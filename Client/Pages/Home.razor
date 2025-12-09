@@ -1,7 +1,23 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>EMS</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="text-center mt-5">
+    <h1 class="display-4">EMS</h1>
 
-Welcome to your new app.
+    <button class="btn btn-primary btn-lg mt-4"
+            @onclick="GoToLogin">
+        Login
+    </button>
+</div>
+
+@code {
+    void GoToLogin()
+    {
+        // Navegar a la página de login
+        NavigationManager.NavigateTo("Identity/Account/Login");
+    }
+
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+}

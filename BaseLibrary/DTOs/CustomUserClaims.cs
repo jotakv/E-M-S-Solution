@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 
 namespace BaseLibrary.DTOs
 {
-    public class Login
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-    }
+    public record CustomUserClaims
+        (string Id = null!, string Name = null!, string Email = null!, string Role = null!);
 }
