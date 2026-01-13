@@ -27,8 +27,140 @@
     </nav>
 </div>
 
+﻿
+@using Client.ApplicationStates
+@inject DepartmentStates departmentState
+
+<AuthorizeView>
+    <Authorized>
+
+        <!-- Top Navbar -->
+        <div class="top-row ps-3 navbar navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="">
+                    Welcome, @context.User.Identity!.Name
+                </a>
+
+                <button title="Navigation menu"
+                        class="navbar-toggler"
+                        @onclick="ToggleNavMenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Side Navigation -->
+        <div class="@NavMenuCssClass nav-scrollable">
+            <nav class="flex-column">
+
+                <!-- Home -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link p-2" href="/home/dashboard">
+                        <span class="bi bi-house-door-fill nav-menu" aria-hidden="true"></span>
+                        Home
+                    </NavLink>
+                </div>
+
+                <!-- Counter -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link p-2" href="counter">
+                        <span class="bi bi-plus-square-fill nav-menu" aria-hidden="true"></span>
+                        Counter
+                    </NavLink>
+                </div>
+
+                <!-- Administration -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link p-2"
+                             @onclick="ShowAdminMenuContainer"
+                             style="cursor:pointer;"
+                             href="javascript:void(0)">
+                        <div class="hstack gap-1">
+                            <span class="bi bi-person-fill fs-3 text-center"
+                                  aria-hidden="true"
+                                  style="margin-top:-2rem"></span>
+                            <span>Administration</span>
+                        </div>
+                    </NavLink>
+
+                    <!-- Users submenu -->
+                    <a class="nav-link p-2 text-white"
+                       style="margin-left:5rem; visibility:@CssStyle">
+                        <div class="hstack">
+                            <span class="bi bi-people fs-5 text-center"
+                                  aria-hidden="true"
+                                  style="margin-top:-2rem"></span>
+                            <span>Users</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Department Section -->
+                <div class="nav-item px-3" style="margin-top:@DepartmentMargin">
+                    <NavLink class="nav-link p-2"
+                             @onclick="ShowDepartmentContainer"
+                             style="cursor:pointer;"
+                             href="javascript:void(0)">
+                        <div class="hstack gap-1">
+                            <span class="bi bi-backpack4-fill fs-3 text-center"
+                                  aria-hidden="true"
+                                  style="margin-top:-2rem"></span>
+                            <span>Department</span>
+                        </div>
+                    </NavLink>
+
+                    <div class="nav-link p-2 text-white"
+                         style="margin-left:5rem; visibility:@DepartmentSubMenuCssClass">
+
+                        <ul class="list-group" style="list-style:none">
+
+                            <!-- General -->
+                            <li class="cursorStyle" style="list-style:none">
+                                <a class="nav-link p-2" @onclick="GeneralDepartmentClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-file-medical fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span class="fs-6">General</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <!-- Department -->
+                            <li class="cursorStyle" style="list-style:none">
+                                <a class="nav-link p-2">
+                                    <div class="hstack">
+                                        <span class="bi bi-substack fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span>Department</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <!-- Branch -->
+                            <li class="cursorStyle" style="list-style:none">
+                                <a class="nav-link p-2">
+                                    <div class="hstack">
+                                        <span class="bi bi-chevron-bar-contract fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span>Branch</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+
+            </nav>
+        </div>
+
+    </Authorized>
+</AuthorizeView>
 @code {
-    private bool collapseNavMenu = true;
+    private bool collapseNavMenu = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -36,4 +168,44 @@
     {
         collapseNavMenu = !collapseNavMenu;
     }
+
+    public string DepartmentMargin { get; set; } = "-3.5rem";
+    private string CssStyle = "hidden";
+    public bool ShowHide { get; set; } = false;
+
+    private void ShowAdminMenuContainer()
+    {
+        ShowHide = !ShowHide;
+        if (ShowHide)
+        {
+            DepartmentMargin = "0";
+            CssStyle = "visible";
+        }
+        else
+        {
+            DepartmentMargin = "-3.5rem";
+            CssStyle = "hidden";
+        }
+    }
+
+    private string DepartmentSubMenuCssClass = "hidden";
+    public bool ShowDepartmentSubMenu { get; set; } = false;
+    private void ShowDepartmentContainer()
+    {
+        ShowDepartmentSubMenu = !ShowDepartmentSubMenu;
+        if (ShowDepartmentSubMenu)
+        {
+            DepartmentSubMenuCssClass = "visible";
+        }
+        else
+        {
+            DepartmentSubMenuCssClass = "hidden";
+        }
+    }
+    
+    void GeneralDepartmentClicked()
+    {
+        departmentState.GeneralDepartmentClicked();
+    }
+
 }

@@ -47,21 +47,25 @@ namespace ClientLibrary.Helpers
 
         public static ClaimsPrincipal SetClaimPrincipal(CustomUserClaims claims)
         {
-            if (claims.Email is null)
+            // If there is no meaningful identity, return anonymous
+            if (string.IsNullOrEmpty(claims.Email))
                 return new ClaimsPrincipal();
 
-            return new ClaimsPrincipal(
-                new ClaimsIdentity(
-                    new List<Claim>
-                    {
-                new Claim(ClaimTypes.NameIdentifier, claims.Id!),
-                new Claim(ClaimTypes.Name, claims.Name!),
-                new Claim(ClaimTypes.Email, claims.Email!),
-                new Claim(ClaimTypes.Role, claims.Role!)
-                    },
-                    "JwtAuth"));
-        }
+            var claimList = new List<Claim>();
 
+            if (!string.IsNullOrEmpty(claims.Id))
+                claimList.Add(new Claim(ClaimTypes.NameIdentifier, claims.Id));
+
+            if (!string.IsNullOrEmpty(claims.Name))
+                claimList.Add(new Claim(ClaimTypes.Name, claims.Name));
+
+            claimList.Add(new Claim(ClaimTypes.Email, claims.Email));
+
+            if (!string.IsNullOrEmpty(claims.Role))
+                claimList.Add(new Claim(ClaimTypes.Role, claims.Role));
+
+            return new ClaimsPrincipal(new ClaimsIdentity(claimList, "JwtAuth"));
+        }
 
         private static CustomUserClaims DecryptToken(string jwtToken)
         {
@@ -77,10 +81,10 @@ namespace ClientLibrary.Helpers
             var role = token.Claims.FirstOrDefault(_ => _.Type == ClaimTypes.Role);
 
             return new CustomUserClaims(
-                userId?.Value!,
-                name?.Value!,
-                email?.Value!,
-                role?.Value!
+                userId?.Value ?? string.Empty,
+                name?.Value ?? string.Empty,
+                email?.Value ?? string.Empty,
+                role?.Value ?? string.Empty
             );
         }
 
