@@ -5,63 +5,77 @@ using System.Security.Claims;
 
 namespace ClientLibrary.Helpers
 {
-    public class CustomAuthenticationStateProvider(LocalStorageService localStorageService) : AuthenticationStateProvider
+    public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     {
-        private readonly ClaimsPrincipal anonymous = new(new ClaimsIdentity());
+        private readonly LocalStorageService _localStorageService;
+        private readonly ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
+
+        public CustomAuthenticationStateProvider(LocalStorageService localStorageService)
+        {
+            _localStorageService = localStorageService;
+        }
+
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var stringToken = await localStorageService.GetToken();
-            if (string.IsNullOrEmpty(stringToken)) return await Task.FromResult(new AuthenticationState(anonymous));
+            var stringToken = await _localStorageService.GetToken();
 
-            var deserializeToken = Serializations.DeserializeJsonString<UserSession>(stringToken);
-            if (deserializeToken == null) return await Task.FromResult(new AuthenticationState(anonymous));
+            if (string.IsNullOrEmpty(stringToken))
+                return new AuthenticationState(_anonymous);
 
-            var getUserClaims = DecryptToken(deserializeToken.Token!);
-            if (getUserClaims == null) return await Task.FromResult(new AuthenticationState(anonymous));
+            var userSession = Serializations.DeserializeJsonString<UserSession>(stringToken);
+            if (userSession == null || string.IsNullOrEmpty(userSession.Token))
+                return new AuthenticationState(_anonymous);
 
-            var claimsPrincipal = SetClaimPrincipal(getUserClaims);
-            return await Task.FromResult(new AuthenticationState(claimsPrincipal));
+            var claims = DecryptToken(userSession.Token);
 
+            var claimsPrincipal = BuildClaimsPrincipal(claims);
+
+            return new AuthenticationState(claimsPrincipal);
         }
 
         public async Task UpdateAuthenticationState(UserSession userSession)
         {
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal();
+            ClaimsPrincipal claimsPrincipal = _anonymous;
 
-            if (userSession.Token != null && userSession.RefreshToken != null)
+            if (userSession != null && !string.IsNullOrEmpty(userSession.Token))
             {
-                var serializeSession = Serializations.SerializeObj(userSession);
-                await localStorageService.SetToken(serializeSession);
+                var serialized = Serializations.SerializeObj(userSession);
+                await _localStorageService.SetToken(serialized);
 
-                var getUserClaims = DecryptToken(userSession.Token!);
-                claimsPrincipal = SetClaimPrincipal(getUserClaims);
+                var claims = DecryptToken(userSession.Token);
+                claimsPrincipal = BuildClaimsPrincipal(claims);
             }
             else
             {
-                await localStorageService.RemoveToken();
+                await _localStorageService.RemoveToken();
             }
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
         }
 
-
-        public static ClaimsPrincipal SetClaimPrincipal(CustomUserClaims claims)
+        private static ClaimsPrincipal BuildClaimsPrincipal(CustomUserClaims claims)
         {
-            if (claims.Email is null)
-                return new ClaimsPrincipal();
+            // If ID or Name is missing, return anonymous
+            if (string.IsNullOrEmpty(claims.Id) || string.IsNullOrEmpty(claims.Name))
+                return new ClaimsPrincipal(new ClaimsIdentity());
 
-            return new ClaimsPrincipal(
-                new ClaimsIdentity(
-                    new List<Claim>
-                    {
-                new Claim(ClaimTypes.NameIdentifier, claims.Id!),
-                new Claim(ClaimTypes.Name, claims.Name!),
-                new Claim(ClaimTypes.Email, claims.Email!),
-                new Claim(ClaimTypes.Role, claims.Role!)
-                    },
-                    "JwtAuth"));
+            var claimList = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, claims.Id),
+                new Claim(ClaimTypes.Name, claims.Name)
+            };
+
+            // Only add Email if it exists
+            if (!string.IsNullOrEmpty(claims.Email))
+                claimList.Add(new Claim(ClaimTypes.Email, claims.Email));
+
+            // Only add Role if it exists
+            if (!string.IsNullOrEmpty(claims.Role))
+                claimList.Add(new Claim(ClaimTypes.Role, claims.Role));
+
+            var identity = new ClaimsIdentity(claimList, "JwtAuth");
+            return new ClaimsPrincipal(identity);
         }
-
 
         private static CustomUserClaims DecryptToken(string jwtToken)
         {
@@ -71,18 +85,13 @@ namespace ClientLibrary.Helpers
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadJwtToken(jwtToken);
 
-            var userId = token.Claims.FirstOrDefault(_ => _.Type == ClaimTypes.NameIdentifier);
-            var name = token.Claims.FirstOrDefault(_ => _.Type == ClaimTypes.Name);
-            var email = token.Claims.FirstOrDefault(_ => _.Type == ClaimTypes.Email);
-            var role = token.Claims.FirstOrDefault(_ => _.Type == ClaimTypes.Role);
+            // Read claims safely
+            var id = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var name = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var email = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-            return new CustomUserClaims(
-                userId?.Value!,
-                name?.Value!,
-                email?.Value!,
-                role?.Value!
-            );
+            return new CustomUserClaims(id, name, email, role);
         }
-
     }
 }
