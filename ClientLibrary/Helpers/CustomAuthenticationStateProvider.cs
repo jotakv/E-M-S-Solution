@@ -1,97 +1,65 @@
 ﻿using BaseLibrary.DTOs;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace ClientLibrary.Helpers
+public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
-    public class CustomAuthenticationStateProvider : AuthenticationStateProvider
+    private readonly ILocalStorageService _localStorage;
+
+    private const string TokenKey = "authToken";
+
+    public CustomAuthenticationStateProvider(ILocalStorageService localStorage)
     {
-        private readonly LocalStorageService _localStorageService;
-        private readonly ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
+        _localStorage = localStorage;
+    }
 
-        public CustomAuthenticationStateProvider(LocalStorageService localStorageService)
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        var token = await _localStorage.GetItemAsync<string>(TokenKey);
+
+        if (string.IsNullOrWhiteSpace(token))
         {
-            _localStorageService = localStorageService;
+            return new AuthenticationState(
+                new ClaimsPrincipal(new ClaimsIdentity())
+            );
         }
 
-        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var stringToken = await _localStorageService.GetToken();
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(token);
 
-            if (string.IsNullOrEmpty(stringToken))
-                return new AuthenticationState(_anonymous);
+        var identity = new ClaimsIdentity(jwt.Claims, "jwt");
+        var user = new ClaimsPrincipal(identity);
 
-            var userSession = Serializations.DeserializeJsonString<UserSession>(stringToken);
-            if (userSession == null || string.IsNullOrEmpty(userSession.Token))
-                return new AuthenticationState(_anonymous);
+        return new AuthenticationState(user);
+    }
 
-            var claims = DecryptToken(userSession.Token);
+    public async Task UpdateAuthenticationState(UserSession session)
+    {
+        await _localStorage.SetItemAsync(TokenKey, session.Token);
 
-            var claimsPrincipal = BuildClaimsPrincipal(claims);
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(session.Token);
 
-            return new AuthenticationState(claimsPrincipal);
-        }
+        var identity = new ClaimsIdentity(jwt.Claims, "jwt");
+        var user = new ClaimsPrincipal(identity);
 
-        public async Task UpdateAuthenticationState(UserSession userSession)
-        {
-            ClaimsPrincipal claimsPrincipal = _anonymous;
+        NotifyAuthenticationStateChanged(
+            Task.FromResult(new AuthenticationState(user))
+        );
+    }
 
-            if (userSession != null && !string.IsNullOrEmpty(userSession.Token))
-            {
-                var serialized = Serializations.SerializeObj(userSession);
-                await _localStorageService.SetToken(serialized);
+    public async Task Logout()
+    {
+        await _localStorage.RemoveItemAsync(TokenKey);
 
-                var claims = DecryptToken(userSession.Token);
-                claimsPrincipal = BuildClaimsPrincipal(claims);
-            }
-            else
-            {
-                await _localStorageService.RemoveToken();
-            }
-
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
-        }
-
-        private static ClaimsPrincipal BuildClaimsPrincipal(CustomUserClaims claims)
-        {
-            // If ID or Name is missing, return anonymous
-            if (string.IsNullOrEmpty(claims.Id) || string.IsNullOrEmpty(claims.Name))
-                return new ClaimsPrincipal(new ClaimsIdentity());
-
-            var claimList = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, claims.Id),
-                new Claim(ClaimTypes.Name, claims.Name)
-            };
-
-            // Only add Email if it exists
-            if (!string.IsNullOrEmpty(claims.Email))
-                claimList.Add(new Claim(ClaimTypes.Email, claims.Email));
-
-            // Only add Role if it exists
-            if (!string.IsNullOrEmpty(claims.Role))
-                claimList.Add(new Claim(ClaimTypes.Role, claims.Role));
-
-            var identity = new ClaimsIdentity(claimList, "JwtAuth");
-            return new ClaimsPrincipal(identity);
-        }
-
-        private static CustomUserClaims DecryptToken(string jwtToken)
-        {
-            if (string.IsNullOrEmpty(jwtToken))
-                return new CustomUserClaims();
-
-            var handler = new JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(jwtToken);
-
-            // Read claims safely
-            var id = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            var name = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var email = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-            var role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-
-            return new CustomUserClaims(id, name, email, role);
-        }
+        NotifyAuthenticationStateChanged(
+            Task.FromResult(
+                new AuthenticationState(
+                    new ClaimsPrincipal(new ClaimsIdentity())
+                )
+            )
+        );
     }
 }

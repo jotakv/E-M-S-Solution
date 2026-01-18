@@ -1,7 +1,20 @@
 ﻿@page "/home/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
 
 <h1>Home page</h1>
+<h2>Hello</h2>
+
+<AuthorizeView>
+    <Authorized>
+        <p>AUTHENTICATED ✅</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>ANONYMOUS ❌</p>
+    </NotAuthorized>
+</AuthorizeView>
+
 
 @code {
     // [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }

@@ -24,10 +24,9 @@
 @code {
     async Task LogoutClicked()
     {
-        var logoutModel = new UserSession();
         var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
-        await customAuthStateProvider.UpdateAuthenticationState(logoutModel);
-        NavManager.NavigateTo("/home/dashboard", replace: true);
+        await customAuthStateProvider.UpdateAuthenticationState(null); // clears token
+        NavManager.NavigateTo("/identity/account/login", replace: true); // cannot go back
     }
 }
 
