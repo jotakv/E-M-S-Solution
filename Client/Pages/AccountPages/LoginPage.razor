@@ -64,31 +64,36 @@
     public bool ShowLoadingButton { get; set; } = false;
 
     Login User = new();
-
-    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
-    protected async override Task OnInitializedAsync()
-    {
-        await CheckUserAuthentication();
-    }
     
     async Task HandleLogin()
     {
         ShowLoadingButton = true;
+
         var result = await accountService.SignInAsync(User);
-        if (result.Flag)
-        {
-            await DisplayDialog(result.Message, "Login Success");
-            var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
-            await customAuthStateProvider.UpdateAuthenticationState(new UserSession
-                {
-                    Token = result.Token, RefreshToken = result.RefreshToken
-                });
-            NavManager.NavigateTo("/", forceLoad: true);
-        }
-        else
+
+        if (!result.Flag)
         {
             await DisplayDialog(result.Message, "Alert");
+            ShowLoadingButton = false;
+            return;
         }
+
+        // Update auth state FIRST
+        var customAuthStateProvider =
+            (CustomAuthenticationStateProvider)AuthStateProvider;
+
+        await customAuthStateProvider.UpdateAuthenticationState(
+            new UserSession
+            {
+                Token = result.Token,
+                RefreshToken = result.RefreshToken
+            });
+
+        // show success dialog
+        await DisplayDialog("Login successfully", "Success");
+
+        // Redirect AFTER user clicks OK
+        NavManager.NavigateTo("/home/dashboard", replace: true);
 
         ShowLoadingButton = false;
     }
@@ -98,12 +103,17 @@
         await DialogService.AlertAsync(content, title);
     }
 
-    private async Task CheckUserAuthentication()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var user = (await AuthenticationState).User;
+        if (!firstRender) return;
+
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
 
         if (user.Identity?.IsAuthenticated == true)
-            NavManager.NavigateTo("/home/dashboard");
+        {
+            NavManager.NavigateTo("/home/dashboard", replace: true);
+        }
     }
 
 }

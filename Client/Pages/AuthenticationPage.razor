@@ -1,10 +1,25 @@
 ﻿@page "/"
-
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+
 
 @code {
-    protected override void OnInitialized()
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected override async Task OnInitializedAsync()
     {
-        Nav.NavigateTo("/home/dashboard", replace: true);
+        var authState = await AuthenticationState;
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // Authenticated user → go to dashboard
+            Nav.NavigateTo("/home/dashboard", replace: true);
+        }
+        else
+        {
+            // Unauthenticated user → go to login page
+            Nav.NavigateTo("/identity/account/login", replace: true);
+        }
     }
 }
