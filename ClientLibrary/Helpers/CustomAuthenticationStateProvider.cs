@@ -37,6 +37,19 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public async Task UpdateAuthenticationState(UserSession session)
     {
+        // LOGOUT CASE
+        if (string.IsNullOrWhiteSpace(session.Token))
+        {
+            await _localStorage.RemoveItemAsync(TokenKey);
+
+            var anonymous = new ClaimsIdentity();
+            var authState = new AuthenticationState(new ClaimsPrincipal(anonymous));
+
+            NotifyAuthenticationStateChanged(Task.FromResult(authState));
+            return;
+        }
+
+        // LOGIN CASE
         await _localStorage.SetItemAsync(TokenKey, session.Token);
 
         var handler = new JwtSecurityTokenHandler();
@@ -49,6 +62,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
             Task.FromResult(new AuthenticationState(user))
         );
     }
+
 
     public async Task Logout()
     {
