@@ -50,7 +50,7 @@ builder.Services.AddScoped<IUserAccount, UserAccountRepository>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorWasm", builder =>
-        builder.WithOrigins("http://localhost:7201")
+        builder.WithOrigins("https://localhost:7201")
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials()
@@ -58,6 +58,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Important: CORS must come **before** Authentication/Authorization
+app.UseHttpsRedirection();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

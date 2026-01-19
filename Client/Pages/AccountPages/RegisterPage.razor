@@ -74,6 +74,12 @@
 
     Register User = new();
 
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await CheckUserAuthentication();
+    }
+
    async Task HandleRegistration()
     {
         ShowLoadingButton = true;
@@ -94,4 +100,13 @@
     {
         await DialogService.AlertAsync(content, title);
     }
+
+    private async Task CheckUserAuthentication()
+    {
+        var user = (await AuthenticationState).User;
+
+        if (user.Identity?.IsAuthenticated == true)
+            NavManager.NavigateTo("/home/dashboard");
+    }
+
 }
