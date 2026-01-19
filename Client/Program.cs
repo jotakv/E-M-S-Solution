@@ -32,4 +32,7 @@ builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddScoped<SfDialogService>();
 
+builder.Services.AddScoped<DepartmentStates>();
+
+
 await builder.Build().RunAsync();
