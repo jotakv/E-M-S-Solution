@@ -1,9 +1,10 @@
 ﻿@page "/home/dashboard"
 @using Microsoft.AspNetCore.Authorization
+@using Client.Pages.AdministrationPages
 @attribute [Authorize]
-@layout MainLayout
+<TableBanner />
 
-<h1>Home page</h1>
+@* <h1>Home page</h1>
 
 <AuthorizeView>
     <Authorized>
@@ -12,7 +13,7 @@
     <NotAuthorized>
         <p>ANONYMOUS ❌</p>
     </NotAuthorized>
-</AuthorizeView>
+</AuthorizeView> *@
 
 
 @code {

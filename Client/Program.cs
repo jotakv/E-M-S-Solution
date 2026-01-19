@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using Client;
+using Client.ApplicationStates;
 using ClientLibrary.Helpers;
 using ClientLibrary.Services.Contracts;
 using ClientLibrary.Services.Implementations;
