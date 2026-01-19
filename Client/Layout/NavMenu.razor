@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -7,7 +8,13 @@
             Hi,
             <AuthorizeView>
                 <Authorized>
-                    @context.User.Identity!.Name
+                    @{
+                        // Get the user's full name from claims
+                        var fullnameClaim = context.User.Claims
+                        .FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+                        string fullname = fullnameClaim?.Value ?? "User";
+                    }
+                    @fullname
                 </Authorized>
                 <NotAuthorized>
                     Guest
@@ -24,7 +31,6 @@
     </div>
 </div>
 
-
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
         <div class="nav-item px-3">
@@ -36,7 +42,7 @@
             <NavLink class="nav-link" href="Identity/Account/Login">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Login
             </NavLink>
-        </div>       
+        </div>
     </nav>
 </div>
 
