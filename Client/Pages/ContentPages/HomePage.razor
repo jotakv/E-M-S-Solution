@@ -1,8 +1,10 @@
 ﻿@page "/home/dashboard"
 @using Microsoft.AspNetCore.Authorization
 @using Client.Pages.AdministrationPages
+@using Client.Pages.DepartmentPages
 @attribute [Authorize]
 <TableBanner />
+<GeneralDepartmentPage />
 
 @* <h1>Home page</h1>
 
