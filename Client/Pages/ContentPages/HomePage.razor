@@ -1,6 +1,35 @@
 ﻿@page "/home/dashboard"
-<h1>Home page</h1>
+@using Microsoft.AspNetCore.Authorization
+@using Client.Pages.AdministrationPages
+@using Client.Pages.DepartmentPages
+@attribute [Authorize]
+<TableBanner />
+<GeneralDepartmentPage />
+
+@* <h1>Home page</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p>AUTHENTICATED ✅</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>ANONYMOUS ❌</p>
+    </NotAuthorized>
+</AuthorizeView> *@
+
 
 @code {
+    // [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    // protected async override Task OnInitializedAsync()
+    // {
+    //     await CheckUserAuthentication();
+    // }
+    // private async Task CheckUserAuthentication()
+    // {
+    //     var user = (await AuthenticationState).User;
+    //     bool isUserAuthenticated = user.Identity!.IsAuthenticated;
+    //     if (!isUserAuthenticated)
+    //         NavManager.NavigateTo("/identity/account/login");
+    // }
 
 }

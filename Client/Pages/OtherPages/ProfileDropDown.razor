@@ -1,0 +1,64 @@
+﻿<div class="btn-group">
+
+    <!-- Profile Image -->
+    <img src="@(ProfileImage == ""
+                          ? "../images/Profile/noProfileEmployee.png"
+                          : ProfileImage)"
+         width="30" height="40"
+         style="border-radius:50%; margin-right:5px;" />
+
+    <!-- Split Button -->
+    <button type="button"
+            class="btn btn-none border-0 dropdown-toggle dropdown-toggle-split"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+        <span class="visually-hidden">Toggle Dropdown</span>
+    </button>
+
+    <!-- Dropdown Menu -->
+    <ul class="dropdown-menu mt-2 border-0">
+        <li>
+            <div class="card shadow-sm">
+                <div class="card-body p-2">
+                    <ul class="list-group">
+                        <li class="list-group-item p-2">
+                            <a class="text-primary fw-bold float-start text-decoration-none"
+                               style="font-family:Tahoma; cursor:pointer;">
+                                <i class="bi bi-person-gear"></i>
+                                Profile
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-footer p-2">
+                    <button class="btn btn-danger btn-sm fw-bold w-100"
+                            @onclick="LogoutClicked"
+                            @onclick:stopPropagation="true">
+                        <i class="bi bi-box-arrow-left"></i>
+                        Logout
+                    </button>
+
+                </div>
+            </div>
+        </li>
+    </ul>
+
+</div>
+
+@code {
+    public string ProfileImage { get; set; } = "";
+
+    async Task LogoutClicked()
+    {
+        var logoutModel = new UserSession();
+        var customAuthStateProvider =
+            (CustomAuthenticationStateProvider)AuthStateProvider;
+
+        await customAuthStateProvider.UpdateAuthenticationState(logoutModel);
+
+        NavManager.NavigateTo("/identity/account/login",
+            replace: true,
+            forceLoad: true);
+    }
+}

@@ -68,21 +68,32 @@
     async Task HandleLogin()
     {
         ShowLoadingButton = true;
+
         var result = await accountService.SignInAsync(User);
-        if (result.Flag)
-        {
-            await DisplayDialog(result.Message, "Login Success");
-            var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
-            await customAuthStateProvider.UpdateAuthenticationState(new UserSession
-                {
-                    Token = result.Token, RefreshToken = result.RefreshToken
-                });
-            NavManager.NavigateTo("/", forceLoad: true);
-        }
-        else
+
+        if (!result.Flag)
         {
             await DisplayDialog(result.Message, "Alert");
+            ShowLoadingButton = false;
+            return;
         }
+
+        // Update auth state FIRST
+        var customAuthStateProvider =
+            (CustomAuthenticationStateProvider)AuthStateProvider;
+
+        await customAuthStateProvider.UpdateAuthenticationState(
+            new UserSession
+            {
+                Token = result.Token,
+                RefreshToken = result.RefreshToken
+            });
+
+        // show success dialog
+        await DisplayDialog("Login successfully", "Success");
+
+        // Redirect AFTER user clicks OK
+        NavManager.NavigateTo("/home/dashboard", replace: true);
 
         ShowLoadingButton = false;
     }
@@ -91,4 +102,18 @@
     {
         await DialogService.AlertAsync(content, title);
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            NavManager.NavigateTo("/home/dashboard", replace: true);
+        }
+    }
+
 }
