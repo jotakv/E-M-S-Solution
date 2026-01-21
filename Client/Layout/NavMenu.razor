@@ -91,7 +91,7 @@
                         <ul class="list-group" style="list-style:none">
 
                             <li>
-                                <a class="nav-link p-2" @onclick ="GeneralDepartmentClicked">
+                                <a class="nav-link p-2" @onclick="GeneralDepartmentClicked">
                                     <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                                     General
                                 </a>
@@ -151,7 +151,23 @@
 
     private void ToggleDepartmentMenu()
         => showDepartmentMenu = !showDepartmentMenu;
+    // 154
+    private string DepartmentCssStyle = "hidden";
+    public bool ShowHideDepartment { get; set; } = false;
+    private void ShowDepartmentContainer()
+    {
+        ShowHideDepartment = !ShowHideDepartment;
+        if (ShowHideDepartment)
+        {
+            DepartmentCssStyle = "visible";
+        }
+        else
+        {
+            DepartmentCssStyle = "hidden";
+        }
+    }
 
     private void GeneralDepartmentClicked()
         => departmentState.GeneralDepartmentClicked();
+
 }

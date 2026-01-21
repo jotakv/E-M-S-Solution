@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace BaseLibrary.DTOs
 {
-    public class Login
+    public class Login : AccountBase
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
+
     }
 }
