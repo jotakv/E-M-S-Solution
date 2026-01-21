@@ -19,9 +19,6 @@
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<Folder Include="Repositories\" />
-	</ItemGroup>
-	<ItemGroup>
 		<ProjectReference Include="..\BaseLibrary\BaseLibrary.csproj" />
 	</ItemGroup>
 </Project>
