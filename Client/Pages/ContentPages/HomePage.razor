@@ -1,8 +1,9 @@
 ﻿@page "/home/dashboard"
-@using Microsoft.AspNetCore.Authorization
-@using Client.Pages.AdministrationPages
-@using Client.Pages.DepartmentPages
+
 @attribute [Authorize]
+@* @using Microsoft.AspNetCore.Authorization
+@attribute [Authorize] *@
+
 <TableBanner />
 <GeneralDepartmentPage />
 

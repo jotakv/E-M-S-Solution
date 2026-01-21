@@ -1,8 +1,4 @@
 ﻿@page "/"
-@inject NavigationManager Nav
-@inject AuthenticationStateProvider AuthStateProvider
-
-
 
 @code {
     [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
