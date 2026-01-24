@@ -1,5 +1,7 @@
 ﻿
 
+using System.Text.Json.Serialization;
+
 namespace BaseLibrary.Entities
 {
     public class Department : BaseEntity
@@ -9,6 +11,7 @@ namespace BaseLibrary.Entities
         public int GeneralDepartmentId { get; set; }
 
         // One to many relatTonship with Branch
+        [JsonIgnore]
         public List<Branch>? Branches { get; set; }
 
 
