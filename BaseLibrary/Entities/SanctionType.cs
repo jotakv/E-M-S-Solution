@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace BaseLibrary.Entities
 {
-    public class GeneralDepartment : BaseEntity
+    public class SanctionType : BaseEntity
     {
-        // Relationship One-to-many with Department
-        public List<Department>? Departments { get; set; }
-
+        //Many to one relationship with Vacation
+        public List<Sanction>? Sanctions { get; set; }
     }
 }
