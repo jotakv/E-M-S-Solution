@@ -1,8 +1,4 @@
-﻿@page "/nav"
-@using Microsoft.AspNetCore.Components.Authorization
-@using Client.ApplicationStates
-@inject AllState departmentState
-
+﻿
 <AuthorizeView>
     <Authorized>
 
@@ -152,6 +148,23 @@
     private void ToggleDepartmentMenu()
         => showDepartmentMenu = !showDepartmentMenu;
 
-    private void GeneralDepartmentClicked()
-        => departmentState.GeneralDepartmentClicked();
+    private string DepartmentCssStyle = "hidden";
+
+    public bool ShowHideDepartment { get; set; } = false;
+
+    private void ShowDepartmentContainer()
+    {
+        ShowHideDepartment = !ShowHideDepartment;
+
+        if (ShowHideDepartment)
+            DepartmentCssStyle = "visible";
+        else
+            DepartmentCssStyle = "hidden";
+    }
+
+
+    void GeneralDepartmentClicked()
+    {
+        allState.GeneralDepartmentClicked();
+    }
 }
