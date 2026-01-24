@@ -48,8 +48,10 @@ namespace ServerLibrary.Repositories.Implementations
 
         private async Task<bool> CheckName(string name)
         {
-            return !await appDbContext.GeneralDepartments
-                .AnyAsync(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var  item = await appDbContext.GeneralDepartments.FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower()));
+            return item is null;
+            //return !await appDbContext.GeneralDepartments
+            //    .AnyAsync(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
     }

@@ -1,8 +1,4 @@
-﻿@page "/nav"
-@using Microsoft.AspNetCore.Components.Authorization
-@using Client.ApplicationStates
-@inject AllState departmentState
-
+﻿
 <AuthorizeView>
     <Authorized>
 
@@ -42,21 +38,14 @@
                         Home
                     </NavLink>
                 </div>
-
-                <!-- Counter -->
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link p-2" href="counter">
-                        <span class="bi bi-plus-square-fill nav-menu text-center" aria-hidden="true" style="margin-top:-2rem; font-size:1.5rem;"></span>
-                        Counter
-                    </NavLink>
-                </div>
-
                 <!-- Administration -->
                 <div class="nav-item px-3">
 
                     <a class="nav-link p-2"
                        style="cursor:pointer;"
-                       @onclick="ToggleAdminMenu" href="javascript:void()">
+                       href="#"
+                       @onclick:preventDefault="true"
+                       @onclick="ToggleAdminMenu">
                         <div class="hstack gap-1">
                             <span class="bi bi-person-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                             <span>Administration</span>
@@ -64,8 +53,9 @@
                     </a>
 
                     <a class="nav-link p-2 text-white"
-                       style="margin-left:5rem; visibility:@AdminMenuVisibility">
-                        <div class="hstack">
+                       style="margin-left:5rem;visibility:@AdminMenuVisibility"
+                       @onclick ="UserClicked">
+                        <div class="hstack" >
                             <span class="bi bi-people fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                             <span>Users</span>
                         </div>
@@ -78,38 +68,88 @@
 
                     <a class="nav-link p-2"
                        style="cursor:pointer;"
-                       @onclick="ToggleDepartmentMenu">
+                       @onclick="ShowDepartmentContainer">
                         <div class="hstack gap-1">
                             <span class="bi bi-backpack4-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                            <span>Department</span>
+                            <span>Managment</span>
                         </div>
                     </a>
 
-                    <div class="nav-link p-2 text-white"
+                    @* <div class="nav-link p-2 text-white"
+                         style="margin-left:5rem; visibility:@DepartmentMenuVisibility"> *@
+                         <div class="nav-link p-2 text-white"
                          style="margin-left:5rem; visibility:@DepartmentMenuVisibility">
-
                         <ul class="list-group" style="list-style:none">
 
                             <li>
                                 <a class="nav-link p-2" @onclick ="GeneralDepartmentClicked">
                                     <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                                    General
+                                    <span>General Dep</span>
                                 </a>
                             </li>
 
-                            <li>
+                            <li style="list-style:none" class="cursorStyle" @onclick="DepartmentClicked">
                                 <a class="nav-link p-2">
                                     <span class="bi bi-substack fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                                     Department
                                 </a>
                             </li>
 
-                            <li>
+                            <li style="list-style:none" class="cursorStyle" @onclick="BranchClicked">
                                 <a class="nav-link p-2">
                                     <span class="bi bi-chevron-bar-contract fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                                     Branch
                                 </a>
                             </li>
+
+                            <li style="list-style:none">
+                                <hr />
+                            </li>
+
+                            <li style="list-style:none">
+                                <a class="nav-link p-2 cusorStyle" @onclick="CountryClicked">
+                                <div class="hstack">
+                                <span class="bi bi-geo-alt fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <span>Country</span>
+                                </div>
+                                </a>
+                            </li>
+
+                            <li style="list-style:none">
+                                <a class="nav-link p-2 cursorStyle" @onclick="CityClicked">
+                                    <div class="hstack">
+                                        <span class="bi bi-pin-map-fill fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span>City</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li style="list-style:none">
+                                <a class="nav-link p-2 cursorStyle" @onclick="TownClicked">
+                                    <div class="hstack">
+                                        <span class="bi bi-geo fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span>Town</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li style="list-style:none">
+                                <hr />
+                            </li>
+
+                            <li style="list-style:none">
+                                <a class="nav-link p-2 cursorStyle" @onclick="EmployeeClicked">
+                                    <div class="hstack">
+                                        <span class="bi bi-people-fill fs-5 text-center"
+                                              aria-hidden="true"
+                                              style="margin-top:-2rem"></span>
+                                        <span>Employees</span>
+                                    </div>
+                                </a>
+                            </li>
+
 
                         </ul>
                     </div>
@@ -125,6 +165,13 @@
         <!-- Optional: hide nav completely -->
     </NotAuthorized>
 </AuthorizeView>
+
+
+<style>
+    .cusorStyle { cursor: pointer; }
+    .cursorStyle { cursor: pointer; }
+</style>
+
 
 @code {
     private bool collapseNavMenu = false;
@@ -152,6 +199,69 @@
     private void ToggleDepartmentMenu()
         => showDepartmentMenu = !showDepartmentMenu;
 
-    private void GeneralDepartmentClicked()
-        => departmentState.GeneralDepartmentClicked();
+    private string DepartmentCssStyle = "hidden";
+
+    public bool ShowHideDepartment { get; set; } = false;
+
+    private void ShowDepartmentContainer()
+    {
+        showDepartmentMenu = !showDepartmentMenu;
+        // ShowHideDepartment = !ShowHideDepartment;
+
+        // if (ShowHideDepartment)
+        //     DepartmentCssStyle = "visible";
+        // else
+        //     DepartmentCssStyle = "hidden";
+    }
+
+    //General Departments /Department / Brach 
+    void GeneralDepartmentClicked()
+    {
+        Console.WriteLine("CLICK GeneralDepartmentClicked");
+        allState.GeneralDepartmentClicked();
+    }
+    void DepartmentClicked()
+    {
+        Console.WriteLine("CLICK DepartmentClicked");
+        allState.DepartmentClicked();
+    }
+
+    void BranchClicked()
+    {
+        Console.WriteLine("CLICK BranchClicked");
+        allState.BranchClicked();
+    }
+
+    // Country / City / Town 
+
+    void CountryClicked()
+    {
+
+        allState.CountryClicked();
+    }
+
+     void CityClicked()
+    {
+        allState.CityClicked();
+    }
+
+
+    void TownClicked()
+    {
+        allState.TownClicked();
+    }
+
+    /// Employee
+    void EmployeeClicked()
+    {
+        Console.WriteLine("CLICK Employees");
+        allState.EmployeeClicked();
+    }
+
+    /// User
+    void UserClicked()
+    {
+        Console.WriteLine("CLICK UserClicked");
+        allState.UserClicked();
+    }
 }

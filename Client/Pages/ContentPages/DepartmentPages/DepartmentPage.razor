@@ -1,0 +1,187 @@
+﻿@implements IDisposable
+
+@if (allState.ShowDepartment)
+{
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+
+                    <div class="card-header">
+                        <h4 class="float-start">Departments</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="AddButtonClicked">
+                            <i class="bi bi-plus-circle-dotted"></i>
+                        </button>
+                    </div>
+
+                    <div class="card-body" style="max-height: 580px; overflow-x:hidden; overflow-y:scroll;">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Id</th>
+                                    <th scope="col">General Department</th>
+                                    <th scope="col">Department</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @if (Departments is not null && Departments.Any())
+                                {
+                                    var count = 1;
+
+                                    foreach (var item in Departments)
+                                    {
+                                        <tr>
+                                            <th scope="row">@count</th>
+                                            <td>@item.Id</td>
+                                            <td>@item.GeneralDepartment!.Name</td>
+                                            <td>@item.Name</td>
+                                            <td>
+                                                <i class="bi bi-pencil text-info" id="cursorStyle"
+                                                   @onclick="() => EditClicked(item)"></i>
+                                                <i class="bi bi-trash text-danger" id="cursorStyle"
+                                                   @onclick="() => DeleteClicked(item)"></i>
+                                            </td>
+                                        </tr>
+
+                                        count++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="alert alert-info text-center">
+                                                No Department added yet!
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+<style>
+    cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
+<DepartmentDialog @ref="departmentDialog"
+                  HandleSaveOperationEvent="HandleSaveOperationEvent"
+                  Department="Department"
+                  GeneralDepartments="GeneralDepartments" />
+
+
+@code {
+
+    public string Title { get; set; } = "Add";
+    private DepartmentDialog? departmentDialog;
+    private Department Department = new();
+    public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
+    public List<Department> Departments { get; set; } = new();
+
+    
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetDepartments();
+        await GetGeneralDepartments();
+        allState.Action += StateHasChanged;
+    }
+
+    private async Task GetDepartments()
+    {
+        Departments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+    }
+
+    private async Task GetGeneralDepartments()
+    {
+        GeneralDepartments = await generalDepartmentService.GetAll(Constants.GeneralDepartmentBaseUrl);
+    }
+
+    private void AddButtonClicked()
+    {
+        departmentDialog?.ChangeTitle("Add");
+        Department = new();
+        OpenDialog();
+    }
+
+    private void OpenDialog()
+    {
+        departmentDialog?.OpenDialog();
+    }
+
+    private async Task HandleSaveOperationEvent(Department department)
+    {
+        bool successCheck;
+
+        if (department.Id > 0)
+        {
+            var result = await departmentService.Update(department, Constants.DepartmentBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var response = await departmentService.Insert(department, Constants.DepartmentBaseUrl);
+            successCheck = await DisplayMessage(response.Flag, response.Message);
+        }
+
+        if (successCheck)
+        {
+            Department = new();
+            await GetDepartments();
+            departmentDialog?.ChangeTitle("Add");
+        }
+    }
+
+    private void EditClicked(Department dep)
+    {
+        departmentDialog?.ChangeTitle("Update");
+        Department = dep;
+        OpenDialog();
+    }
+
+    private async Task DeleteClicked(Department dep)
+    {
+        bool confirm = await dialogService.ConfirmAsync(
+            $"Are you sure you wanna delete {dep.Name}?",
+            "Confirm Delete");
+
+        if (!confirm) return;
+
+        var response = await departmentService.DeleteById(dep.Id, Constants.DepartmentBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+
+        if (result)
+            await GetDepartments();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+
+        await dialogService.AlertAsync(message, "Alert!");
+        return false;
+    }
+
+
+}
