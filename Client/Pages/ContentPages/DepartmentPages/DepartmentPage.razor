@@ -1,4 +1,4 @@
-﻿@* @implements IDisposable *@
+﻿@implements IDisposable
 
 @if (allState.ShowDepartment)
 {
@@ -90,6 +90,12 @@
     private Department Department = new();
     public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
     public List<Department> Departments { get; set; } = new();
+
+    
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {
