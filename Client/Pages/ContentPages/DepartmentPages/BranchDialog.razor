@@ -65,7 +65,7 @@
 </SfDialog>
 
 @code {
-    [Parameter] public Branch branch { get; set; } = new();
+    [Parameter] public Branch Branch { get; set; } = new();
     [Parameter] public List<Department> Departments { get; set; } = new();
     [Parameter] public EventCallback<Branch> HandleSaveOperationEvent { get; set; }
 
@@ -80,7 +80,7 @@
             return;
         }
 
-        await HandleSaveOperationEvent.InvokeAsync(Department);
+        await HandleSaveOperationEvent.InvokeAsync(Branch);
     }
 
     public void OpenDialog()
