@@ -54,8 +54,8 @@
 
                     <a class="nav-link p-2 text-white"
                        style="margin-left:5rem;visibility:@AdminMenuVisibility"
-                       @onclick ="UserClicked">
-                        <div class="hstack" >
+                       @onclick="UserClicked">
+                        <div class="hstack">
                             <span class="bi bi-people fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
                             <span>Users</span>
                         </div>
@@ -77,13 +77,15 @@
 
                     @* <div class="nav-link p-2 text-white"
                          style="margin-left:5rem; visibility:@DepartmentMenuVisibility"> *@
-                         <div class="nav-link p-2 text-white"
-                         style="margin-left:5rem; visibility:@DepartmentMenuVisibility">
+                    <div class="nav-link p-2 text-white"
+                         style="margin-left:2rem; visibility:@DepartmentMenuVisibility">
                         <ul class="list-group" style="list-style:none">
 
                             <li>
-                                <a class="nav-link p-2" @onclick ="GeneralDepartmentClicked">
-                                    <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <a class="nav-link p-2" @onclick="GeneralDepartmentClicked">
+                                    <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem">
+
+                                    </span>
                                     <span>General Dep</span>
                                 </a>
                             </li>
@@ -108,10 +110,10 @@
 
                             <li style="list-style:none">
                                 <a class="nav-link p-2 cusorStyle" @onclick="CountryClicked">
-                                <div class="hstack">
-                                <span class="bi bi-geo-alt fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                                <span>Country</span>
-                                </div>
+                                    <div class="hstack">
+                                        <span class="bi bi-geo-alt fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Country</span>
+                                    </div>
                                 </a>
                             </li>
 
@@ -168,8 +170,13 @@
 
 
 <style>
-    .cusorStyle { cursor: pointer; }
-    .cursorStyle { cursor: pointer; }
+    .cusorStyle {
+        cursor: pointer;
+    }
+
+    .cursorStyle {
+        cursor: pointer;
+    }
 </style>
 
 
@@ -214,7 +221,7 @@
         //     DepartmentCssStyle = "hidden";
     }
 
-    //General Departments /Department / Brach 
+    //General Departments /Department / Brach
     void GeneralDepartmentClicked()
     {
         Console.WriteLine("CLICK GeneralDepartmentClicked");
@@ -232,7 +239,7 @@
         allState.BranchClicked();
     }
 
-    // Country / City / Town 
+    // Country / City / Town
 
     void CountryClicked()
     {
@@ -240,7 +247,7 @@
         allState.CountryClicked();
     }
 
-     void CityClicked()
+    void CityClicked()
     {
         allState.CityClicked();
     }
