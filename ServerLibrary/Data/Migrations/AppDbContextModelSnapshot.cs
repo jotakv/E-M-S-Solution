@@ -185,10 +185,6 @@ namespace ServerLibrary.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Fullname")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("JobName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -532,7 +528,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Overtime", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.OvertimeType", "OvertimeType")
-                        .WithMany()
+                        .WithMany("Overtimes")
                         .HasForeignKey("OvertimeTypeId");
 
                     b.Navigation("OvertimeType");
@@ -592,6 +588,11 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.GeneralDepartment", b =>
                 {
                     b.Navigation("Departments");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.OvertimeType", b =>
+                {
+                    b.Navigation("Overtimes");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.SanctionType", b =>
