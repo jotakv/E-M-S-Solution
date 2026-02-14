@@ -98,7 +98,7 @@
 
     private async Task DisplayDialog(string content, string title)
     {
-        await DialogService.AlertAsync(content, title);
+        await dialogService.AlertAsync(content, title);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

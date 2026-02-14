@@ -11,20 +11,28 @@
 @using Client
 @using Client.Layout
 
-@*Add*@
-@using Client.Pages.OtherPages
-@using Client.Pages.ContentPages.DepartmentPages
+@using Client.Pages.OtherPages.OvertimePages
+@using Client.Pages.OtherPages.DoctorPages
+@*using Client.Pages.OtherPages.VacationPages
+@using Client.Pages.OtherPages.SanctionPages*@
+@using Client.Pages.ContentPages.EmployeePages
+@using Client.Pages.ContentPages.UserPages
 @using Client.Pages.ContentPages.LocationPages
+@using Client.Pages.ContentPages.DepartmentPages
+@using Client.Pages.OtherPages
 
 @using BaseLibrary.DTOs
 @using ClientLibrary.Helpers
 @using Microsoft.AspNetCore.Components.Authorization
 @using ClientLibrary.Services.Contracts
-@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor.DropDowns
+
+@using Client.Pages.ContentPages.EmployeePages
 
 @*Add*@
 @using Microsoft.AspNetCore.Authorization
+@using Syncfusion.Blazor.Popups
 
 
 @inject AuthenticationStateProvider AuthStateProvider
@@ -42,9 +50,6 @@
 @* /Syncfusion dialog service *@
 @inject SfDialogService dialogService
 
-@*Add*@
-@inject SfDialogService DialogService
-
 @* /General Departments / Department / Branch *@
 @inject IGenericServiceInterface<GeneralDepartment> generalDepartmentService
 @inject IGenericServiceInterface<Department> departmentService
@@ -54,6 +59,16 @@
 @inject IGenericServiceInterface<Country> countryService
 @inject IGenericServiceInterface<City> cityService
 @inject IGenericServiceInterface<Town> townService
+
+
+@* / Suplementary tables *@ 
+@inject IGenericServiceInterface<Overtime> overtimeService
+@inject IGenericServiceInterface<OvertimeType> overtimeTypeService
+@inject IGenericServiceInterface<Vacation> vacationService 
+@inject IGenericServiceInterface<VacationType> vacationTypeService
+@inject IGenericServiceInterface<Sanction> sanctionService 
+@inject IGenericServiceInterface<SanctionType> sanctionTypeService
+@inject IGenericServiceInterface<Doctor> doctorService
 
 @* //Employee *@
 @inject IGenericServiceInterface<Employee> employeeService

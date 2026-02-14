@@ -50,11 +50,14 @@ namespace ServerLibrary.Data.Migrations
                     MedicalRecommendation = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Civilld = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    // CAMBIO: Columna agregada
+                    EmployeeId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Doctors", x => x.Id);
+                    // Nota: La FK se agrega al final del método Up
                 });
 
             migrationBuilder.CreateTable(
@@ -202,7 +205,9 @@ namespace ServerLibrary.Data.Migrations
                     OvertimeTypeld = table.Column<int>(type: "int", nullable: false),
                     Civilld = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    // CAMBIO: Columna agregada
+                    EmployeeId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -226,7 +231,9 @@ namespace ServerLibrary.Data.Migrations
                     SanctionTypeId = table.Column<int>(type: "int", nullable: true),
                     Civilld = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    // CAMBIO: Columna agregada
+                    EmployeeId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -249,7 +256,9 @@ namespace ServerLibrary.Data.Migrations
                     VacationTypeId = table.Column<int>(type: "int", nullable: false),
                     Civilld = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Other = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    // CAMBIO: Columna agregada
+                    EmployeeId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -337,6 +346,45 @@ namespace ServerLibrary.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            // --- CAMBIOS: AGREGANDO LAS RELACIONES Y LOS ÍNDICES ---
+
+            // Foreign Key para Doctors -> Employees
+            migrationBuilder.AddForeignKey(
+                name: "FK_Doctors_Employees_EmployeeId",
+                table: "Doctors",
+                column: "EmployeeId",
+                principalTable: "Employees",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            // Foreign Key para Overtimes -> Employees
+            migrationBuilder.AddForeignKey(
+                name: "FK_Overtimes_Employees_EmployeeId",
+                table: "Overtimes",
+                column: "EmployeeId",
+                principalTable: "Employees",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            // Foreign Key para Sanctions -> Employees
+            migrationBuilder.AddForeignKey(
+                name: "FK_Sanctions_Employees_EmployeeId",
+                table: "Sanctions",
+                column: "EmployeeId",
+                principalTable: "Employees",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            // Foreign Key para Vacations -> Employees
+            migrationBuilder.AddForeignKey(
+                name: "FK_Vacations_Employees_EmployeeId",
+                table: "Vacations",
+                column: "EmployeeId",
+                principalTable: "Employees",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            // Índices existentes
             migrationBuilder.CreateIndex(
                 name: "IX_Branches_DepartmentId",
                 table: "Branches",
@@ -381,64 +429,56 @@ namespace ServerLibrary.Data.Migrations
                 name: "IX_Vacations_VacationTypeId",
                 table: "Vacations",
                 column: "VacationTypeId");
+
+            // CAMBIO: Índices nuevos para las relaciones con EmployeeId
+            migrationBuilder.CreateIndex(
+                name: "IX_Doctors_EmployeeId",
+                table: "Doctors",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Overtimes_EmployeeId",
+                table: "Overtimes",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sanctions_EmployeeId",
+                table: "Sanctions",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vacations_EmployeeId",
+                table: "Vacations",
+                column: "EmployeeId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ApplicationUsers");
+            migrationBuilder.DropTable(name: "Doctors");
+            migrationBuilder.DropTable(name: "Overtimes");
+            migrationBuilder.DropTable(name: "Sanctions");
+            migrationBuilder.DropTable(name: "Vacations");
+            migrationBuilder.DropTable(name: "RefreshTokenInfos");
+            migrationBuilder.DropTable(name: "UserRoles");
 
-            migrationBuilder.DropTable(
-                name: "Doctors");
+            migrationBuilder.DropTable(name: "Employees");
 
-            migrationBuilder.DropTable(
-                name: "Employees");
+            migrationBuilder.DropTable(name: "Branches");
+            migrationBuilder.DropTable(name: "Towns");
 
-            migrationBuilder.DropTable(
-                name: "Overtimes");
+            migrationBuilder.DropTable(name: "Departments"); 
+            migrationBuilder.DropTable(name: "City");        
 
-            migrationBuilder.DropTable(
-                name: "RefreshTokenInfos");
+            migrationBuilder.DropTable(name: "GeneralDepartments"); 
+            migrationBuilder.DropTable(name: "Country");            
 
-            migrationBuilder.DropTable(
-                name: "Sanctions");
+            migrationBuilder.DropTable(name: "ApplicationUsers");
+            migrationBuilder.DropTable(name: "SystemRoles");
 
-            migrationBuilder.DropTable(
-                name: "SystemRoles");
-
-            migrationBuilder.DropTable(
-                name: "UserRoles");
-
-            migrationBuilder.DropTable(
-                name: "Vacations");
-
-            migrationBuilder.DropTable(
-                name: "Branches");
-
-            migrationBuilder.DropTable(
-                name: "Towns");
-
-            migrationBuilder.DropTable(
-                name: "OvertimeTypes");
-
-            migrationBuilder.DropTable(
-                name: "SanctionTypes");
-
-            migrationBuilder.DropTable(
-                name: "VacationTypes");
-
-            migrationBuilder.DropTable(
-                name: "Departments");
-
-            migrationBuilder.DropTable(
-                name: "City");
-
-            migrationBuilder.DropTable(
-                name: "GeneralDepartments");
-
-            migrationBuilder.DropTable(
-                name: "Country");
+            migrationBuilder.DropTable(name: "OvertimeTypes");
+            migrationBuilder.DropTable(name: "SanctionTypes");
+            migrationBuilder.DropTable(name: "VacationTypes");
         }
     }
 }
