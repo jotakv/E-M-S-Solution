@@ -1,0 +1,57 @@
+﻿<SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog" />
+    <DialogTemplates>
+        <Header> Add Employee Health Issue </Header>
+        <Content>
+            <EditForm Model="Doctor" OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Employee ID</label>
+                            <input @bind="Doctor.EmployeeId" class="form-control" disabled />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Date</label>
+                            <InputDate @bind-Value="Doctor.Date" class="form-control" />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Medical Diagnose</label>
+                            <InputTextArea @bind-Value="Doctor.MedicalDiagnose" class="form-control" />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Recommendation</label>
+                            <InputTextArea @bind-Value="Doctor.MedicalRecommendation" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+</SfDialog>
+
+
+@code {
+    public string Title { get; set; } = "Add";
+
+    [Parameter] public Doctor Doctor { get; set; } = new();
+    [Parameter] public EventCallback<Doctor> HandleSaveOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+
+    // Corrección: Cambiado de 'async void' a 'async Task' para correcta gestión de estado
+    private async Task Save() => await HandleSaveOperationEvent.InvokeAsync(Doctor);
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+}
