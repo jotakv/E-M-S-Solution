@@ -13,8 +13,7 @@ namespace BaseLibrary.Entities
         public string? CivilId { get; set; }
         [Required]
         public string? FileNumber { get; set; }
-        [Required]
-        public string? Fullname { get; set; }
+        
         [Required]
         public string? JobName { get; set; }
 

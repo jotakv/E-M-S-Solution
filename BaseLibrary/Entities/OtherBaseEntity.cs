@@ -10,11 +10,7 @@ namespace BaseLibrary.Entities
     public class OtherBaseEntity
     {
         public int Id { get; set; }
-        [Required]
-        public string Civilld { get; set; } = string.Empty;
-        [Required]
+        public int EmployeeId { get; set; }
 
-        public string FileNumber { get; set; } = string.Empty;
-        public string? Other { get; set; }
     }
 }
