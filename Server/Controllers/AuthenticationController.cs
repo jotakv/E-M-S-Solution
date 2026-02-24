@@ -45,7 +45,17 @@ namespace Server.Controllers
         [HttpPut("update-user")]
         public async Task<IActionResult> UpdateUser(ManageUser manageUser)
         {
+            if (manageUser == null)
+                return BadRequest("Model is empty");
+
             var result = await accountInterface.UpdateUser(manageUser);
+
+            if (result == null)
+                return NotFound(new { message = "User not found" });
+
+            if (!result.Flag) // assuming GeneralResponse has Flag for success
+                return BadRequest(result);
+
             return Ok(result);
         }
 

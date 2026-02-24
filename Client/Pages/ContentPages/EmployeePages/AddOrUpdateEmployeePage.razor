@@ -10,229 +10,272 @@
 {
     if (ShowAddOrUpdateEmployee)
     {
-        <div class="container">
-            <div class="row mt-5">
-                <div class="col-lg-1 text-center">
+        <div class="container-fluid px-4">
+            <!-- Header Row -->
+            <div class="row mt-4 align-items-center">
+                <div class="col-auto">
                     <i class="bi bi-x-lg fs-3 fw-bold text-danger" style="cursor:pointer" @onclick="CloseForm"></i>
                 </div>
-                <div class="col-lg-6 text-center"><h2>Title Employee</h2></div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-12 mt-2 mb-5 d-flex justify-content-center">
-                    <div class="hstack">
-                        @if (FirstLayer)
-                        {
-                            <div class="@FloatingNumber1 text-center">1</div>
-                            <div class="@Floatingdiv1 format-border"></div>
-                            <div class="@FloatingNumber2 text-center">2</div>
-                            <div class="@Floatingdiv2 format-border"></div>
-                        }
-                        @if (SecondLayer)
-                        {
-                            <div class="@FloatingNumber1 text-center">1</div>
-                            <div class="@Floatingdiv1 format-border"></div>
-                            <div class="@FloatingNumber1 text-center">2</div>
-                            <div class="@Floatingdiv1 format-border"></div>
-                        }
-                    </div>
-                </div>
-
-                <div class="col-lg-12">
-                    <div class="container-fluid">
-                        @if (FirstLayer)
-                        {
-                            <EditForm Enhance Model="EmployeeGroup1" OnValidSubmit="Form1">
-                                <DataAnnotationsValidator />
-                                <div class="row">
-                                    <div class="col-lg-2"></div>
-                                    <div class="col-lg-4">
-                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Personal Information</div>
-                                        <div class="card-body">
-                                            <div class="form-group">
-                                                <label class="form-label">Fullname</label>
-                                                <InputText @bind-Value="EmployeeGroup1.Name" class="form-control" />
-                                                <ValidationMessage For="() => EmployeeGroup1.Name" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <label class="form-label">Telephone</label>
-                                                <InputText @bind-Value="EmployeeGroup1.TelephoneNumber" class="form-control" />
-                                                <ValidationMessage For="() => EmployeeGroup1.TelephoneNumber" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <label class="form-label">Address</label>
-                                                <InputTextArea @bind-Value="EmployeeGroup1.Address" class="form-control" />
-                                                <ValidationMessage For="() => EmployeeGroup1.TelephoneNumber" class="text-danger" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-4 mt-2">
-                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Other Information</div>
-                                        <div class="card-body">
-                                            <div class="form-group">
-                                                <label class="form-label">Civil Id</label>
-                                                <InputText @bind-Value="EmployeeGroup1.CivilId" class="form-control" />
-                                                <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <label class="form-label">File Number</label>
-                                                <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" />
-                                                <ValidationMessage For="() => EmployeeGroup1.FileNumber" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-3">
-                                                <label class="form-label @(ImageUploadMessage == "" ? "" : "text-danger")">
-                                                    @(ImageUploadMessage == "" ? "Upload Image" : ImageUploadMessage)
-                                                </label>
-                                                <InputFile class="form-control" OnChange="UploadImage"></InputFile>
-                                                <ValidationMessage For="() => EmployeeGroup1.Photo" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-5">
-                                                <button class="btn btn-primary float-end mt-4 mb-5" type="submit">
-                                                    <i class="bi bi-arrow-right"></i>
-                                                    Next
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-2"></div>
-                                </div>
-                            </EditForm>
-                        }
-                        @if (SecondLayer)
-                        {
-                     
-                            @* Employee Gropu 2 *@
-                    <EditForm Enhance Model="EmployeeGroup2" OnValidSubmit="Form2">
-                        <DataAnnotationsValidator />
-                        <div class="row">
-                            <div class="col-lg-2"></div>
-                            <div class="col-lg-4">
-                                <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Job Information</div>
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label class="form-label">Job Name</label>
-                                        <InputText @bind-Value="EmployeeGroup2.JobName" class="form-control" />
-                                        <ValidationMessage For="()=>EmployeeGroup2.JobName" class="text-danger" />
-                                    </div>
-                                        <div class="form-group mt-3">
-                                                @{
-                                                    string generalDepartment = GeneralDepartment.Equals("") ? "Select General Department" : GeneralDepartment;
-                                                }
-                                                <label class="form-level"> Select General Deparment </label>
-                                                <SfDropDownList TValue="string" TItem="GeneralDepartment" Placeholder="@generalDepartment" DataSource="GeneralDepartments">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment" ValueChange="OnGeneralDepartmentValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                            </div>
-                                            <div class="form-group mt-3">
-                                                @{
-                                                    string department = Department.Equals("") ? "Select Department" : Department;
-                                                }
-                                                <label class="form-level"> Select Deparment </label>
-                                                <SfDropDownList TValue="string" TItem="Department" Placeholder="@department" DataSource="Departments">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="Department" ValueChange="OnDepartmentValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                            </div>
-
-                                            <div class="form-group mt-3">
-                                                <label class="form-label"> Select Branch </label>
-                                                @{
-                                                    string branch = Branch.Equals("") ? "Select Branch" : Branch;
-                                                }
-                                                <SfDropDownList TValue="string" TItem="Branch" Placeholder="@branch" DataSource="Branches">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="Branch" ValueChange="OnBranchValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                                <ValidationMessage For="() => EmployeeGroup2.BranchId" class="text-danger" />
-                                            </div>
-
-                                            <div class="form-group mt-3">
-                                                <label class="form-label"> Select Country </label>
-                                                @{
-                                                    string country = Country.Equals("") ? "Select Country" : Country;
-                                                }
-                                                <SfDropDownList TValue="string" TItem="Country" Placeholder="@country" DataSource="Countries">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="Country" ValueChange="OnCountryValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                            </div>
-                                            <div class="form-group mt-3">
-                                                <label class="form-label"> Select City </label>
-                                                @{
-                                                    string city = City.Equals("") ? "Select City" : City;
-                                                }
-                                                <SfDropDownList TValue="string" TItem="City" Placeholder="Select City" DataSource="Cities">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="City" ValueChange="OnCityValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                            </div>
-                                            <div class="form-group mt-3">
-                                                <label class="form-label"> Select Towm </label>
-                                                @{
-                                                    string town = Town.Equals("") ? "Select Town" : Town;
-                                                }
-                                                            <SfDropDownList TValue="string" TItem="Town" Placeholder="@town" DataSource="Towns">
-                                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                                    <DropDownListEvents TValue="string" TItem="Town" ValueChange="OnTownValueChange"></DropDownListEvents>
-                                                </SfDropDownList>
-                                                <ValidationMessage For="() => EmployeeGroup2.TownId" class="text-danger" />
-                                            </div>
-                                            <div class="form-group mt-3">
-                                                <label class="form-label">Other</label>
-                                                <textarea @bind="EmployeeGroup2.Other" placeholder="Optional" class="form-control"></textarea>
-                                            </div>
-                                            <div class="form-group mt-4 mb-5">
-                                                <button class="btn btn-success float-end" type="submit">
-                                                    <i class="bi bi-save"></i>
-                                                    Save
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-2"></div>
-                                </div>
-                            </EditForm>
-                        }
-                    </div>
+                <div class="col text-center">
+                    <h2>@Title Employee</h2>
                 </div>
             </div>
+
+            <!-- Step Progress Bar -->
+            <div class="row mt-3 mb-4">
+                <div class="col-12 d-flex justify-content-center align-items-center gap-2">
+                    <div class="step-circle active">1</div>
+                    <div class="step-line @(SecondLayer ? "active" : "inactive")"></div>
+                    <div class="step-circle @(SecondLayer ? "active" : "inactive")">2</div>
+                </div>
+            </div>
+
+            <!-- LAYER 1: Personal Info -->
+            @if (FirstLayer)
+            {
+                <EditForm Enhance Model="EmployeeGroup1" OnValidSubmit="Form1">
+                    <DataAnnotationsValidator />
+                    <div class="row justify-content-center">
+
+                        <div class="col-lg-4">
+                            <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Personal Information</div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Fullname</label>
+                                <InputText @bind-Value="EmployeeGroup1.Name" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup1.Name" class="text-danger" />
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Telephone</label>
+                                <InputText @bind-Value="EmployeeGroup1.TelephoneNumber" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup1.TelephoneNumber" class="text-danger" />
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Address</label>
+                                <InputTextArea @bind-Value="EmployeeGroup1.Address" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup1.Address" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Other Information</div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Civil Id</label>
+                                <InputText @bind-Value="EmployeeGroup1.CivilId" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" />
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">File Number</label>
+                                <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup1.FileNumber" class="text-danger" />
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label @(ImageUploadMessage == "" ? "" : "text-danger")">
+                                    @(ImageUploadMessage == "" ? "Upload Image" : ImageUploadMessage)
+                                </label>
+                                <InputFile class="form-control" OnChange="UploadImage" />
+                                <ValidationMessage For="() => EmployeeGroup1.Photo" class="text-danger" />
+                            </div>
+                            <div class="form-group mt-4 d-flex justify-content-end">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-arrow-right"></i> Next
+                                </button>
+                            </div>
+                            @if (!string.IsNullOrEmpty(EmployeeGroup1.Photo))
+                            {
+                                <div class="mt-2">
+                                    <img src="@EmployeeGroup1.Photo" alt="Preview" style="width:150px;height:150px;border-radius:8px;" />
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                </EditForm>
+            }
+
+            <!-- LAYER 2: Job + Location Info -->
+            @if (SecondLayer)
+            {
+                <EditForm Enhance Model="EmployeeGroup2" OnValidSubmit="Form2">
+                    <DataAnnotationsValidator />
+                    <div class="row justify-content-center">
+
+                        <!-- Left Column: Job Information -->
+                        <div class="col-lg-4">
+                            <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Job Information</div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Job Name</label>
+                                <InputText @bind-Value="EmployeeGroup2.JobName" class="form-control" />
+                                <ValidationMessage For="() => EmployeeGroup2.JobName" class="text-danger" />
+                            </div>
+
+                            <!-- CHANGE 1 vs Document 9:
+                                 - Removed CssClass="w-100"
+                                 - Added Width="100%" PopupHeight="200px" PopupWidth="100%"
+                                 - Added Opened event with OffsetY=1 fix
+                                 Everything else is identical to your original -->
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select General Department</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="GeneralDepartment"
+                                                Placeholder="Select General Department"
+                                                DataSource="@GeneralDepartments"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment"
+                                                        ValueChange="OnGeneralDepartmentValueChange"
+                                                        Opened="@(args => args.Popup.OffsetY = 1)" />
+                                </SfDropDownList>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select Department</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="Department"
+                                                Placeholder="Select Department"
+                                                DataSource="@Departments"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="Department"
+                                                        ValueChange="OnDepartmentValueChange"
+                                                        />
+                                </SfDropDownList>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select Branch</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="Branch"
+                                                Placeholder="Select Branch"
+                                                DataSource="@Branches"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="Branch"
+                                                        ValueChange="OnBranchValueChange"
+                                                        Opened="@(args => args.Popup.OffsetY = 1)" />
+                                </SfDropDownList>
+                                <ValidationMessage For="() => EmployeeGroup2.BranchId" class="text-danger" />
+                            </div>
+
+                            <div class="form-group mt-4">
+                                <button class="btn btn-primary" type="button" @onclick="PrevClicked">
+                                    <i class="bi bi-arrow-left"></i> Prev
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Location Information -->
+                        <div class="col-lg-4">
+                            <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Location Information</div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select Country</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="Country"
+                                                Placeholder="Select Country"
+                                                DataSource="@Countries"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="Country"
+                                                        ValueChange="OnCountryValueChange"
+                                                        Opened="@(args => args.Popup.OffsetY = 1)" />
+                                </SfDropDownList>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select City</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="City"
+                                                Placeholder="Select City"
+                                                DataSource="@Cities"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="City"
+                                                        ValueChange="OnCityValueChange"
+                                                        Opened="@(args => args.Popup.OffsetY = 1)" />
+                                </SfDropDownList>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select Town</label>
+                                <SfDropDownList TValue="string"
+                                                TItem="Town"
+                                                Placeholder="Select Town"
+                                                DataSource="@Towns"
+                                                Width="100%"
+                                                PopupHeight="200px">
+                                    <DropDownListFieldSettings Value="Id" Text="Name" />
+                                    <DropDownListEvents TValue="string" TItem="Town"
+                                                        ValueChange="OnTownValueChange"
+                                                        Opened="@(args => args.Popup.OffsetY = 1)" />
+                                </SfDropDownList>
+                                <ValidationMessage For="() => EmployeeGroup2.TownId" class="text-danger" />
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Other</label>
+                                <textarea @bind="EmployeeGroup2.Other" placeholder="Optional" class="form-control"></textarea>
+                            </div>
+
+                            <div class="form-group mt-4 d-flex justify-content-end">
+                                <button class="btn btn-success" type="submit">
+                                    <i class="bi bi-save"></i> Save
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </EditForm>
+            }
         </div>
     }
 }
 
 <style>
-    .floatingDiv {
-        width: 500px;
-        background: #228ada;
-        height: 10px;
-    }
-
-    .floatingNumber {
+    .step-circle {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
         color: white;
-        background: #1d1858;
-        width: 20px;
-        height: 20px;
+        flex-shrink: 0;
     }
 
-    .inactive-div {
-        width: 500px;
-        background: gray;
-        height: 10px;
+        .step-circle.active {
+            background-color: #1d1858;
+        }
+
+        .step-circle.inactive {
+            background-color: #aaaaaa;
+        }
+
+    .step-line {
+        height: 6px;
+        width: 400px;
+        border-radius: 10px;
     }
 
-    .inactive-span {
-        border-radius: 50%;
-        color: white;
-        background: gray;
-        width: 20px;
-        height: 20px;
-    }
+        .step-line.active {
+            background-color: #228ada;
+        }
 
-    .format-border {
-        border-radius: 20px;
-    }
+        .step-line.inactive {
+            background-color: #aaaaaa;
+        }
+
+   
 </style>
 
 @code {
@@ -249,12 +292,6 @@
     [Parameter] public List<Department> Departments { get; set; } = new();
     [Parameter] public List<Branch> Branches { get; set; } = new();
 
-    string FloatingNumber1 = "floatingNumber";
-    string Floatingdiv1 = "floatingDiv";
-
-    string FloatingNumber2 = "inactive-span";
-    string Floatingdiv2 = "inactive-div";
-
     public bool FirstLayer { get; set; } = true;
     public bool SecondLayer { get; set; } = false;
 
@@ -266,144 +303,137 @@
     public string City { get; set; } = "";
     public string Town { get; set; } = "";
 
-    private void ShowLayer2()
-    {
-        FirstLayer = false;
-        SecondLayer = true;
-    }
+    private void ShowLayer2() { FirstLayer = false; SecondLayer = true; }
+    void PrevClicked() { FirstLayer = true; SecondLayer = false; }
 
-    void PrevClicked()
-    {
-        FirstLayer = true;
-        SecondLayer = false;
-    }
-
-    //Form closed
     [Parameter] public EventCallback NotifyParentFormCloseClicked { get; set; }
-
     async Task CloseForm()
     {
         ShowAddOrUpdateEmployee = false;
         await NotifyParentFormCloseClicked.InvokeAsync();
     }
 
-    //File Upload
     string ImageUploadMessage = "";
     private async Task UploadImage(InputFileChangeEventArgs e)
     {
-        if (e.File.Name.ToLower().Contains(".png"))
+        var file = e.File;
+
+        // Accept ONLY real PNG files by MIME type
+        if (file.ContentType != "image/png" && file.ContentType != "image/x-png")
         {
-            var format = "image/png";
-            var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
-            var buffer = new byte[resizeImage.Size];
-            await resizeImage.OpenReadStream().ReadAsync(buffer);
-            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
-            ImageUploadMessage = "";
-            EmployeeGroup1.Photo = imageData;
-            imageData = "";
+            ImageUploadMessage = "PNG file needed.";
+            EmployeeGroup1.Photo = null;
+
+            // Optional: log to browser console
+            Console.WriteLine($"Upload failed: invalid file type {file.ContentType}");
+
             return;
         }
-        ImageUploadMessage = "PNG file needed.";
-        return;
+
+        // Resize and convert to Base64
+        var resized = await file.RequestImageFileAsync("image/png", 300, 300);
+        var buffer = new byte[resized.Size];
+        await resized.OpenReadStream().ReadAsync(buffer);
+
+        EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
+        ImageUploadMessage = "";
+
+        // Optional: log success
+        Console.WriteLine("PNG uploaded successfully");
     }
 
-    //Forms Validations
-// Form 1
-private bool ValidateEmployeeGroup1()
-{
-    if (string.IsNullOrEmpty(EmployeeGroup1.Name)
-    || string.IsNullOrEmpty(EmployeeGroup1.TelephoneNumber)
-    || string.IsNullOrEmpty(EmployeeGroup1.FileNumber)
-    || string.IsNullOrEmpty(EmployeeGroup1.Address)
-    || string.IsNullOrEmpty(EmployeeGroup1.Photo)
-    || string.IsNullOrEmpty(EmployeeGroup1.CivilId))
-        return false;
-    else
-        return true;
-}
 
-//form 2
-private bool ValidateEmployeeGroup2()
-{
-    if (string.IsNullOrEmpty(EmployeeGroup2.JobName)
-    || EmployeeGroup2.TownId == 0
-    || EmployeeGroup2.BranchId == 0)
-        return false;
-    else
-        return true;
-}
+    private bool ValidateEmployeeGroup1() =>
+        !string.IsNullOrEmpty(EmployeeGroup1.Name) &&
+        !string.IsNullOrEmpty(EmployeeGroup1.TelephoneNumber) &&
+        !string.IsNullOrEmpty(EmployeeGroup1.FileNumber) &&
+        !string.IsNullOrEmpty(EmployeeGroup1.Address) &&
+        !string.IsNullOrEmpty(EmployeeGroup1.Photo) &&
+        !string.IsNullOrEmpty(EmployeeGroup1.CivilId);
 
-// Save forms
-[Parameter] public EventCallback<Employee> HandleSaveEmployeeClickedEvent { get; set; }
-private void Form1()
-{
-    var isValid = ValidateEmployeeGroup1();
-    if (isValid)
+    private bool ValidateEmployeeGroup2() =>
+        !string.IsNullOrEmpty(EmployeeGroup2.JobName) &&
+        EmployeeGroup2.TownId != 0 &&
+        EmployeeGroup2.BranchId != 0;
+
+    [Parameter] public EventCallback<Employee> HandleSaveEmployeeClickedEvent { get; set; }
+
+    private void Form1()
     {
-        Employee.Name = EmployeeGroup1.Name;
-        Employee.TelephoneNumber = EmployeeGroup1.TelephoneNumber;
-        Employee.Address = EmployeeGroup1.Address;
-        Employee.CivilId = EmployeeGroup1.CivilId;
-        Employee.FileNumber = EmployeeGroup1.FileNumber;
-        Employee.Photo = EmployeeGroup1.Photo;
-        ShowLayer2();
-    }
-}
+        // console.writeline($"name: {employee.name}");
+        // console.writeline($"address: {employee.address}");
+        // console.writeline($"telephone: {employee.telephonenumber}");
+        // console.writeline($"civilid: {employee.civilid}");
+        // console.writeline($"filenumber: {employee.filenumber}");
+        // console.writeline($"photo length: {employee.photo?.length}");
 
-private async Task Form2()
-{
-    var isValid = ValidateEmployeeGroup2();
-    if (isValid)
+        Console.WriteLine($"Name: {EmployeeGroup1.Name}");
+        Console.WriteLine($"Address: {EmployeeGroup1.Address}");
+        Console.WriteLine($"Telephone: {EmployeeGroup1.TelephoneNumber}");
+        Console.WriteLine($"CivilId: {EmployeeGroup1.CivilId}");
+        Console.WriteLine($"FileNumber: {EmployeeGroup1.FileNumber}");
+        Console.WriteLine($"Photo length: {EmployeeGroup1.Photo?.Length}");
+
+        if (ValidateEmployeeGroup1())
+        {
+            Employee.Name = EmployeeGroup1.Name;
+            Employee.TelephoneNumber = EmployeeGroup1.TelephoneNumber;
+            Employee.Address = EmployeeGroup1.Address;
+            Employee.CivilId = EmployeeGroup1.CivilId;
+            Employee.FileNumber = EmployeeGroup1.FileNumber;
+            Employee.Photo = EmployeeGroup1.Photo;
+            ShowLayer2();
+        }
+    }
+
+    private async Task Form2()
     {
-        Employee.JobName = EmployeeGroup2.JobName;
-        Employee.Other = EmployeeGroup2.Other;
-        Employee.BranchId = EmployeeGroup2.BranchId;
-        Employee.TownId = EmployeeGroup2.TownId;
+        // Debug: remove these after fixing
+        Console.WriteLine($"JobName: {EmployeeGroup2.JobName}");
+        Console.WriteLine($"BranchId: {EmployeeGroup2.BranchId}");
+        Console.WriteLine($"TownId: {EmployeeGroup2.TownId}");
+        Console.WriteLine($"Other: {EmployeeGroup2.Other}");
 
-        await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
-     
+        if (ValidateEmployeeGroup2())
+        {
+            Employee.JobName = EmployeeGroup2.JobName;
+            Employee.Other = EmployeeGroup2.Other;
+            Employee.BranchId = EmployeeGroup2.BranchId;
+            Employee.TownId = EmployeeGroup2.TownId;
+            await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
+        }
     }
-}
+
     public void ClearContent()
     {
-        Employee = new();
-        EmployeeGroup1 = new();
-        EmployeeGroup2 = new();
+        Employee = new(); EmployeeGroup1 = new(); EmployeeGroup2 = new();
         StateHasChanged();
     }
 
-    protected override void OnInitialized()
-    {
-        allState.Action += StateHasChanged;
-    }
-   
-
-    //Country // City // Town 
+    protected override void OnInitialized() => allState.Action += StateHasChanged;
 
     [Parameter] public EventCallback<int> HandleCountrySelectedEvent { get; set; }
     public void OnCountryValueChange(ChangeEventArgs<string, Country> args) =>
-    HandleCountrySelectedEvent.InvokeAsync(int.Parse(args.Value));
+        HandleCountrySelectedEvent.InvokeAsync(int.Parse(args.Value));
 
     [Parameter] public EventCallback<int> HandleCitySelectedEvent { get; set; }
     public async Task OnCityValueChange(ChangeEventArgs<string, City> args) =>
-    await HandleCitySelectedEvent.InvokeAsync(int.Parse(args.Value));
+        await HandleCitySelectedEvent.InvokeAsync(int.Parse(args.Value));
 
-    public void OnTownValueChange(ChangeEventArgs<string, Town> args) => EmployeeGroup2.TownId = int.Parse(args.Value);
+    public void OnTownValueChange(ChangeEventArgs<string, Town> args) =>
+        EmployeeGroup2.TownId = int.Parse(args.Value);
 
-    // General Department //Department // Branch
     [Parameter] public EventCallback<int> HandleGeneralDepartmentSelectedEvent { get; set; }
     async Task OnGeneralDepartmentValueChange(ChangeEventArgs<string, GeneralDepartment> args) =>
-    await HandleGeneralDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
+        await HandleGeneralDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
 
     [Parameter] public EventCallback<int> HandleDepartmentSelectedEvent { get; set; }
     async Task OnDepartmentValueChange(ChangeEventArgs<string, Department> args) =>
-    await HandleDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
+        await HandleDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
 
-    public void OnBranchValueChange(ChangeEventArgs<string, Branch> args) => EmployeeGroup2.BranchId = int.Parse(args.Value);
+    public void OnBranchValueChange(ChangeEventArgs<string, Branch> args) =>
+        EmployeeGroup2.BranchId = int.Parse(args.Value);
 
     public void Dispose() => allState.Action -= StateHasChanged;
 
 }
-
-
-    

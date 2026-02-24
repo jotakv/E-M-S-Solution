@@ -11,7 +11,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.0" />
     <PackageReference Include="Syncfusion.Blazor" Version="32.1.25" />
+    <PackageReference Include="Syncfusion.Blazor.Themes" Version="32.2.5" />
     <PackageReference Include="Syncfusion.Licensing" Version="32.1.25" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>

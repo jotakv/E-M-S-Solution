@@ -42,9 +42,11 @@ namespace ClientLibrary.Services.Implementations
 
         public async Task<GeneralResponse> UpdateUser(ManageUser user)
         {
-            var httpClient = getHttpClient.GetPublicHttpClient();
+            var httpClient = await getHttpClient.GetPrivateHttpClient(); 
             var result = await httpClient.PutAsJsonAsync($"{AuthUrl}/update-user", user);
-            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, " Error occured");
+
+            if (!result.IsSuccessStatusCode)
+                return new GeneralResponse(false, "Error occurred");
 
             return await result.Content.ReadFromJsonAsync<GeneralResponse>()!;
         }
