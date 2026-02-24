@@ -22,15 +22,13 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<List<GeneralDepartment>> GetAll() => await appDbContext.GeneralDepartments.ToListAsync();
         public async Task<GeneralDepartment> GetById(int id) => await appDbContext.GeneralDepartments.FindAsync(id);
 
-            public async Task<GeneralResponse> Insert(GeneralDepartment item)
-            {
-                var checkIfNull = await CheckName(item.Name);
-                if (!checkIfNull)
-                return new GeneralResponse(false, "General Department already added");
-                appDbContext.GeneralDepartments.Add(item);
-                await Commit();
-                return Success();
-            }
+        public async Task<GeneralResponse> Insert(GeneralDepartment item)
+        {
+            if (!await CheckName(item.Name!)) return new GeneralResponse(false, "Department already added");
+            appDbContext.GeneralDepartments.Add(item);
+            await Commit();
+            return Success();
+        }
 
         public async Task<GeneralResponse> Update(GeneralDepartment item)
         {
@@ -53,6 +51,7 @@ namespace ServerLibrary.Repositories.Implementations
             //return !await appDbContext.GeneralDepartments
             //    .AnyAsync(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
+
 
     }
 }
