@@ -24,48 +24,43 @@ namespace ServerLibrary.Repositories.Implementations
     {
         public async Task<GeneralResponse> CreateAsync(Register user)
         {
-            if (user == null)
-                return new GeneralResponse(false, "Model is empty");
+            if (user == null) return new GeneralResponse(false, "Model is empty");
 
             var checkUser = await FindUserByEmail(user.Email!);
-            if (checkUser != null)
-                return new GeneralResponse(false, "User registered already");
+            if (checkUser != null) return new GeneralResponse(false, "User registered already");
 
-            // Create user
+            //Save user
             var applicationUser = await AddToDatabase(new ApplicationUser()
             {
                 Fullname = user.Fullname,
                 Email = user.Email,
                 Password = BCrypt.Net.BCrypt.HashPassword(user.Password)
+
             });
 
-            // Ensure roles exist
-            var adminRole = await appDbContext.SystemRoles
-                .FirstOrDefaultAsync(r => r.Name == Constants.Admin);
-
-            if (adminRole == null)
+            // check, create and assign role
+            var checkAdminRole = await appDbContext.SystemRoles.FirstOrDefaultAsync(_ => _.Name!.Equals(Constants.Admin));
+            if (checkAdminRole is null)
             {
-                adminRole = await AddToDatabase(
-                    new SystemRole { Name = Constants.Admin });
+                var createAdminRole = await AddToDatabase(new SystemRole() { Name = Constants.Admin });
+                await AddToDatabase(new UserRole() { RoleId = createAdminRole.Id, UserId = applicationUser.Id });
+                return new GeneralResponse(true, "Account created!");
             }
 
-            var userRole = await appDbContext.SystemRoles
-                .FirstOrDefaultAsync(r => r.Name == Constants.User);
-
-            if (userRole == null)
+            var checkUserRole = await appDbContext.SystemRoles.FirstOrDefaultAsync(_ => _.Name!.Equals(Constants.User));
+            SystemRole response = new();
+            if (checkUserRole is null)
             {
-                userRole = await AddToDatabase(
-                    new SystemRole { Name = Constants.User });
+                response = await AddToDatabase(new SystemRole() { Name = Constants.Admin });
+                await AddToDatabase(new UserRole() { RoleId = response.Id, UserId = applicationUser.Id });
             }
-
-            // ✅ ALWAYS assign USER role on signup
-            await AddToDatabase(new UserRole
+            else
             {
-                UserId = applicationUser.Id,
-                RoleId = userRole.Id
-            });
-
+                await AddToDatabase(new UserRole() { RoleId = checkUserRole.Id, UserId = applicationUser.Id });
+            }
             return new GeneralResponse(true, "Account created!");
+
+
         }
 
         public async Task<LoginResponse> SignInAsync(Login user)
@@ -186,40 +181,13 @@ namespace ServerLibrary.Repositories.Implementations
             return users;
         }
 
-        public async Task<GeneralResponse> UpdateUser(ManageUser model)
+        public async Task<GeneralResponse> UpdateUser(ManageUser user)
         {
-            if (model == null)
-                return new GeneralResponse(false, "Model is empty");
-
-            // 1️⃣ Find user
-            var user = await appDbContext.ApplicationUsers
-                .FirstOrDefaultAsync(u => u.Id == model.UserId);
-
-            if (user == null)
-                return new GeneralResponse(false, "User not found");
-
-            // 2️⃣ Update basic fields
-            user.Fullname = model.Name;
-            user.Email = model.Email;
-
-            // 3️⃣ Update role
-            var role = await appDbContext.SystemRoles
-                .FirstOrDefaultAsync(r => r.Name.ToLower() == model.Role.ToLower());
-
-            if (role == null)
-                return new GeneralResponse(false, "Role not found");
-
-            var userRole = await appDbContext.UserRoles
-                .FirstOrDefaultAsync(ur => ur.UserId == user.Id);
-
-            if (userRole != null)
-            {
-                userRole.RoleId = role.Id;
-            }
-
+            var getRole = (await SystemRoles()).FirstOrDefault(r => r.Name!.Equals(user.Role));
+            var userRole = await appDbContext.UserRoles.FirstOrDefaultAsync(u => u.UserId == user.UserId);
+            userRole!.RoleId = getRole!.Id;
             await appDbContext.SaveChangesAsync();
-
-            return new GeneralResponse(true, "User updated successfully");
+            return new GeneralResponse(true, "User role updated successfully");
         }
 
         public async Task<List<SystemRole>> GetRoles() => await SystemRoles();
@@ -230,15 +198,9 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> DeleteUser(int id)
         {
-            var user = await appDbContext.ApplicationUsers
-                .FirstOrDefaultAsync(u => u.Id == id);
-
-            if (user == null)
-                return new GeneralResponse(false, "User not found");
-
-            appDbContext.ApplicationUsers.Remove(user);
+            var user = await appDbContext.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == id);
+            appDbContext.ApplicationUsers.Remove(user!);
             await appDbContext.SaveChangesAsync();
-
             return new GeneralResponse(true, "User successfully deleted");
         }
     }
