@@ -6,67 +6,64 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ClientLibrary.Helpers
 {
-    public class CustomHttpHandler
-        (GetHttpClient getHttpClient, LocalStorageService localStorageService, IUserAccountService accountService) : DelegatingHandler
+    public class CustomHttpHandler : DelegatingHandler
     {
-        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        private readonly GetHttpClient getHttpClient;
+        private readonly LocalStorageService localStorageService;
+        private readonly IUserAccountService accountService;
+
+        public CustomHttpHandler(GetHttpClient getHttpClient, LocalStorageService localStorageService, IUserAccountService accountService)
+        {
+            this.getHttpClient = getHttpClient;
+            this.localStorageService = localStorageService;
+            this.accountService = accountService;
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             bool loginUrl = request.RequestUri!.AbsoluteUri.Contains("login");
             bool registerUrl = request.RequestUri!.AbsoluteUri.Contains("register");
             bool refreshTokenUrl = request.RequestUri!.AbsoluteUri.Contains("refresh-token");
 
-            if (loginUrl || registerUrl || refreshTokenUrl) 
+            if (loginUrl || registerUrl || refreshTokenUrl)
                 return await base.SendAsync(request, cancellationToken);
 
             var result = await base.SendAsync(request, cancellationToken);
 
             if (result.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // Get token from LocalStorage
-                var stringToken = await localStorageService.GetToken();
-                if (stringToken == null) return result;
-                // Check if the header contains token
-                string token = string.Empty;
+                var json = await localStorageService.GetToken();
+                if (json == null) return result;
 
-                try {token = request.Headers.Authorization!.Parameter!;}
-                catch { }
+                var session = JsonSerializer.Deserialize<UserSession>(json);
+                if (session == null) return result;
 
-                var deserializedToken = Serializations.DeserializeJsonString<UserSession>(stringToken);
-                if (deserializedToken == null) return result;
+                // Refresh token
+                var refreshResponse = await accountService.RefreshTokenAsync();
+                if (!refreshResponse.Flag) return result;
 
-                if (string.IsNullOrEmpty(token))
+                // Save new session
+                var newSession = new UserSession
                 {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", deserializedToken.Token);
-                    return await base.SendAsync(request, cancellationToken);
+                    Token = refreshResponse.Token,
+                    RefreshToken = refreshResponse.RefreshToken
+                };
 
-                }
-                // Call for refresh token
-                var newJwtToken = await GetReshToken(deserializedToken.RefreshToken!);
-                if (string.IsNullOrEmpty(newJwtToken)) return result;
+                await localStorageService.SetToken(JsonSerializer.Serialize(newSession));
 
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", newJwtToken);
+                // Retry request with new token
+                request.Headers.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", refreshResponse.Token);
+
                 return await base.SendAsync(request, cancellationToken);
-
             }
+
             return result;
-;
-        }
-
-        private async Task<string> GetReshToken(string refreshToken)
-        {
-            var result = await accountService.RefreshTokenAsync(new RefreshToken { Token = refreshToken });
-
-            string serializedToken = Serializations.SerializeObj(new UserSession() 
-                { Token = result.Token, RefreshToken = result.RefreshToken });
-
-            await localStorageService.SetToken(serializedToken);
-
-            return result.Token;
-
         }
     }
 }
