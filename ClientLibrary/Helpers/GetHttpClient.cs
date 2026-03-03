@@ -16,16 +16,36 @@ namespace ClientLibrary.Helpers
         {
             var client = httpClientFactory.CreateClient("SystemApiClient");
 
-            var json = await localStorageService.GetToken();
-            if (string.IsNullOrWhiteSpace(json))
-                return client;
+            try
+            {
+                var json = await localStorageService.GetToken();
 
-            var session = JsonSerializer.Deserialize<UserSession>(json);
-            if (session == null || string.IsNullOrWhiteSpace(session.Token))
-                return client;
+                if (string.IsNullOrWhiteSpace(json))
+                    return client;
 
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", session.Token);
+                // Handle case where raw JWT was stored instead of UserSession JSON
+                UserSession? session = null;
+                if (json.TrimStart().StartsWith("{"))
+                {
+                    session = JsonSerializer.Deserialize<UserSession>(json);
+                }
+                else
+                {
+                    // It's a raw token string
+                    session = new UserSession { Token = json };
+                }
+
+                if (session == null || string.IsNullOrWhiteSpace(session.Token))
+                    return client;
+
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", session.Token);
+            }
+            catch
+            {
+                // Token in bad format — clear it and return unauthenticated client
+                await localStorageService.RemoveToken();
+            }
 
             return client;
         }

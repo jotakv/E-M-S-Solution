@@ -4,6 +4,7 @@ using BaseLibrary.Responses;
 using Blazored.LocalStorage;
 using ClientLibrary.Helpers;
 using ClientLibrary.Services.Contracts;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -13,26 +14,32 @@ namespace ClientLibrary.Services.Implementations
     {
         private readonly GetHttpClient getHttpClient;
         private readonly LocalStorageService localStorageService;
+        private readonly AuthenticationStateProvider authStateProvider;
 
-        public UserAccountService(GetHttpClient getHttpClient, LocalStorageService localStorageService)
+        public UserAccountService(
+            GetHttpClient getHttpClient,
+            LocalStorageService localStorageService,
+            AuthenticationStateProvider authStateProvider)
         {
             this.getHttpClient = getHttpClient;
             this.localStorageService = localStorageService;
+            this.authStateProvider = authStateProvider;
         }
 
         public const string AuthUrl = "api/authentication";
+
         public async Task<GeneralResponse> CreateAsync(Register user)
         {
             var httpClient = await getHttpClient.GetPrivateHttpClient();
             var result = await httpClient.PostAsJsonAsync($"{AuthUrl}/register", user);
-            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, "Error ocurred");
+            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, "Error occurred");
             return await result.Content.ReadFromJsonAsync<GeneralResponse>()!;
         }
+
         public async Task<LoginResponse> SignInAsync(Login user)
         {
             var httpClient = getHttpClient.GetPublicHttpClient();
             var result = await httpClient.PostAsJsonAsync($"{AuthUrl}/login", user);
-
             var response = await result.Content.ReadFromJsonAsync<LoginResponse>();
 
             if (response != null && response.Flag)
@@ -43,23 +50,28 @@ namespace ClientLibrary.Services.Implementations
                     RefreshToken = response.RefreshToken
                 };
 
+                // Save token
                 await localStorageService.SetToken(JsonSerializer.Serialize(session));
+
+                // ✅ Notify Blazor auth state has changed
+                var customProvider = (CustomAuthenticationStateProvider)authStateProvider;
+                await customProvider.UpdateAuthenticationState(session);
             }
 
             return response!;
         }
 
-
         public async Task<LoginResponse> RefreshTokenAsync()
         {
             var json = await localStorageService.GetToken();
-            var session = JsonSerializer.Deserialize<UserSession>(json);
+            if (string.IsNullOrWhiteSpace(json))
+                return new LoginResponse(false, "No token stored.");
 
+            var session = JsonSerializer.Deserialize<UserSession>(json);
             if (session == null || string.IsNullOrWhiteSpace(session.RefreshToken))
                 return new LoginResponse(false, "No refresh token stored.");
 
             var httpClient = getHttpClient.GetPublicHttpClient();
-
             var result = await httpClient.PostAsJsonAsync($"{AuthUrl}/refresh-token", new
             {
                 token = session.Token,
@@ -77,12 +89,14 @@ namespace ClientLibrary.Services.Implementations
                 };
 
                 await localStorageService.SetToken(JsonSerializer.Serialize(newSession));
+
+                // ✅ Notify Blazor on refresh too
+                var customProvider = (CustomAuthenticationStateProvider)authStateProvider;
+                await customProvider.UpdateAuthenticationState(newSession);
             }
 
             return response!;
         }
-
-
 
         public async Task<List<ManageUser>> GetUsers()
         {
@@ -93,12 +107,9 @@ namespace ClientLibrary.Services.Implementations
 
         public async Task<GeneralResponse> UpdateUser(ManageUser user)
         {
-            var httpClient = await getHttpClient.GetPrivateHttpClient(); 
+            var httpClient = await getHttpClient.GetPrivateHttpClient();
             var result = await httpClient.PutAsJsonAsync($"{AuthUrl}/update-user", user);
-
-            if (!result.IsSuccessStatusCode)
-                return new GeneralResponse(false, "Error occurred");
-
+            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, "Error occurred");
             return await result.Content.ReadFromJsonAsync<GeneralResponse>()!;
         }
 
@@ -113,8 +124,7 @@ namespace ClientLibrary.Services.Implementations
         {
             var httpClient = await getHttpClient.GetPrivateHttpClient();
             var result = await httpClient.DeleteAsync($"{AuthUrl}/delete-user/{id}");
-            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, " Error occured");
-
+            if (!result.IsSuccessStatusCode) return new GeneralResponse(false, "Error occurred");
             return await result.Content.ReadFromJsonAsync<GeneralResponse>()!;
         }
     }
