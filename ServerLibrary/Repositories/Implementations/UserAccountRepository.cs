@@ -141,7 +141,7 @@ namespace ServerLibrary.Repositories.Implementations
         {
             if (token is null) return new LoginResponse(false, "Model is empty");
             
-            var findToken = await appDbContext.RefreshTokenInfos.FirstOrDefaultAsync(_ => _.Token!.Equals(token.Token));
+            var findToken = await appDbContext.RefreshTokenInfos.FirstOrDefaultAsync(_ => _.Token!.Equals(token.Refreshtoken));
             if (findToken is null) return new LoginResponse(false, "Refresh token is required");
 
             //get user details
