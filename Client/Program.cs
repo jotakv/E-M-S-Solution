@@ -37,6 +37,7 @@ builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
+
 //General Department / Department / Branch
 builder.Services.AddScoped<IGenericServiceInterface<GeneralDepartment>, GenericServiceImplementation<GeneralDepartment>>();
 builder.Services.AddScoped<IGenericServiceInterface<Department>, GenericServiceImplementation<Department>>();

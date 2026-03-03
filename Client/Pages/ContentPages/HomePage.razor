@@ -4,22 +4,30 @@
 @* @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize] *@
 
-<TableBanner />
-<GeneralDepartmentPage />
-<DepartmentPage />
-<BranchPage />
-<CountryPage />
-<CityPage />
-<TownPage />
-<UserPage />
-<DoctorPage />
-<OvertimePage />
-<SanctionPage />
-<VacationPage />
-<VacationTypePage />
-<OvertimeTypePage />
-<SanctionTypePage />
-<EmployeePage/>
+<AuthorizeView>
+    <Authorized>
+        <TableBanner />
+        <GeneralDepartmentPage />
+        <DepartmentPage />
+        <BranchPage />
+        <CountryPage />
+        <CityPage />
+        <TownPage />
+        <UserPage />
+        <DoctorPage />
+        <OvertimePage />
+        <SanctionPage />
+        <VacationPage />
+        <VacationTypePage />
+        <OvertimeTypePage />
+        <SanctionTypePage />
+        <EmployeePage />
+    </Authorized>
+
+    <NotAuthorized>
+        <p>Loading...</p>
+    </NotAuthorized>
+</AuthorizeView>
 
 @* <h1>Home page</h1>
 

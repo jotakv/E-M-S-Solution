@@ -8,8 +8,7 @@ using System.Text.Json;
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly ILocalStorageService _localStorage;
-
-    private const string TokenKey = "authToken";
+    private const string TokenKey = "authtoken";
 
     public CustomAuthenticationStateProvider(ILocalStorageService localStorage)
     {
@@ -18,77 +17,57 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var json = await _localStorage.GetItemAsync<string>(TokenKey);
+        var json = await _localStorage.GetItemAsStringAsync(TokenKey);
 
         if (string.IsNullOrWhiteSpace(json))
-        {
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-        }
+            return Unauthenticated();
 
-        UserSession? session;
-        try
-        {
-            session = JsonSerializer.Deserialize<UserSession>(json);
-        }
-        catch
-        {
-            // corrupted/old value – treat as logged out
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-        }
+        // Fix double-serialization
+        if (json.StartsWith("\""))
+            json = JsonSerializer.Deserialize<string>(json)!;
 
+        var session = JsonSerializer.Deserialize<UserSession>(json);
         if (session == null || string.IsNullOrWhiteSpace(session.Token))
-        {
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-        }
+            return Unauthenticated();
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(session.Token);
 
-        var identity = new ClaimsIdentity(jwt.Claims, "jwt");
+        var claims = jwt.Claims.ToList();
+
+        // ⭐ THIS IS THE FIX ⭐
+        var roleClaims = claims
+            .Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+            .Select(c => new Claim(ClaimTypes.Role, c.Value))
+            .ToList();
+
+        claims.AddRange(roleClaims);
+
+        var identity = new ClaimsIdentity(claims, "jwt");
         var user = new ClaimsPrincipal(identity);
 
         return new AuthenticationState(user);
     }
 
+    private static AuthenticationState Unauthenticated() =>
+        new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+
     public async Task UpdateAuthenticationState(UserSession session)
     {
-        // LOGOUT CASE
-        if (string.IsNullOrWhiteSpace(session.Token))
+        if (string.IsNullOrWhiteSpace(session?.Token))
         {
             await _localStorage.RemoveItemAsync(TokenKey);
-
-            var anonymous = new ClaimsIdentity();
-            var authState = new AuthenticationState(new ClaimsPrincipal(anonymous));
-
-            NotifyAuthenticationStateChanged(Task.FromResult(authState));
+            NotifyAuthenticationStateChanged(Task.FromResult(Unauthenticated()));
             return;
         }
 
-        // LOGIN CASE
-        await _localStorage.SetItemAsync(TokenKey, JsonSerializer.Serialize(session));
-
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(session.Token);
-
-        var identity = new ClaimsIdentity(jwt.Claims, "jwt");
-        var user = new ClaimsPrincipal(identity);
-
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(new AuthenticationState(user))
-        );
+        await _localStorage.SetItemAsStringAsync(TokenKey, JsonSerializer.Serialize(session));
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
-
 
     public async Task Logout()
     {
         await _localStorage.RemoveItemAsync(TokenKey);
-
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(
-                new AuthenticationState(
-                    new ClaimsPrincipal(new ClaimsIdentity())
-                )
-            )
-        );
+        NotifyAuthenticationStateChanged(Task.FromResult(Unauthenticated()));
     }
 }
