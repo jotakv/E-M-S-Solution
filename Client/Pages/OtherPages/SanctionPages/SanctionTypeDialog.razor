@@ -12,30 +12,32 @@
         <Header>@Title Sanction Type</Header>
 
         <Content>
-            <EditForm Model="SanctionType" OnSubmit="Save">
+            <EditForm Model="SanctionType" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
-
-                        <!-- Name -->
                         <div class="form-group">
                             <label class="form-label">Name</label>
-                            <InputText @bind-Value="SanctionType.Name"
-                                       class="form-control" />
+                            <InputText @bind-Value="SanctionType.Name" class="form-control" />
                         </div>
-
                     </div>
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save" />
-    </DialogButtons>
-
 </SfDialog>
 
 @code {
@@ -44,6 +46,7 @@
 
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
+    public bool IsSaving { get; set; } = false;
 
     public void OpenDialog()
     {
@@ -57,7 +60,7 @@
         StateHasChanged();
     }
 
-    private async void Save()
+    private async Task Save()
     {
         if (string.IsNullOrWhiteSpace(SanctionType.Name))
         {
@@ -65,7 +68,12 @@
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(SanctionType);
+
+        IsSaving = false;
     }
 
     public void ChangeTitle(string title)

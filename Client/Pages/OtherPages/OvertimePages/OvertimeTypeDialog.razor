@@ -1,10 +1,13 @@
-﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+﻿@using Syncfusion.Blazor.Popups
+@using Microsoft.AspNetCore.Components.Forms
+
+<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogEvents OnOpen="OpenDialog"></DialogEvents>
 
     <DialogTemplates>
         <Header>@Title Overtime Type</Header>
         <Content>
-            <EditForm Model="OvertimeType" OnValidSubmit="Save">
+            <EditForm Model="OvertimeType" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
@@ -15,11 +18,21 @@
                 </div>
             </EditForm>
         </Content>
-    </DialogTemplates>
 
-    <DialogButtons>
-        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" />
-    </DialogButtons>
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
+    </DialogTemplates>
 </SfDialog>
 
 @code {
@@ -28,6 +41,7 @@
 
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
+    public bool IsSaving { get; set; } = false;
 
     public void OpenDialog()
     {
@@ -51,7 +65,11 @@
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(OvertimeType);
-        CloseDialog();
+
+        IsSaving = false;
     }
 }

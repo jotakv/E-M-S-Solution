@@ -1,7 +1,13 @@
-﻿<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+﻿@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Popups
+@using Microsoft.AspNetCore.Components.Forms
+
+<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
     <DialogTemplates>
         <Header>@Title Town</Header>
+
         <Content>
             <EditForm Model="Town" Enhance OnSubmit="Save">
                 <div class="card border-success">
@@ -10,10 +16,12 @@
                             <label class="form-label">Id</label>
                             <input @bind="Town.Id" class="form-control" disabled />
                         </div>
+
                         <div class="form-group">
                             <label class="form-label">Name</label>
                             <InputText @bind-Value="Town.Name" class="form-control" />
                         </div>
+
                         <div class="form-group mt-3 mb-3">
                             <label class="form-label">Select City</label>
 
@@ -32,16 +40,26 @@
                                     <DropDownListEvents TValue="string" TItem="City" ValueChange="OnValueChange"></DropDownListEvents>
                                 </SfDropDownList>
                             }
-
                         </div>
                     </div>
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-    <DialogButtons>
-        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
-    </DialogButtons>
 </SfDialog>
 
 @code {
@@ -51,18 +69,33 @@
 
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
-    
-    private async void Save()
+    public bool IsSaving { get; set; } = false;
+
+    private async Task Save()
     {
         if (string.IsNullOrEmpty(Town.Name) || Town.CityId <= 0)
-            await dialogService.AlertAsync("You need to provide Country name.", "Alert!");
-        else
-            await HandleSaveOperationEvent.InvokeAsync(Town);
+        {
+            await dialogService.AlertAsync("You need to provide a Town name and select a City.", "Alert!");
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        await HandleSaveOperationEvent.InvokeAsync(Town);
+
+        IsSaving = false;
     }
 
     public void OpenDialog()
     {
         IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
         StateHasChanged();
     }
 

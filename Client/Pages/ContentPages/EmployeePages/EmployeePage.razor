@@ -163,9 +163,11 @@
     private async Task LoadEmployees() => Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
 
     //Save Employee
+    //Save Employee
     async Task HandleSaveEmployeeClickedEvent(Employee employee)
     {
         bool successCheck = false;
+
         if (employee.Id > 0)
         {
             var result = await employeeService.Update(employee, Constants.EmployeeBaseUrl);
@@ -176,24 +178,30 @@
             var response = await employeeService.Insert(employee, Constants.EmployeeBaseUrl);
             successCheck = await DisplayMessage(response.Flag, response.Message);
         }
+
         if (successCheck)
         {
             addOrUpdateEmployee!.ClearContent();
+
+            ShowAddOrUpdatePage = false; 
+            ShowMainPage = true;         
+            await LoadEmployees();      
         }
     }
-
     public bool ShowMainPage { get; set; } = true;
     public bool ShowAddOrUpdatePage { get; set; } = false;
-    void ShowAddOrUpdateEmployeeButtonClicked()
+    private async Task ShowAddOrUpdateEmployeeButtonClicked()
     {
+        await LoadDefaults();
+
         ShowMainPage = false;
         ShowAddOrUpdatePage = true;
     }
 
-    //Edit clicked
-    void EditClicked()
+    private async Task EditClicked()
     {
-        //EmployeeGrouping1
+        await LoadDefaults();
+
         addOrUpdateEmployee!.Employee.Id = SelectedEmployee.Id;
         addOrUpdateEmployee!.EmployeeGroup1.Name = SelectedEmployee.Name;
         addOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = SelectedEmployee.TelephoneNumber;
@@ -202,29 +210,22 @@
         addOrUpdateEmployee!.EmployeeGroup1.Photo = SelectedEmployee.Photo;
         addOrUpdateEmployee!.EmployeeGroup1.CivilId = SelectedEmployee.CivilId;
 
-        //EmployeeGroup2
         addOrUpdateEmployee!.EmployeeGroup2.JobName = SelectedEmployee.JobName;
         addOrUpdateEmployee!.EmployeeGroup2.Other = SelectedEmployee.Other;
 
-        //General Department / Department / Branch
-
-        // TODO: Review addOrUpdateEmployee!.GeneralDepartment = SelectedEmployee.Branch!.Department!.GeneralDepartment;
         addOrUpdateEmployee!.Department = SelectedEmployee.Branch!.Department!.Name;
         addOrUpdateEmployee!.Branch = SelectedEmployee.Branch!.Name;
 
-        //Country / City / Town
         addOrUpdateEmployee!.Country = SelectedEmployee.Town!.City!.Country!.Name;
         addOrUpdateEmployee!.City = SelectedEmployee.Town!.City!.Name;
         addOrUpdateEmployee!.Town = SelectedEmployee.Town!.Name;
 
-        //Title
         addOrUpdateEmployee.Title = "Update";
         SelectedEmployee = new();
         contextMenu!.CloseContextMenu();
         ShowAddOrUpdatePage = true;
         ShowMainPage = false;
     }
-
     //Delete clicked
     private async Task DeleteClicked()
     {
