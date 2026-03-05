@@ -1,274 +1,198 @@
-﻿
-<AuthorizeView>
+﻿<AuthorizeView>
     <Authorized>
 
-        <!-- Top Navbar -->
         <div class="top-row ps-3 navbar navbar-dark">
             <div class="container-fluid">
-
-                <a class="navbar-brand" href="/">
-                    Welcome,
-                    @{
-                        var fullnameClaim = context.User.Claims
-                        .FirstOrDefault(c =>
-                        c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-
-                        string fullname = fullnameClaim?.Value ?? "User";
-                    }
-                    @fullname
+                <a class="navbar-brand" href="/home/dashboard">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
                 </a>
-
-                <button class="navbar-toggler"
-                        title="Navigation menu"
-                        @onclick="ToggleNavMenu">
+                <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
             </div>
         </div>
 
-        <!-- Side Navigation -->
         <div class="@NavMenuCssClass nav-scrollable">
             <nav class="flex-column">
 
-                <!-- Home -->
+                @* {{!-- ADMINISTRATION (Admin only) --}} *@
+                @* <AuthorizeView Roles="Admin" Context="adminCtx">
+                    <Authorized> *@
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="ShowAdminMenuContainer">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-person-fill fs-5" aria-hidden="true"></span>
+                                    <span>Administration</span>
+                                </div>
+                            </a>
+                            @if (ShowHide)
+                            {
+                                <div style="margin-left:1.5rem;">
+                                    <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="UserClicked">
+                                        <div class="hstack gap-2">
+                                            <span class="bi bi-people fs-5" aria-hidden="true"></span>
+                                            <span>Users</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                  @*   </Authorized>
+                </AuthorizeView> *@
+
+                @* {{!-- MANAGEMENT (all authenticated users) --}} *@
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link p-2" href="/home/dashboard">
-                        <span class="bi bi-house-door-fill nav-menu text-center" aria-hidden="true" style="margin-top:-2rem; font-size:1.5rem;"></span>
-                        Home
-                    </NavLink>
-                </div>
-                <!-- Administration -->
-                <div class="nav-item px-3">
-
-                    <a class="nav-link p-2"
-                       style="cursor:pointer;"
-                       href="#"
-                       @onclick:preventDefault="true"
-                       @onclick="ToggleAdminMenu">
-                        <div class="hstack gap-1">
-                            <span class="bi bi-person-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                            <span>Administration</span>
+                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="ShowDepartmentContainer">
+                        <div class="hstack gap-2">
+                            <span class="bi bi-backpack4-fill fs-5" aria-hidden="true"></span>
+                            <span>Management</span>
                         </div>
                     </a>
-
-                    <a class="nav-link p-2 text-white"
-                       style="margin-left:5rem;visibility:@AdminMenuVisibility"
-                       @onclick="UserClicked">
-                        <div class="hstack">
-                            <span class="bi bi-people fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                            <span>Users</span>
-                        </div>
-                    </a>
-
-                </div>
-
-                <!-- Department -->
-                <div class="nav-item px-3" style="margin-top:@DepartmentMargin">
-
-                    <a class="nav-link p-2"
-                       style="cursor:pointer;"
-                       @onclick="ShowDepartmentContainer">
-                        <div class="hstack gap-1">
-                            <span class="bi bi-backpack4-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                            <span>Managment</span>
-                        </div>
-                    </a>
-
-                    @* <div class="nav-link p-2 text-white"
-                         style="margin-left:5rem; visibility:@DepartmentMenuVisibility"> *@
-                    <div class="nav-link p-2 text-white"
-                         style="margin-left:2rem; visibility:@DepartmentMenuVisibility">
-                        <ul class="list-group" style="list-style:none">
-
-                            <li>
-                                <a class="nav-link p-2" @onclick="GeneralDepartmentClicked">
-                                    <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem">
-
-                                    </span>
+                    @if (ShowHideDepartment)
+                    {
+                        <div style="margin-left:1.5rem;">
+                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="GeneralDepartmentClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-file-medical fs-5" aria-hidden="true"></span>
                                     <span>General Dep</span>
-                                </a>
-                            </li>
+                                </div>
+                            </a>
+                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="DepartmentClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-substack fs-5" aria-hidden="true"></span>
+                                    <span>Department</span>
+                                </div>
+                            </a>
+                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="BranchClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-chevron-bar-contract fs-5" aria-hidden="true"></span>
+                                    <span>Branch</span>
+                                </div>
+                            </a>
+                        </div>
 
-                            <li style="list-style:none" class="cursorStyle" @onclick="DepartmentClicked">
-                                <a class="nav-link p-2">
-                                    <span class="bi bi-substack fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                                    Department
-                                </a>
-                            </li>
+                        <hr class="border-secondary mx-3" />
+                        @* { { !--LOCATION--} } *@
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="CountryClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-geo-alt fs-5" aria-hidden="true"></span>
+                                    <span>Country</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="CityClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-pin-map-fill fs-5" aria-hidden="true"></span>
+                                    <span>City</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="TownClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-geo fs-5" aria-hidden="true"></span>
+                                    <span>Town</span>
+                                </div>
+                            </a>
+                        </div>
 
-                            <li style="list-style:none" class="cursorStyle" @onclick="BranchClicked">
-                                <a class="nav-link p-2">
-                                    <span class="bi bi-chevron-bar-contract fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                                    Branch
-                                </a>
-                            </li>
+                        <hr class="border-secondary mx-3" />
+                        @* { {!--TYPES--} } *@
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="OvertimeTypeClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-stopwatch fs-5" aria-hidden="true"></span>
+                                    <span>Overtime Type</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="SanctionTypeClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-x-octagon fs-5" aria-hidden="true"></span>
+                                    <span>Sanction Type</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="VacationTypeClicked">
+                                <div class="hstack gap-2">
+                                    <span class="bi bi-backpack3 fs-5" aria-hidden="true"></span>
+                                    <span>Vacation Type</span>
+                                </div>
+                            </a>
+                        </div>
 
-                            <li style="list-style:none">
-                                <hr />
-                            </li>
-
-                            <li style="list-style:none">
-                                <a class="nav-link p-2 cusorStyle" @onclick="CountryClicked">
-                                    <div class="hstack">
-                                        <span class="bi bi-geo-alt fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
-                                        <span>Country</span>
-                                    </div>
-                                </a>
-                            </li>
-
-                            <li style="list-style:none">
-                                <a class="nav-link p-2 cursorStyle" @onclick="CityClicked">
-                                    <div class="hstack">
-                                        <span class="bi bi-pin-map-fill fs-5 text-center"
-                                              aria-hidden="true"
-                                              style="margin-top:-2rem"></span>
-                                        <span>City</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li style="list-style:none">
-                                <a class="nav-link p-2 cursorStyle" @onclick="TownClicked">
-                                    <div class="hstack">
-                                        <span class="bi bi-geo fs-5 text-center"
-                                              aria-hidden="true"
-                                              style="margin-top:-2rem"></span>
-                                        <span>Town</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li style="list-style:none">
-                                <hr />
-                            </li>
-
-                            <li style="list-style:none">
-                                <a class="nav-link p-2 cursorStyle" @onclick="EmployeeClicked">
-                                    <div class="hstack">
-                                        <span class="bi bi-people-fill fs-5 text-center"
-                                              aria-hidden="true"
-                                              style="margin-top:-2rem"></span>
-                                        <span>Employees</span>
-                                    </div>
-                                </a>
-                            </li>
-
-
-                        </ul>
-                    </div>
-
+                        <hr class="border-secondary mx-3" />
+                        @* { {!--EMPLOYEES--} } *@
+                        <div class="nav-item px-3">
+                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="EmployeeClicked">
+                        <div class="hstack gap-2">
+                            <span class="bi bi-people-fill fs-5" aria-hidden="true"></span>
+                            <span>Employees</span>
+                        </div>
+                    </a>
+                </div>
+                }
                 </div>
 
             </nav>
         </div>
 
-    </Authorized>
 
+    </Authorized>
     <NotAuthorized>
-        <!-- Optional: hide nav completely -->
+        {{!-- Nav hidden when not logged in --}}
     </NotAuthorized>
 </AuthorizeView>
 
-
 <style>
-    .cusorStyle {
-        cursor: pointer;
+    .nav-link {
+        color: rgba(255,255,255,0.8) !important;
     }
 
-    .cursorStyle {
-        cursor: pointer;
+    .nav-link:hover {
+        color: white !important;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 4px;
+    }
+
+    .hstack .bi {
+        line-height: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .hstack span:not(.bi) {
+        line-height: 1.5;
+        margin-top: 2px; 
     }
 </style>
-
 
 @code {
     private bool collapseNavMenu = false;
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
 
-    private void ToggleNavMenu()
-        => collapseNavMenu = !collapseNavMenu;
+    // Administration
+    public bool ShowHide { get; set; } = false;
+    private void ShowAdminMenuContainer() => ShowHide = !ShowHide;
 
-    // --- Administration Menu ---
-    private bool showAdminMenu = false;
-    private string AdminMenuVisibility => showAdminMenu ? "visible" : "hidden";
-
-    private void ToggleAdminMenu()
-    {
-        showAdminMenu = !showAdminMenu;
-        DepartmentMargin = showAdminMenu ? "0" : "-3.5rem";
-    }
-
-    // --- Department Menu ---
-    private bool showDepartmentMenu = false;
-    private string DepartmentMenuVisibility => showDepartmentMenu ? "visible" : "hidden";
-
-    public string DepartmentMargin { get; set; } = "-3.5rem";
-
-    private void ToggleDepartmentMenu()
-        => showDepartmentMenu = !showDepartmentMenu;
-
-    private string DepartmentCssStyle = "hidden";
-
+    // Management
     public bool ShowHideDepartment { get; set; } = false;
+    private void ShowDepartmentContainer() => ShowHideDepartment = !ShowHideDepartment;
 
-    private void ShowDepartmentContainer()
-    {
-        showDepartmentMenu = !showDepartmentMenu;
-        // ShowHideDepartment = !ShowHideDepartment;
-
-        // if (ShowHideDepartment)
-        //     DepartmentCssStyle = "visible";
-        // else
-        //     DepartmentCssStyle = "hidden";
-    }
-
-    //General Departments /Department / Brach
-    void GeneralDepartmentClicked()
-    {
-        Console.WriteLine("CLICK GeneralDepartmentClicked");
-        allState.GeneralDepartmentClicked();
-    }
-    void DepartmentClicked()
-    {
-        Console.WriteLine("CLICK DepartmentClicked");
-        allState.DepartmentClicked();
-    }
-
-    void BranchClicked()
-    {
-        Console.WriteLine("CLICK BranchClicked");
-        allState.BranchClicked();
-    }
-
-    // Country / City / Town
-
-    void CountryClicked()
-    {
-
-        allState.CountryClicked();
-    }
-
-    void CityClicked()
-    {
-        allState.CityClicked();
-    }
-
-
-    void TownClicked()
-    {
-        allState.TownClicked();
-    }
-
-    /// Employee
-    void EmployeeClicked()
-    {
-        Console.WriteLine("CLICK Employees");
-        allState.EmployeeClicked();
-    }
-
-    /// User
-    void UserClicked()
-    {
-        Console.WriteLine("CLICK UserClicked");
-        allState.UserClicked();
-    }
+    void GeneralDepartmentClicked() => allState.GeneralDepartmentClicked();
+    void DepartmentClicked() => allState.DepartmentClicked();
+    void BranchClicked() => allState.BranchClicked();
+    void CountryClicked() => allState.CountryClicked();
+    void CityClicked() => allState.CityClicked();
+    void TownClicked() => allState.TownClicked();
+    void OvertimeTypeClicked() => allState.OvertimeTypeClicked();
+    void SanctionTypeClicked() => allState.SanctionTypeClicked();
+    void VacationTypeClicked() => allState.VacationTypeClicked();
+    void UserClicked() => allState.UserClicked();
+    void EmployeeClicked() => allState.EmployeeClicked();
 }

@@ -52,16 +52,22 @@
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
+
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save">
-        </DialogButton>
-    </DialogButtons>
-
 </SfDialog>
 
 @code {
@@ -72,15 +78,22 @@
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
 
+    public bool IsSaving { get; set; } = false;
+
     private async Task Save()
     {
         if (string.IsNullOrWhiteSpace(Branch.Name) || Branch.DepartmentId <= 0)
         {
-            await dialogService.AlertAsync("You need to provide Department name.", "Alert!");
+            await dialogService.AlertAsync("You need to provide a Branch name and select a Department.", "Alert!");
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(Branch);
+
+        IsSaving = false;
     }
 
     public void OpenDialog()
@@ -89,23 +102,19 @@
         StateHasChanged();
     }
 
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
     public void ChangeTitle(string title)
     {
         Title = title;
     }
 
-    // public void OnValueChange(ChangeEventArgs args)
-    // {
-    //     if (args.Value is not null && int.TryParse(args.Value.ToString(), out var generalDepartmentId))
-    //     {
-    //         Department.GeneralDepartmentId = generalDepartmentId;
-    //     }
-    // }
     public void OnValueChange(ChangeEventArgs<string, Department> args)
     {
         Branch.DepartmentId = int.Parse(args.Value);
     }
-
-
 }
-

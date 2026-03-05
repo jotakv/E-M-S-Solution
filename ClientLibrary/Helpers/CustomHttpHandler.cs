@@ -30,11 +30,24 @@ namespace ClientLibrary.Helpers
             bool registerUrl = request.RequestUri!.AbsoluteUri.Contains("register");
             bool refreshTokenUrl = request.RequestUri!.AbsoluteUri.Contains("refresh-token");
 
-            if (loginUrl || registerUrl || refreshTokenUrl)
-                return await base.SendAsync(request, cancellationToken);
+            // Attach token to all protected requests
+            if (!loginUrl && !registerUrl && !refreshTokenUrl)
+            {
+                var json = await localStorageService.GetToken();
+                if (json != null)
+                {
+                    var session = JsonSerializer.Deserialize<UserSession>(json);
+                    if (session != null)
+                    {
+                        request.Headers.Authorization =
+                            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", session.Token);
+                    }
+                }
+            }
 
             var result = await base.SendAsync(request, cancellationToken);
 
+            // Handle 401 → refresh token
             if (result.StatusCode == HttpStatusCode.Unauthorized)
             {
                 var json = await localStorageService.GetToken();
@@ -43,11 +56,9 @@ namespace ClientLibrary.Helpers
                 var session = JsonSerializer.Deserialize<UserSession>(json);
                 if (session == null) return result;
 
-                // Refresh token
                 var refreshResponse = await accountService.RefreshTokenAsync();
                 if (!refreshResponse.Flag) return result;
 
-                // Save new session
                 var newSession = new UserSession
                 {
                     Token = refreshResponse.Token,
@@ -56,14 +67,16 @@ namespace ClientLibrary.Helpers
 
                 await localStorageService.SetToken(JsonSerializer.Serialize(newSession));
 
-                // Retry request with new token
+                // Retry with new token
                 request.Headers.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", refreshResponse.Token);
 
                 return await base.SendAsync(request, cancellationToken);
+
             }
 
             return result;
         }
+
     }
 }

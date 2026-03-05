@@ -27,7 +27,7 @@
                             </thead>
 
                             <tbody>
-                                @if (Cities is not null)
+                                @if (Cities is not null && Cities.Any())
                                 {
                                     var count = 1;
 
@@ -115,10 +115,21 @@
     }
 
 
-    private void AddButtonClicked()
+    private async Task AddButtonClicked()
     {
+        await GetCountries();
+
         cityDialog?.ChangeTitle("Add");
         City = new();
+        OpenDialog();
+    }
+
+    private async Task EditClicked(City city)
+    {
+        await GetCountries();
+
+        cityDialog?.ChangeTitle("Update");
+        City = city;
         OpenDialog();
     }
 
@@ -146,15 +157,9 @@
         {
             City = new();
             await GetCities();
-            cityDialog?.ChangeTitle("Add");           
+            cityDialog?.ChangeTitle("Add");
+            cityDialog?.CloseDialog();
         }
-    }
-
-    private void EditClicked(City city)
-    {
-        cityDialog?.ChangeTitle("Update");
-        City = city;
-        OpenDialog();
     }
 
     private async Task DeleteClicked(City city)

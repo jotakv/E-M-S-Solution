@@ -52,19 +52,22 @@
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save">
-        </DialogButton>
-    </DialogButtons>
-
 </SfDialog>
-
-
 
 @code {
     [Parameter] public Department Department { get; set; } = new();
@@ -74,15 +77,26 @@
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
 
+    // Variable para controlar el spinner
+    public bool IsSaving { get; set; } = false;
+
     private async Task Save()
     {
         if (string.IsNullOrWhiteSpace(Department.Name) || Department.GeneralDepartmentId <= 0)
         {
-            await dialogService.AlertAsync("You need to provide Department name.", "Alert!");
+            await dialogService.AlertAsync("You need to provide a Department name and select a General Department.", "Alert!");
             return;
         }
 
+        // Activamos el loading
+        IsSaving = true;
+        StateHasChanged();
+
+        // Enviamos al padre
         await HandleSaveOperationEvent.InvokeAsync(Department);
+
+        // Desactivamos el loading
+        IsSaving = false;
     }
 
     public void OpenDialog()
@@ -91,22 +105,20 @@
         StateHasChanged();
     }
 
+    // Método para cerrar el modal desde el padre
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
     public void ChangeTitle(string title)
     {
         Title = title;
     }
 
-    // public void OnValueChange(ChangeEventArgs args)
-    // {
-    //     if (args.Value is not null && int.TryParse(args.Value.ToString(), out var generalDepartmentId))
-    //     {
-    //         Department.GeneralDepartmentId = generalDepartmentId;
-    //     }
-    // }
     public void OnValueChange(ChangeEventArgs<string, GeneralDepartment> args)
     {
         Department.GeneralDepartmentId = int.Parse(args.Value);
     }
-
-
 }
