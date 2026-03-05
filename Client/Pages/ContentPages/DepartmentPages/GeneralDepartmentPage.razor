@@ -11,7 +11,7 @@
                         <h4 class="float-start">General Department</h4>
 
                         <button class="btn btn-outline-success float-end" @onclick="OpenDialog">
-                            <i class="bi bi-plus-circle-dotted"></i> Add Department
+                            <i class="bi bi-plus-circle-dotted"></i>
                         </button>
                     </div>
 
@@ -107,9 +107,7 @@
 
     //add or update
     private async Task HandleSaveOperationEvent(GeneralDepartment generalDepartment)
-
     {
-
         bool successCheck = false;
         if (generalDepartment.Id > 0)
         {
@@ -129,6 +127,8 @@
             GeneralDepartment = new();
             await GetGeneralDepartments();
             generalDepartmentDialog?.ChangeTitle("Add");
+
+            generalDepartmentDialog?.CloseDialog();
         }
     }
 

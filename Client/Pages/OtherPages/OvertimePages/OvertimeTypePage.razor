@@ -22,7 +22,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (Types is not null)
+                                    @if (Types is not null && Types.Any())
                                     {
                                         int count = 1;
                                         foreach (var item in Types)
@@ -91,14 +91,12 @@
         bool successCheck = false;
         if (item.Id > 0)
         {
-            var result = await overtimeTypeService
-            .Update(item, Constants.OvertimeTypeBaseUrl);
+            var result = await overtimeTypeService.Update(item, Constants.OvertimeTypeBaseUrl);
             successCheck = await DisplayMessage(result.Flag, result.Message);
         }
         else
         {
-            var response = await overtimeTypeService
-            .Insert(item, Constants.OvertimeTypeBaseUrl);
+            var response = await overtimeTypeService.Insert(item, Constants.OvertimeTypeBaseUrl);
             successCheck = await DisplayMessage(response.Flag, response.Message);
         }
 
@@ -107,6 +105,7 @@
             OvertimeType = new();
             await GetTypes();
             overtimeTypeDialog?.ChangeTitle("Add");
+            overtimeTypeDialog?.CloseDialog();
         }
     }
 

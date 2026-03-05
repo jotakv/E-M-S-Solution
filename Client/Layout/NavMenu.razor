@@ -153,11 +153,22 @@
         color: rgba(255,255,255,0.8) !important;
     }
 
-        .nav-link:hover {
-            color: white !important;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 4px;
-        }
+    .nav-link:hover {
+        color: white !important;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 4px;
+    }
+
+    .hstack .bi {
+        line-height: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .hstack span:not(.bi) {
+        line-height: 1.5;
+        margin-top: 2px; 
+    }
 </style>
 
 @code {

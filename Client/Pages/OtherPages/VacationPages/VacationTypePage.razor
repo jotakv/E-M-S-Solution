@@ -123,6 +123,7 @@
             VacationType = new();
             await GetTypes();
             vacationTypeDialog?.ChangeTitle("Add");
+            vacationTypeDialog?.CloseDialog();
         }
     }
 

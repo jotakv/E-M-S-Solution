@@ -126,6 +126,7 @@
             SanctionType = new();
             await GetTypes();
             sanctionTypeDialog?.ChangeTitle("Add");
+            sanctionTypeDialog?.CloseDialog();
         }
     }
 

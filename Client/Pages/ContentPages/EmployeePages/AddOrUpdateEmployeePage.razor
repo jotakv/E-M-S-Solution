@@ -96,7 +96,7 @@
             <!-- LAYER 2: Job + Location Info -->
             @if (SecondLayer)
             {
-                <EditForm Enhance Model="EmployeeGroup2" OnValidSubmit="Form2">
+                <EditForm Enhance Model="EmployeeGroup2" OnSubmit="Form2">
                     <DataAnnotationsValidator />
                     <div class="row justify-content-center">
 
@@ -226,8 +226,16 @@
                             </div>
 
                             <div class="form-group mt-4 d-flex justify-content-end">
-                                <button class="btn btn-success" type="submit">
-                                    <i class="bi bi-save"></i> Save
+                                <button class="btn btn-success" type="submit" disabled="@IsSaving">
+                                    @if (IsSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <span class="ms-1">Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-save"></i> <span class="ms-1">Save</span>
+                                    }
                                 </button>
                             </div>
                         </div>
@@ -386,21 +394,27 @@
         }
     }
 
+    public bool IsSaving { get; set; } = false; 
+
     private async Task Form2()
     {
-        // Debug: remove these after fixing
-        Console.WriteLine($"JobName: {EmployeeGroup2.JobName}");
-        Console.WriteLine($"BranchId: {EmployeeGroup2.BranchId}");
-        Console.WriteLine($"TownId: {EmployeeGroup2.TownId}");
-        Console.WriteLine($"Other: {EmployeeGroup2.Other}");
-
         if (ValidateEmployeeGroup2())
         {
+            IsSaving = true; 
+            StateHasChanged(); 
+
             Employee.JobName = EmployeeGroup2.JobName;
             Employee.Other = EmployeeGroup2.Other;
             Employee.BranchId = EmployeeGroup2.BranchId;
             Employee.TownId = EmployeeGroup2.TownId;
+
             await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
+
+            IsSaving = false; 
+        } else
+        {        
+            IsSaving = false; 
+            StateHasChanged();
         }
     }
 
