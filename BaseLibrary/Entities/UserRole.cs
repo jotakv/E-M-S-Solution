@@ -9,5 +9,6 @@ namespace BaseLibrary.Entities
         public int UserId { get; set; }
         public ApplicationUser User { get; set; }
 
+
     }
 }

@@ -68,6 +68,8 @@
                          HandleDepartmentSelectedEvent="HandleDepartmentSelectedEvent"
                          HandleSaveEmployeeClickedEvent="HandleSaveEmployeeClickedEvent"/>
 
+
+
     <ContextMenu @ref="contextMenu"
                  HandleDeleteClicked="DeleteClicked"
                  HandleEditClicked="EditClicked"
@@ -77,9 +79,18 @@
                  HandleAddSanctionClicked="AddSanctionClicked"
                  HandleAddVacationClicked="AddVacationClicked"/>
 
-    <DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
+        <DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
 
-    <OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent"/>
+        <OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes" 
+        HandleSaveOperationEvent="SaveOvertimeEvent"/>
+
+        <SanctionDialog @ref="sanctionDialog" ItemModel="Sanction" SanctionTypes="SanctionTypes"
+        HandleSaveOperationEvent="SaveSanctionEvent"/>
+        
+        <VacationDialog @ref="vacationDialog" ItemModel="Vacation"VacationTypes="VacationTypes" 
+        HandleSaveOperationEvent="SaveVacationEvent" />
+
+
 
 <EmployeeDetailPage EmployeeDetails="Employee"
                     ShowDetailsPage="ShowDetailsPage"
@@ -280,7 +291,8 @@
         }
 
         //Save Overtime Handler 
-        async Task SaveOvertimeEvent(Overtime item) { 
+        async Task SaveOvertimeEvent(Overtime item) 
+        { 
             item.EmployeeId = SelectedEmployee.Id; 
             var (flag, message) = await overtimeService.Insert(item, Constants.OvertimeBaseUrl); 
             var response = await DisplayMessage(flag, message); 
@@ -292,26 +304,63 @@
         }
 
         // Add Sanction clicked
+        SanctionDialog? sanctionDialog;
+        Sanction Sanction = new();
+        List<SanctionType> SanctionTypes = [];
         private void AddSanctionClicked()
         {
-            //Sanction.EmployeeId = SelectedEmployee.Id;
+            Sanction.EmployeeId = SelectedEmployee.Id;
             contextMenu!.CloseContextMenu();
-            //sanctionDialog!.OpenDialog();
+            sanctionDialog!.OpenDialog();
         }
 
+    //Save Sanction Handler
+    async Task SaveSanctionEvent(Sanction item)
+    {
+        item.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await sanctionService.Insert(item, Constants.SanctionBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            Sanction = new();
+            sanctionDialog!.CloseDialog();
+        }
+    }
+
+
         // Add Vacation clicked
+    VacationDialog? vacationDialog;
+    Vacation Vacation = new();
+    List<VacationType> VacationTypes = [];
         private void AddVacationClicked()
         {
-            //Vacation.EmployeeId = SelectedEmployee.Id;
-            contextMenu.CloseContextMenu();
-            //vacationDialog!.OpenDialog();
-        }   
+            Vacation.EmployeeId = SelectedEmployee.Id;
+            contextMenu!.CloseContextMenu();
+            vacationDialog!.OpenDialog();
+        }
+
+        //Save Vacation Handler
+    async Task SaveVacationEvent(Vacation item)
+    {
+        item.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await vacationService.Insert(item, Constants.VacationBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            Vacation = new();
+            vacationDialog!.CloseDialog();
+        }
+    }
+
 
     //Context menu
     //Show Menu Pop Up
     ContextMenu? contextMenu;
     public bool ShowDetailsPage { get; set; } = false;
     public Employee SelectedEmployee { get; set; } = new();
+
     void ShowMenuPopUp(Employee employee)
     {
         SelectedEmployee = employee;

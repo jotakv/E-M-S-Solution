@@ -50,11 +50,20 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> Insert(Employee item)
         {
-            if (!await CheckName(item.Name!)) return new GeneralResponse(false, "Employee already added");
+            try
+            {
+                if (!await CheckName(item.Name!))
+                    return new GeneralResponse(false, "Employee already added");
 
-            appDbContext.Employees.Add(item);
-            await Commit();
-            return Success();
+                appDbContext.Employees.Add(item);
+                await Commit();
+
+                return Success();
+            }
+            catch (Exception ex)
+            {
+                return new GeneralResponse(false, ex.InnerException?.Message ?? ex.Message);
+            }
         }
 
         public async Task<GeneralResponse> Update(Employee employee)
