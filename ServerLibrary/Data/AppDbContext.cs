@@ -38,5 +38,31 @@ namespace ServerLibrary.Data
         public DbSet<SanctionType> SanctionTypes { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // One-to-one: ApplicationUser → UserRole
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.UserRole)
+                .WithOne(ur => ur.User)
+                .HasForeignKey<UserRole>(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: SystemRole → UserRoles
+            modelBuilder.Entity<SystemRole>()
+                .HasMany(r => r.UserRoles)
+                .WithOne(ur => ur.Role)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Seed roles
+            modelBuilder.Entity<SystemRole>().HasData(
+                new SystemRole { Id = 1, Name = "Admin" },
+                new SystemRole { Id = 2, Name = "User" }
+            );
+        }
+
+
     }
 }

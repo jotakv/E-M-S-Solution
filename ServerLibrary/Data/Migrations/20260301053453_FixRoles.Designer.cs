@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ServerLibrary.Data;
 
@@ -11,9 +12,11 @@ using ServerLibrary.Data;
 namespace ServerLibrary.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301053453_FixRoles")]
+    partial class FixRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,16 +138,11 @@ namespace ServerLibrary.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Civilld")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("MedicalDiagnose")
                         .IsRequired()
@@ -152,9 +150,6 @@ namespace ServerLibrary.Data.Migrations
 
                     b.Property<string>("MedicalRecommendation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Other")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -241,19 +236,11 @@ namespace ServerLibrary.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Civilld")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("FileNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Other")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("OvertimeTypeId")
                         .HasColumnType("int");
@@ -315,19 +302,11 @@ namespace ServerLibrary.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Civilld")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Other")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Punishment")
                         .IsRequired()
@@ -336,7 +315,7 @@ namespace ServerLibrary.Data.Migrations
                     b.Property<DateTime>("PunishmentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("SanctionTypeId")
+                    b.Property<int>("SanctionTypeId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -446,19 +425,11 @@ namespace ServerLibrary.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Civilld")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
 
                     b.Property<int>("NumberOfDays")
                         .HasColumnType("int");
-
-                    b.Property<string>("Other")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -555,7 +526,9 @@ namespace ServerLibrary.Data.Migrations
                 {
                     b.HasOne("BaseLibrary.Entities.SanctionType", "SanctionType")
                         .WithMany("Sanctions")
-                        .HasForeignKey("SanctionTypeId");
+                        .HasForeignKey("SanctionTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("SanctionType");
                 });

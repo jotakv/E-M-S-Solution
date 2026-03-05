@@ -1,20 +1,24 @@
-﻿<SfDialog Width="250px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+﻿@using Syncfusion.Blazor.Popups
+@using Microsoft.AspNetCore.Components.Forms
+
+<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogEvents OnOpen="OpenDialog"></DialogEvents>
 
     <DialogTemplates>
-        <Header> @Title Department </Header>
+        <Header>@Title Overtime Type</Header>
         <Content>
-            <EditForm Model="GeneralDepartment" Enhance OnSubmit="Save">
+            <EditForm Model="OvertimeType" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Name</label>
-                            <InputText @bind-Value="GeneralDepartment.Name" class="form-control" />
+                            <InputText @bind-Value="OvertimeType.Name" class="form-control" />
                         </div>
                     </div>
                 </div>
             </EditForm>
         </Content>
+
         <FooterTemplate>
             <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
                 @if (IsSaving)
@@ -31,14 +35,12 @@
     </DialogTemplates>
 </SfDialog>
 
-
 @code {
+    [Parameter] public OvertimeType OvertimeType { get; set; } = new();
+    [Parameter] public EventCallback<OvertimeType> HandleSaveOperationEvent { get; set; }
 
-    [Parameter] public GeneralDepartment GeneralDepartment { get; set; } = new();
-    [Parameter] public EventCallback<GeneralDepartment> HandleSaveOperationEvent { get; set; }
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
-
     public bool IsSaving { get; set; } = false;
 
     public void OpenDialog()
@@ -53,26 +55,21 @@
         StateHasChanged();
     }
 
-    public async Task Save()
+    public void ChangeTitle(string title) => Title = title;
+
+    private async Task Save()
     {
-        if (string.IsNullOrEmpty(GeneralDepartment.Name))
+        if (string.IsNullOrWhiteSpace(OvertimeType.Name))
         {
-            await dialogService.AlertAsync("You need to provide Department name. ", "Alert!");
+            await dialogService.AlertAsync("You need to provide OvertimeType name.", "Alert!");
+            return;
         }
-        else
-        {
-            IsSaving = true;
-            StateHasChanged();
 
-            await HandleSaveOperationEvent.InvokeAsync(GeneralDepartment);
+        IsSaving = true;
+        StateHasChanged();
 
-            IsSaving = false;
-        }
+        await HandleSaveOperationEvent.InvokeAsync(OvertimeType);
+
+        IsSaving = false;
     }
-
-    public void ChangeTitle(string title)
-    {
-        Title = title;
-    }
-
 }

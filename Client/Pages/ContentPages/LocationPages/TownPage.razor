@@ -22,7 +22,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (Towns is not null)
+                                    @if (Towns is not null && Towns.Any())
                                     {
                                         int count = 1;
                                         foreach (var item in Towns)
@@ -43,7 +43,7 @@
                                     else
                                     {
                                         <tr>
-                                            <td colspan="4"><div class="alert alert-info text-center">No Town added yet!</div></td>
+                                            <td colspan="5"><div class="alert alert-info text-center">No Town added yet!</div></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -91,10 +91,21 @@
         Towns = await townService.GetAll(Constants.TownBaseUrl);
     }
 
-    void AddButtonClicked()
+    private async Task AddButtonClicked()
     {
+        await GetCities();
+
         townDialog?.ChangeTitle("Add");
         Town = new();
+        OpenDialog();
+    }
+
+    private async Task EditClicked(Town town)
+    {
+        await GetCities();
+
+        townDialog?.ChangeTitle("Update");
+        Town = town;
         OpenDialog();
     }
 
@@ -106,6 +117,7 @@
     private async Task HandleSaveOperationEvent()
     {
         bool successCheck = false;
+        
         if (Town.Id > 0)
         {
             var result = await townService.Update(Town, Constants.TownBaseUrl);
@@ -122,14 +134,8 @@
             Town = new();
             await GetTowns();
             townDialog?.ChangeTitle("Add");
+            townDialog?.CloseDialog();
         }
-    }
-
-    private void EditClicked(Town town)
-    {
-        townDialog?.ChangeTitle("Update");
-        Town = town;
-        OpenDialog();
     }
 
     private async Task DeleteClicked(Town town)
