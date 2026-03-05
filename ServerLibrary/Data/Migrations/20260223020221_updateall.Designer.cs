@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ServerLibrary.Data;
 
@@ -11,9 +12,11 @@ using ServerLibrary.Data;
 namespace ServerLibrary.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260223020221_updateall")]
+    partial class updateall
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -354,18 +357,6 @@ namespace ServerLibrary.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SystemRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "User"
-                        });
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Town", b =>
@@ -405,11 +396,6 @@ namespace ServerLibrary.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("UserRoles");
                 });
@@ -541,25 +527,6 @@ namespace ServerLibrary.Data.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("BaseLibrary.Entities.UserRole", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.SystemRole", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BaseLibrary.Entities.ApplicationUser", "User")
-                        .WithOne("UserRole")
-                        .HasForeignKey("BaseLibrary.Entities.UserRole", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BaseLibrary.Entities.Vacation", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.VacationType", "VacationType")
@@ -569,12 +536,6 @@ namespace ServerLibrary.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("VacationType");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.ApplicationUser", b =>
-                {
-                    b.Navigation("UserRole")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Branch", b =>
@@ -610,11 +571,6 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.SanctionType", b =>
                 {
                     b.Navigation("Sanctions");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.SystemRole", b =>
-                {
-                    b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Town", b =>

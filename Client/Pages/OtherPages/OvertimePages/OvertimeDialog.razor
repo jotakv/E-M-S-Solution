@@ -1,86 +1,121 @@
-﻿<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible"> 
-    <DialogEvents OnOpen="OpenDialog">
+﻿<SfDialog Width="350px"
+          IsModal="true"
+          ShowCloseIcon="true"
+          @bind-Visible="IsVisible">
 
-    </DialogEvents> 
     <DialogTemplates>
+        <Header>@Title Employee's Overtime</Header>
 
-<Header> @Title Employee's Overtime </Header> 
-<Content> 
-    <EditForm Model="ItemModel" Enhance OnSubmit="Save"> 
-        <div class="card border-success"> 
-            <div class="card-body"> 
-                <div class="form-group"> 
-                    <label class="form-label">Employee ID</label> 
-                    <input @bind="ItemModel.EmployeeId" class="form-control" disabled /> 
-                </div> 
-                <div class="form-group mt-2"> 
-                    <label class="form-label">Start Date</label> 
-                    <InputDate @bind-Value="ItemModel.StartDate" class="form-control" /> 
-                </div> 
-                <div class="form-group mt-2"> 
-                    <label class="form-label">End Date</label> 
-                    <InputDate @bind-Value="ItemModel.EndDate" class="form-control" /> 
-                </div> 
-                <div class="form-group mt-2"> 
-                    <label class="form-label">Number of days</label> 
-                    <input value="@ItemModel.NumberOfDays" class="form-control" disabled /> 
-                </div> 
-                <div class="form-group mt-3 mb-3"> 
-                    <label class="form-label">Select Type</label>
+        <Content>
+            <EditForm Model="ItemModel" OnValidSubmit="Save">
 
-                    @if (ItemModel.OvertimeType != null) { 
-                        string selected = ItemModel.OvertimeType!.Name!; 
-                        <SfDropDownList TValue="string" TItem="OvertimeType" Placeholder="@selected" DataSource="OvertimeTypes"> 
-                            <DropDownListFieldSettings Value="Id" Text="Name">
+                <div class="card border-success">
+                    <div class="card-body">
 
-                            </DropDownListFieldSettings> 
-                            <DropDownListEvents TValue="string" TItem="OvertimeType" ValueChange="OnValueChange">
+                        <!-- Employee ID -->
+                        <div class="form-group">
+                            <label class="form-label">Employee ID</label>
+                            <input value="@ItemModel.EmployeeId"
+                                   class="form-control"
+                                   disabled />
+                        </div>
 
-                            </DropDownListEvents> 
-                         </SfDropDownList> 
-                         
-                     } else { 
-                         <SfDropDownList TValue="string" TItem="OvertimeType" Placeholder="Select Type" DataSource="OvertimeTypes"> 
-                             <DropDownListFieldSettings Value="Id" Text="Name">
+                        <!-- Start Date -->
+                        <div class="form-group mt-2">
+                            <label class="form-label">Start Date</label>
+                            <InputDate @bind-Value="ItemModel.StartDate"
+                                       class="form-control" />
+                        </div>
 
-                             </DropDownListFieldSettings> 
-                             <DropDownListEvents TValue="string" TItem="OvertimeType" ValueChange="OnValueChange">
+                        <!-- End Date -->
+                        <div class="form-group mt-2">
+                            <label class="form-label">End Date</label>
+                            <InputDate @bind-Value="ItemModel.EndDate"
+                                       class="form-control" />
+                        </div>
 
-                             </DropDownListEvents> 
-                         </SfDropDownList> 
-                     }
+                        <!-- Number of Days (READ ONLY PROPERTY) -->
+                        <div class="form-group mt-2">
+                            <label class="form-label">Number of days</label>
+                            <input value="@ItemModel.NumberOfDays"
+                                   class="form-control"
+                                   disabled />
+                        </div>
 
-                    </div> 
-                 </div> 
-               </div> 
-            </EditForm> 
-         </Content> 
-       </DialogTemplates> 
-   </SfDialog>
+                        <!-- Overtime Type -->
+                        <div class="form-group mt-3">
+                            <label class="form-label">Select Type</label>
 
-@code { 
-    [Parameter] public Overtime ItemModel { get; set; } = new(); 
-    [Parameter] public List<OvertimeType> OvertimeTypes { get; set; } = new(); 
+                            <SfDropDownList TValue="string"
+                                            TItem="OvertimeType"
+                                            DataSource="OvertimeTypes"
+                                            Placeholder="Select Type"
+                                            ValueChange="OnValueChange">
+
+                                <DropDownListFieldSettings
+                                    Value="Id"
+                                    Text="Name">
+                                </DropDownListFieldSettings>
+
+                            </SfDropDownList>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+
+    <DialogButtons>
+        <DialogButton Content="SAVE"
+                      IsPrimary="true"
+                      OnClick="Save" />
+    </DialogButtons>
+
+</SfDialog>
+
+@code {
+
+    [Parameter] public Overtime ItemModel { get; set; } = new();
+    [Parameter] public List<OvertimeType> OvertimeTypes { get; set; } = new();
     [Parameter] public EventCallback<Overtime> HandleSaveOperationEvent { get; set; }
 
-    public string Title { get; set; } = "Add"; 
     private bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
 
-    private async void Save() {
-        if (ItemModel.OvertimeTypeld <= 0) 
-            await dialogService.AlertAsync("You need to provide type.", "Alert!"); 
-        else 
-            await HandleSaveOperationEvent.InvokeAsync(ItemModel); 
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
     }
 
-    public void OpenDialog() { IsVisible = true; StateHasChanged(); }
-
-    public void CloseDialog() { IsVisible = false; StateHasChanged(); }
-
-    public void OnValueChange(ChangeEventArgs<string, OvertimeType> args) { 
-        ItemModel.OvertimeTypeld = int.Parse(args.Value.ToString()); 
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
     }
 
-    public void ChangeTitle(string title) => Title = title; 
+    private async Task Save()
+    {
+        if (ItemModel.OvertimeTypeld <= 0)
+        {
+            await dialogService.AlertAsync("You need to provide type.", "Alert!");
+            return;
+        }
 
+        await HandleSaveOperationEvent.InvokeAsync(ItemModel);
+        CloseDialog();
+    }
+
+    private void OnValueChange(ChangeEventArgs<string, OvertimeType> args)
+    {
+        if (!string.IsNullOrEmpty(args.Value))
+        {
+            ItemModel.OvertimeTypeld = int.Parse(args.Value);
+        }
+    }
+
+    public void ChangeTitle(string title) => Title = title;
 }
