@@ -16,8 +16,8 @@
             <nav class="flex-column">
 
                 @* {{!-- ADMINISTRATION (Admin only) --}} *@
-                @* <AuthorizeView Roles="Admin" Context="adminCtx">
-                    <Authorized> *@
+                <AuthorizeView Roles="Admin" Context="adminCtx">
+                    <Authorized> 
                         <div class="nav-item px-3">
                             <a class="nav-link p-2" style="cursor:pointer;" @onclick="ShowAdminMenuContainer">
                                 <div class="hstack gap-2">
@@ -37,8 +37,8 @@
                                 </div>
                             }
                         </div>
-                  @*   </Authorized>
-                </AuthorizeView> *@
+                     </Authorized>
+                </AuthorizeView> 
 
                 @* {{!-- MANAGEMENT (all authenticated users) --}} *@
                 <div class="nav-item px-3">
@@ -144,7 +144,7 @@
 
     </Authorized>
     <NotAuthorized>
-        {{!-- Nav hidden when not logged in --}}
+    
     </NotAuthorized>
 </AuthorizeView>
 

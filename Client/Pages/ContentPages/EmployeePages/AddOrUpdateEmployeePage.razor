@@ -4,14 +4,15 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Collections.Generic
 @using System.Threading.Tasks
+@inject Syncfusion.Blazor.Popups.SfDialogService dialogService
 
 @implements IDisposable
+
 @if (allState.ShowEmployee)
 {
     if (ShowAddOrUpdateEmployee)
     {
         <div class="container-fluid px-4">
-            <!-- Header Row -->
             <div class="row mt-4 align-items-center">
                 <div class="col-auto">
                     <i class="bi bi-x-lg fs-3 fw-bold text-danger" style="cursor:pointer" @onclick="CloseForm"></i>
@@ -21,7 +22,6 @@
                 </div>
             </div>
 
-            <!-- Step Progress Bar -->
             <div class="row mt-3 mb-4">
                 <div class="col-12 d-flex justify-content-center align-items-center gap-2">
                     <div class="step-circle active">1</div>
@@ -30,13 +30,11 @@
                 </div>
             </div>
 
-            <!-- LAYER 1: Personal Info -->
             @if (FirstLayer)
             {
-                <EditForm Enhance Model="EmployeeGroup1" OnValidSubmit="Form1">
+                <EditForm Enhance Model="EmployeeGroup1" OnSubmit="Form1">
                     <DataAnnotationsValidator />
                     <div class="row justify-content-center">
-
                         <div class="col-lg-4">
                             <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Personal Information</div>
                             <div class="form-group mb-3">
@@ -86,21 +84,16 @@
                                     <img src="@EmployeeGroup1.Photo" alt="Preview" style="width:150px;height:150px;border-radius:8px;" />
                                 </div>
                             }
-
                         </div>
-
                     </div>
                 </EditForm>
             }
 
-            <!-- LAYER 2: Job + Location Info -->
             @if (SecondLayer)
             {
                 <EditForm Enhance Model="EmployeeGroup2" OnSubmit="Form2">
                     <DataAnnotationsValidator />
                     <div class="row justify-content-center">
-
-                        <!-- Left Column: Job Information -->
                         <div class="col-lg-4">
                             <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Job Information</div>
 
@@ -109,12 +102,6 @@
                                 <InputText @bind-Value="EmployeeGroup2.JobName" class="form-control" />
                                 <ValidationMessage For="() => EmployeeGroup2.JobName" class="text-danger" />
                             </div>
-
-                            <!-- CHANGE 1 vs Document 9:
-                                 - Removed CssClass="w-100"
-                                 - Added Width="100%" PopupHeight="200px" PopupWidth="100%"
-                                 - Added Opened event with OffsetY=1 fix
-                                 Everything else is identical to your original -->
 
                             <div class="form-group mb-3">
                                 <label class="form-label">Select General Department</label>
@@ -139,11 +126,9 @@
                                                 DataSource="@Departments"
                                                 Width="100%"
                                                 PopupHeight="200px">
-                                    
                                     <DropDownListFieldSettings Value="Id" Text="Name" />
                                     <DropDownListEvents TValue="string" TItem="Department"
-                                                        ValueChange="OnDepartmentValueChange"
-                                                        />
+                                                        ValueChange="OnDepartmentValueChange" />
                                 </SfDropDownList>
                             </div>
 
@@ -170,7 +155,6 @@
                             </div>
                         </div>
 
-                        <!-- Right Column: Location Information -->
                         <div class="col-lg-4">
                             <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Location Information</div>
 
@@ -282,8 +266,6 @@
         .step-line.inactive {
             background-color: #aaaaaa;
         }
-
-   
 </style>
 
 @code {
@@ -326,19 +308,14 @@
     {
         var file = e.File;
 
-        // Accept ONLY real PNG files by MIME type
         if (file.ContentType != "image/png" && file.ContentType != "image/x-png")
         {
             ImageUploadMessage = "PNG file needed.";
             EmployeeGroup1.Photo = null;
-
-            // Optional: log to browser console
             Console.WriteLine($"Upload failed: invalid file type {file.ContentType}");
-
             return;
         }
 
-        // Resize and convert to Base64
         var resized = await file.RequestImageFileAsync("image/png", 300, 300);
         var buffer = new byte[resized.Size];
         await resized.OpenReadStream().ReadAsync(buffer);
@@ -346,10 +323,8 @@
         EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
         ImageUploadMessage = "";
 
-        // Optional: log success
         Console.WriteLine("PNG uploaded successfully");
     }
-
 
     private bool ValidateEmployeeGroup1() =>
         !string.IsNullOrEmpty(EmployeeGroup1.Name) &&
@@ -366,15 +341,8 @@
 
     [Parameter] public EventCallback<Employee> HandleSaveEmployeeClickedEvent { get; set; }
 
-    private void Form1()
+    private async Task Form1()
     {
-        // console.writeline($"name: {employee.name}");
-        // console.writeline($"address: {employee.address}");
-        // console.writeline($"telephone: {employee.telephonenumber}");
-        // console.writeline($"civilid: {employee.civilid}");
-        // console.writeline($"filenumber: {employee.filenumber}");
-        // console.writeline($"photo length: {employee.photo?.length}");
-
         Console.WriteLine($"Name: {EmployeeGroup1.Name}");
         Console.WriteLine($"Address: {EmployeeGroup1.Address}");
         Console.WriteLine($"Telephone: {EmployeeGroup1.TelephoneNumber}");
@@ -392,16 +360,20 @@
             Employee.Photo = EmployeeGroup1.Photo;
             ShowLayer2();
         }
+        else
+        {
+            await dialogService.AlertAsync("Please fill all required fields in Personal Information.", "Alert!");
+        }
     }
 
-    public bool IsSaving { get; set; } = false; 
+    public bool IsSaving { get; set; } = false;
 
     private async Task Form2()
     {
         if (ValidateEmployeeGroup2())
         {
-            IsSaving = true; 
-            StateHasChanged(); 
+            IsSaving = true;
+            StateHasChanged();
 
             Employee.JobName = EmployeeGroup2.JobName;
             Employee.Other = EmployeeGroup2.Other;
@@ -410,11 +382,13 @@
 
             await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
 
-            IsSaving = false; 
-        } else
-        {        
-            IsSaving = false; 
+            IsSaving = false;
+        }
+        else
+        {
+            IsSaving = false;
             StateHasChanged();
+            await dialogService.AlertAsync("Please fill all required fields in Job and Location Information.", "Alert!");
         }
     }
 
@@ -449,5 +423,4 @@
         EmployeeGroup2.BranchId = int.Parse(args.Value);
 
     public void Dispose() => allState.Action -= StateHasChanged;
-
 }
