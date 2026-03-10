@@ -1,4 +1,7 @@
-﻿<SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+﻿@using Syncfusion.Blazor.Popups
+@using Microsoft.AspNetCore.Components.Forms
+
+<SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogEvents OnOpen="OpenDialog" />
     <DialogTemplates>
         <Header> Add Employee Health Issue </Header>
@@ -27,8 +30,14 @@
             </EditForm>
         </Content>
     </DialogTemplates>
-</SfDialog>
 
+    <DialogButtons>
+        <DialogButton Content="SAVE"
+                      Type="ButtonType.Submit"
+                      IsPrimary="true"
+                      OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
 
 @code {
     public string Title { get; set; } = "Add";
@@ -38,12 +47,14 @@
 
     private bool IsVisible { get; set; } = false;
 
-    // Corrección: Cambiado de 'async void' a 'async Task' para correcta gestión de estado
     private async Task Save() => await HandleSaveOperationEvent.InvokeAsync(Doctor);
 
     public void OpenDialog()
     {
         IsVisible = true;
+
+        if (Doctor.Date.Date == DateTime.MinValue.Date) Doctor.Date = DateTime.Now;
+
         StateHasChanged();
     }
 
