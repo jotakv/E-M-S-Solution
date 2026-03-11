@@ -3,44 +3,33 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject SfDialogService dialogService
 
-<SfDialog Width="350px"
-          IsModal="true"
-          ShowCloseIcon="true"
-          @bind-Visible="IsVisible">
-
+<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Overtime</Header>
 
         <Content>
-            <EditForm Model="ItemModel" OnValidSubmit="Save">
-
+            <EditForm Model="ItemModel" OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
 
                         <div class="form-group">
                             <label class="form-label">Employee ID</label>
-                            <input value="@ItemModel.EmployeeId"
-                                   class="form-control"
-                                   disabled />
+                            <input value="@ItemModel.EmployeeId" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Start Date</label>
-                            <InputDate @bind-Value="ItemModel.StartDate"
-                                       class="form-control" />
+                            <InputDate @bind-Value="ItemModel.StartDate" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">End Date</label>
-                            <InputDate @bind-Value="ItemModel.EndDate"
-                                       class="form-control" />
+                            <InputDate @bind-Value="ItemModel.EndDate" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Number of days</label>
-                            <input value="@ItemModel.NumberOfDays"
-                                   class="form-control"
-                                   disabled />
+                            <input value="@ItemModel.NumberOfDays" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
@@ -56,18 +45,23 @@
 
                     </div>
                 </div>
-
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save" />
-    </DialogButtons>
-
 </SfDialog>
 
 @code {
@@ -77,16 +71,14 @@
 
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
+    public bool IsSaving { get; set; } = false;
 
-    public void OpenDialog(int employeeId = 0) 
+    public void OpenDialog(int employeeId = 0)
     {
-        if (employeeId > 0)
-        {
-            ItemModel.EmployeeId = employeeId;
-        }
-    
         IsVisible = true;
-    
+
+        if (employeeId > 0) ItemModel.EmployeeId = employeeId;
+
         if (ItemModel.StartDate.Date == DateTime.MinValue.Date) ItemModel.StartDate = DateTime.Now;
         if (ItemModel.EndDate.Date == DateTime.MinValue.Date) ItemModel.EndDate = DateTime.Now;
 
@@ -107,8 +99,12 @@
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
-        CloseDialog();
+
+        IsSaving = false;
     }
 
     public void ChangeTitle(string title) => Title = title;
