@@ -78,7 +78,7 @@
              HandleAddSanctionClicked="AddSanctionClicked"
              HandleAddVacationClicked="AddVacationClicked" />
 
-<DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
+<DoctorDialog @ref="doctorDialog" Doctor="Doctor" HandleSaveOperationEvent="SaveHealthEvent" />
 
 <OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes"
                 HandleSaveOperationEvent="SaveOvertimeEvent" />
@@ -307,13 +307,12 @@
     }
 
     DoctorDialog? doctorDialog = new DoctorDialog();
+    public Doctor Doctor { get; set; } = new();
 
     private void AddHealthClicked()
     {
-        Doctor doctor = new();
-        doctor.EmployeeId = SelectedEmployee.Id;
         contextMenu!.CloseContextMenu();
-        doctorDialog!.OpenDialog();
+        doctorDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
     async Task SaveHealthEvent(Doctor item)
@@ -335,9 +334,8 @@
 
     private void AddOvertimeClicked()
     {
-        Overtime.EmployeeId = SelectedEmployee.Id;
         contextMenu!.CloseContextMenu();
-        overtimeDialog!.OpenDialog();
+        overtimeDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
     async Task SaveOvertimeEvent(Overtime item)
@@ -359,9 +357,8 @@
 
     private void AddSanctionClicked()
     {
-        Sanction.EmployeeId = SelectedEmployee.Id;
         contextMenu!.CloseContextMenu();
-        sanctionDialog!.OpenDialog();
+        sanctionDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
     async Task SaveSanctionEvent(Sanction item)
@@ -383,9 +380,8 @@
 
     private void AddVacationClicked()
     {
-        Vacation.EmployeeId = SelectedEmployee.Id;
         contextMenu!.CloseContextMenu();
-        vacationDialog!.OpenDialog();
+        vacationDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
     async Task SaveVacationEvent(Vacation item)

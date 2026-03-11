@@ -2,7 +2,6 @@
 @using Microsoft.AspNetCore.Components.Forms
 
 <SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
-    <DialogEvents OnOpen="OpenDialog" />
     <DialogTemplates>
         <Header> Add Employee Health Issue </Header>
         <Content>
@@ -49,8 +48,13 @@
 
     private async Task Save() => await HandleSaveOperationEvent.InvokeAsync(Doctor);
 
-    public void OpenDialog()
+    public void OpenDialog(int employeeId = 0)
     {
+        if (employeeId > 0)
+        {
+            Doctor.EmployeeId = employeeId;
+        }
+
         IsVisible = true;
 
         if (Doctor.Date.Date == DateTime.MinValue.Date) Doctor.Date = DateTime.Now;
