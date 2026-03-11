@@ -3,11 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject SfDialogService dialogService
 
-<SfDialog Width="280px"
-          IsModal="true"
-          ShowCloseIcon="true"
-          @bind-Visible="IsVisible">
-
+<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Vacation</Header>
 
@@ -18,29 +14,22 @@
 
                         <div class="form-group">
                             <label class="form-label">Employee ID</label>
-                            <input @bind="ItemModel.EmployeeId"
-                                   class="form-control"
-                                   disabled />
+                            <input @bind="ItemModel.EmployeeId" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Start Date</label>
-                            <InputDate @bind-Value="ItemModel.StartDate"
-                                       class="form-control" />
+                            <InputDate @bind-Value="ItemModel.StartDate" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Number of days</label>
-                            <InputNumber @bind-Value="ItemModel.NumberOfDays"
-                                         class="form-control" />
+                            <InputNumber @bind-Value="ItemModel.NumberOfDays" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">End Date</label>
-                            <input value="@ItemModel.EndDate.ToString("dd/MM/yyyy")"
-                                   type="text"
-                                   class="form-control"
-                                   disabled />
+                            <input value="@ItemModel.EndDate.ToString("dd/MM/yyyy")" type="text" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
@@ -58,27 +47,33 @@
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save" />
-    </DialogButtons>
-
 </SfDialog>
 
 @code {
-    // Inicializamos SOLO el StartDate. El EndDate lo calcula automáticamente tu entidad.
     [Parameter] public Vacation ItemModel { get; set; } = new Vacation { StartDate = DateTime.Now };
     [Parameter] public List<VacationType> VacationTypes { get; set; } = new();
     [Parameter] public EventCallback<Vacation> HandleSaveOperationEvent { get; set; }
 
     public string Title { get; set; } = "Add";
     private bool IsVisible { get; set; } = false;
+    public bool IsSaving { get; set; } = false;
 
-    private async void Save()
+    private async Task Save()
     {
         if (ItemModel.VacationTypeId <= 0)
         {
@@ -86,22 +81,21 @@
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
+
+        IsSaving = false;
     }
 
     public void OpenDialog(int employeeId = 0)
     {
-        if (employeeId > 0)
-        {
-            ItemModel.EmployeeId = employeeId;
-        }
-
         IsVisible = true;
+        
+        if (employeeId > 0) ItemModel.EmployeeId = employeeId;
 
-        if (ItemModel.StartDate.Date == DateTime.MinValue.Date)
-        {
-            ItemModel.StartDate = DateTime.Now;
-        }
+        if (ItemModel.StartDate.Date == DateTime.MinValue.Date) ItemModel.StartDate = DateTime.Now;
 
         StateHasChanged();
     }
