@@ -3,11 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject SfDialogService dialogService
 
-<SfDialog Width="280px"
-          IsModal="true"
-          ShowCloseIcon="true"
-          @bind-Visible="IsVisible">
-
+<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Sanction</Header>
 
@@ -18,27 +14,22 @@
 
                         <div class="form-group">
                             <label class="form-label">Employee ID</label>
-                            <input @bind="ItemModel.EmployeeId"
-                                   class="form-control"
-                                   disabled />
+                            <input @bind="ItemModel.EmployeeId" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Occurring Date</label>
-                            <InputDate @bind-Value="ItemModel.Date"
-                                       class="form-control" />
+                            <InputDate @bind-Value="ItemModel.Date" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Punishment Date</label>
-                            <InputDate @bind-Value="ItemModel.PunishmentDate"
-                                       class="form-control" />
+                            <InputDate @bind-Value="ItemModel.PunishmentDate" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Punishment</label>
-                            <InputTextArea @bind-Value="ItemModel.Punishment"
-                                           class="form-control" />
+                            <InputTextArea @bind-Value="ItemModel.Punishment" class="form-control" />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
@@ -56,15 +47,21 @@
                 </div>
             </EditForm>
         </Content>
+
+        <FooterTemplate>
+            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+                @if (IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="ms-1">Saving...</span>
+                }
+                else
+                {
+                    <span>SAVE</span>
+                }
+            </button>
+        </FooterTemplate>
     </DialogTemplates>
-
-    <DialogButtons>
-        <DialogButton Content="SAVE"
-                      Type="ButtonType.Submit"
-                      IsPrimary="true"
-                      OnClick="Save" />
-    </DialogButtons>
-
 </SfDialog>
 
 @code {
@@ -74,8 +71,9 @@
 
     public string Title { get; set; } = "Add";
     private bool IsVisible { get; set; } = false;
+    public bool IsSaving { get; set; } = false;
 
-    private async void Save()
+    private async Task Save()
     {
         if (ItemModel.SanctionTypeId <= 0)
         {
@@ -83,17 +81,19 @@
             return;
         }
 
+        IsSaving = true;
+        StateHasChanged();
+
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
+
+        IsSaving = false;
     }
 
     public void OpenDialog(int employeeId = 0)
     {
-        if (employeeId > 0)
-        {
-            ItemModel.EmployeeId = employeeId;
-        }
-
         IsVisible = true;
+
+        if (employeeId > 0) ItemModel.EmployeeId = employeeId;
 
         if (ItemModel.Date.Date == DateTime.MinValue.Date) ItemModel.Date = DateTime.Now;
         if (ItemModel.PunishmentDate.Date == DateTime.MinValue.Date) ItemModel.PunishmentDate = DateTime.Now;
