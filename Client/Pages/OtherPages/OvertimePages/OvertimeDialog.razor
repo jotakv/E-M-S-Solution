@@ -8,8 +8,6 @@
           ShowCloseIcon="true"
           @bind-Visible="IsVisible">
 
-    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
-
     <DialogTemplates>
         <Header>@Title Employee's Overtime</Header>
 
@@ -80,10 +78,15 @@
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
 
-    public void OpenDialog()
+    public void OpenDialog(int employeeId = 0) 
     {
+        if (employeeId > 0)
+        {
+            ItemModel.EmployeeId = employeeId;
+        }
+    
         IsVisible = true;
-
+    
         if (ItemModel.StartDate.Date == DateTime.MinValue.Date) ItemModel.StartDate = DateTime.Now;
         if (ItemModel.EndDate.Date == DateTime.MinValue.Date) ItemModel.EndDate = DateTime.Now;
 
