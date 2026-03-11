@@ -8,8 +8,6 @@
           ShowCloseIcon="true"
           @bind-Visible="IsVisible">
 
-    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
-
     <DialogTemplates>
         <Header>@Title Employee's Vacation</Header>
 
@@ -91,8 +89,13 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
     }
 
-    public void OpenDialog()
+    public void OpenDialog(int employeeId = 0)
     {
+        if (employeeId > 0)
+        {
+            ItemModel.EmployeeId = employeeId;
+        }
+
         IsVisible = true;
 
         if (ItemModel.StartDate.Date == DateTime.MinValue.Date)
