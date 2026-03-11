@@ -332,9 +332,12 @@
     Overtime Overtime = new();
     List<OvertimeType> OvertimeTypes = [];
 
-    private void AddOvertimeClicked()
+    private async Task AddOvertimeClicked()
     {
         contextMenu!.CloseContextMenu();
+
+        OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
+        
         overtimeDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -355,9 +358,12 @@
     Sanction Sanction = new();
     List<SanctionType> SanctionTypes = [];
 
-    private void AddSanctionClicked()
+    private async Task AddSanctionClicked()
     {
         contextMenu!.CloseContextMenu();
+
+        SanctionTypes = await sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
+
         sanctionDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -378,9 +384,12 @@
     Vacation Vacation = new();
     List<VacationType> VacationTypes = [];
 
-    private void AddVacationClicked()
+    private async Task AddVacationClicked()
     {
         contextMenu!.CloseContextMenu();
+
+        VacationTypes = await vacationTypeService.GetAll(Constants.VacationTypeBaseUrl);
+
         vacationDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
