@@ -14,7 +14,10 @@
                             </button>
                         </div>
                         <div class="card-body">
-                            <SfGrid DataSource="@Employees">
+                            @{
+                                var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
+                            }
+                            <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
                                 <GridColumns>
                                     <GridColumn HeaderText="Employee Image">
                                         <Template>
@@ -95,6 +98,7 @@
 
 @code {
     private bool _previousShowEmployeeState = false;
+    private SfGrid<Employee>? DefaultGrid;
 
     AddOrUpdateEmployeePage? addOrUpdateEmployee;
     public List<Employee> Employees { get; set; } = [];
@@ -337,7 +341,7 @@
         contextMenu!.CloseContextMenu();
 
         OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
-        
+
         overtimeDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -420,6 +424,19 @@
     {
         ShowDetailsPage = false;
         ShowMainPage = true;
+    }
+
+    // Excel export / PDF Export
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text == "Excel Export")
+        {
+            await this.DefaultGrid!.ExportToExcelAsync();
+        }
+        else if (args.Item.Text == "Pdf Export")
+        {
+            await this.DefaultGrid!.ExportToPdfAsync();
+        }
     }
 
     private async Task<bool> DisplayMessage(bool flag, string message)

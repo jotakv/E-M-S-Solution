@@ -1,4 +1,85 @@
-﻿
+﻿@implements IDisposable
+
+@if (allState.ShowOvertime)
+{
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-12">
+
+                <div class="card border-success shadow-lg">
+                    <div class="card-header">
+                        <h4 class="float-start">Manage Employees' Overtimes</h4>
+                    </div>
+
+                    <div class="card-header"
+                         style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+
+                        <div class="card-body">
+
+                            @{
+                                var Tool = new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" };
+                            }
+
+                            <SfGrid DataSource="@Overtimes"
+                                    AllowPaging="true"
+                                    AllowSorting="true"
+                                    Toolbar="@Tool"
+                                    AllowExcelExport="true"
+                                    AllowPdfExport="true"
+                                    @ref="DefaultGrid">
+
+                                <GridPageSettings PageSize="5"></GridPageSettings>
+
+                                <GridEvents OnToolbarClick="ToolbarClickHandler"
+                                            TValue="Overtime"></GridEvents>
+
+                                <GridColumns>
+
+                                    <GridColumn Field=@nameof(Overtime.EmployeeId)
+                                                HeaderText="ID">
+                                    </GridColumn>
+
+                                    <GridColumn Field=@nameof(Overtime.StartDate)
+                                                HeaderText="Start Date">
+                                    </GridColumn>
+
+                                    <GridColumn Field=@nameof(Overtime.NumberOfDays)
+                                                HeaderText="Days">
+                                    </GridColumn>
+
+                                    <GridColumn Field=@nameof(Overtime.EndDate)
+                                                HeaderText="End Date">
+                                    </GridColumn>
+
+                                    <GridColumn HeaderText="Action">
+                                        <Template>
+                                            @{
+                                                var item = context as Overtime;
+                                            }
+                                            <div>
+                                                <i class="bi bi-pencil text-info cursorStyle"
+                                                   @onclick="() => EditClicked(item!)"></i>
+
+                                                <i class="bi bi-trash text-danger cursorStyle"
+                                                   @onclick="() => DeleteClicked(item!)"></i>
+                                            </div>
+                                        </Template>
+                                    </GridColumn>
+
+                                </GridColumns>
+
+                            </SfGrid>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
 <OvertimeDialog @ref="overtimeDialog"
                 ItemModel="ItemModel"
                 OvertimeTypes="OvertimeTypes"

@@ -1,4 +1,82 @@
-﻿<DoctorDialog @ref="doctorDialog"
+﻿@implements IDisposable
+
+@if (allState.ShowHealth)
+{
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-12">
+
+                <div class="card border-success shadow-lg">
+                    <div class="card-header">
+                        <h4 class="float-start">Manage Employees' Healths</h4>
+                    </div>
+
+                    <div class="card-header"
+                         style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+
+                        <div class="card-body">
+
+                            @{
+                                var Tool = new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" };
+                            }
+
+                            <SfGrid DataSource="@Doctors"
+                                    AllowPaging="true"
+                                    AllowSorting="true"
+                                    Toolbar="@Tool"
+                                    AllowExcelExport="true"
+                                    AllowPdfExport="true"
+                                    @ref="DefaultGrid">
+
+                                <GridPageSettings PageSize="5"></GridPageSettings>
+
+                                <GridEvents OnToolbarClick="ToolbarClickHandler"
+                                            TValue="Doctor"></GridEvents>
+
+                                <GridColumns>
+
+                                    <GridColumn Field=@nameof(Doctor.EmployeeId)
+                                                HeaderText="ID">
+                                    </GridColumn>
+
+                                    <GridColumn Field=@nameof(Doctor.MedicalDiagnose)
+                                                HeaderText="Medical Diagnose">
+                                    </GridColumn>
+
+                                    <GridColumn Field=@nameof(Doctor.MedicalRecommendation)
+                                                HeaderText="Medical Recommendation">
+                                    </GridColumn>
+
+                                    <GridColumn HeaderText="Action">
+                                        <Template>
+                                            @{
+                                                var item = context as Doctor;
+                                            }
+                                            <div>
+                                                <i class="bi bi-pencil text-info cursorStyle"
+                                                   @onclick="() => EditClicked(item!)"></i>
+
+                                                <i class="bi bi-trash text-danger cursorStyle"
+                                                   @onclick="() => DeleteClicked(item!)"></i>
+                                            </div>
+                                        </Template>
+                                    </GridColumn>
+
+                                </GridColumns>
+
+                            </SfGrid>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+<DoctorDialog @ref="doctorDialog"
               Doctor="Doctor"
               HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
