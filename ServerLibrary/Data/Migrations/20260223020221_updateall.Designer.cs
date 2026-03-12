@@ -11,6 +11,7 @@ using ServerLibrary.Data;
 
 namespace ServerLibrary.Data.Migrations
 {
+    #pragma warning disable CS8981
     [DbContext(typeof(AppDbContext))]
     [Migration("20260223020221_updateall")]
     partial class updateall
@@ -585,4 +586,5 @@ namespace ServerLibrary.Data.Migrations
 #pragma warning restore 612, 618
         }
     }
+    #pragma warning restore CS8981
 }

@@ -25,7 +25,7 @@ namespace ServerLibrary.Repositories.Implementations
             .ToListAsync();
 
         public async Task<Sanction> GetById(int id) =>
-            await appDbContext.Sanctions.FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+            (await appDbContext.Sanctions.FirstOrDefaultAsync(eid => eid.EmployeeId == id))!;
 
         public async Task<GeneralResponse> Insert(Sanction item)
         {

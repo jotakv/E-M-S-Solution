@@ -4,6 +4,7 @@
 
 namespace ServerLibrary.Data.Migrations
 {
+    #pragma warning disable CS8981
     /// <inheritdoc />
     public partial class updateall : Migration
     {
@@ -228,4 +229,5 @@ namespace ServerLibrary.Data.Migrations
                 principalColumn: "Id");
         }
     }
+    #pragma warning restore CS8981
 }

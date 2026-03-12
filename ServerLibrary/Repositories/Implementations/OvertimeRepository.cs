@@ -26,7 +26,7 @@ namespace ServerLibrary.Repositories.Implementations
         .ToListAsync();
 
         public async Task<Overtime> GetById(int id) =>
-            await appDbContext.Overtimes.FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+            (await appDbContext.Overtimes.FirstOrDefaultAsync(eid => eid.EmployeeId == id))!;
 
         public async Task<GeneralResponse> Insert(Overtime item)
         {

@@ -22,7 +22,7 @@ namespace ServerLibrary.Repositories.Implementations
             AsNoTracking().
             Include(d => d.Department).
             ToListAsync();
-        public async Task<Branch> GetById(int id) => await appDbContext.Branches.FindAsync(id);
+        public async Task<Branch> GetById(int id) => (await appDbContext.Branches.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(Branch item)
         {

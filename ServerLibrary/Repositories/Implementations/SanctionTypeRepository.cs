@@ -18,7 +18,7 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<List<SanctionType>> GetAll() => await appDbContext.SanctionTypes.AsNoTracking().ToListAsync();
 
-        public async Task<SanctionType> GetById(int id) => await appDbContext.SanctionTypes.FindAsync(id);
+        public async Task<SanctionType> GetById(int id) => (await appDbContext.SanctionTypes.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(SanctionType item) { if (!await CheckName(item.Name!)) return new GeneralResponse(false, "Sanction Type already added"); appDbContext.SanctionTypes.Add(item); await Commit(); return Success(); }
 
