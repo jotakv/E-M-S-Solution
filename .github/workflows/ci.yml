@@ -1,0 +1,79 @@
+name: EMS CI - Build, Test and Coverage
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  merge_group:
+    branches:
+      - master
+
+concurrency:
+  group: "ems-ci"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  SOLUTION_FILE: "EmployeeManagmentSystemSolution.sln"
+  TEST_PROJECT: "Tests/ServerLibrary.UnitTests/ServerLibrary.UnitTests.csproj"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore solution
+        run: dotnet restore "${{ env.SOLUTION_FILE }}"
+
+      - name: Build solution
+        run: dotnet build "${{ env.SOLUTION_FILE }}" --configuration Release --no-restore
+
+      - name: Test project and collect coverage
+        run: >
+          dotnet test "${{ env.TEST_PROJECT }}"
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-trx
+          path: "**/*.trx"
+
+      - name: Install ReportGenerator
+        if: always()
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage report
+        if: always()
+        shell: bash
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          reportgenerator \
+            -reports:"**/coverage.cobertura.xml" \
+            -targetdir:"coveragereport" \
+            -reporttypes:"Html;Cobertura;MarkdownSummary"
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coveragereport
