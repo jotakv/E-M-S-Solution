@@ -52,7 +52,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     private static AuthenticationState Unauthenticated() =>
         new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
 
-    public async Task UpdateAuthenticationState(UserSession session)
+    public async Task UpdateAuthenticationState(UserSession? session)
     {
         if (string.IsNullOrWhiteSpace(session?.Token))
         {

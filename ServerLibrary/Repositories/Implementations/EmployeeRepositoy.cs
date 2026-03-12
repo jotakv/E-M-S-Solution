@@ -28,11 +28,11 @@ namespace ServerLibrary.Repositories.Implementations
             var employees = await appDbContext.Employees
             .AsNoTracking()
             .Include(t => t.Town)
-            .ThenInclude(b => b.City)
-            .ThenInclude(c => c.Country)
+            .ThenInclude(b => b!.City)
+            .ThenInclude(c => c!.Country)
             .Include(b => b.Branch)
-            .ThenInclude(d => d.Department)
-            .ThenInclude(gd => gd.GeneralDepartment).ToListAsync();
+            .ThenInclude(d => d!.Department)
+            .ThenInclude(gd => gd!.GeneralDepartment).ToListAsync();
             return employees;
         }
 
@@ -40,11 +40,11 @@ namespace ServerLibrary.Repositories.Implementations
         {
             var employee = await appDbContext.Employees
             .Include(t => t.Town)
-            .ThenInclude(b => b.City)
-            .ThenInclude(c => c.Country)
+            .ThenInclude(b => b!.City)
+            .ThenInclude(c => c!.Country)
             .Include(b => b.Branch)
-            .ThenInclude(d => d.Department)
-            .ThenInclude(gd => gd.GeneralDepartment).FirstOrDefaultAsync(ei => ei.Id == id)!;
+            .ThenInclude(d => d!.Department)
+            .ThenInclude(gd => gd!.GeneralDepartment).FirstOrDefaultAsync(ei => ei.Id == id)!;
             return employee!;
         }
 

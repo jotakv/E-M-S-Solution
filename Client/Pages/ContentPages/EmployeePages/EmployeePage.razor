@@ -250,13 +250,13 @@
 
         addOrUpdateEmployee!.Employee.Id = SelectedEmployee.Id;
         addOrUpdateEmployee!.EmployeeGroup1.Name = SelectedEmployee.Name;
-        addOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = SelectedEmployee.TelephoneNumber;
-        addOrUpdateEmployee!.EmployeeGroup1.FileNumber = SelectedEmployee.FileNumber;
-        addOrUpdateEmployee!.EmployeeGroup1.Address = SelectedEmployee.Address;
-        addOrUpdateEmployee!.EmployeeGroup1.Photo = SelectedEmployee.Photo;
-        addOrUpdateEmployee!.EmployeeGroup1.CivilId = SelectedEmployee.CivilId;
+        addOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = SelectedEmployee.TelephoneNumber ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.FileNumber = SelectedEmployee.FileNumber ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.Address = SelectedEmployee.Address ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.Photo = SelectedEmployee.Photo ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.CivilId = SelectedEmployee.CivilId ?? string.Empty;
 
-        addOrUpdateEmployee!.EmployeeGroup2.JobName = SelectedEmployee.JobName;
+        addOrUpdateEmployee!.EmployeeGroup2.JobName = SelectedEmployee.JobName ?? string.Empty;
         addOrUpdateEmployee!.EmployeeGroup2.Other = SelectedEmployee.Other;
         addOrUpdateEmployee!.EmployeeGroup2.BranchId = SelectedEmployee.BranchId;
         addOrUpdateEmployee!.EmployeeGroup2.TownId = SelectedEmployee.TownId;
@@ -414,8 +414,9 @@
     public bool ShowDetailsPage { get; set; } = false;
     public Employee SelectedEmployee { get; set; } = new();
 
-    void ShowMenuPopUp(Employee employee)
+    void ShowMenuPopUp(Employee? employee)
     {
+        if (employee is null) return;
         SelectedEmployee = employee;
         contextMenu!.OpenContextMenu();
     }

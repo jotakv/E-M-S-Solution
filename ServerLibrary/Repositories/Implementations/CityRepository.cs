@@ -27,7 +27,7 @@ namespace ServerLibrary.Repositories.Implementations
             Cities.AsNoTracking().
             Include(c => c.Country).
             ToListAsync();
-        public async Task<City> GetById(int id) => await appDbContext.Cities.FindAsync(id);
+        public async Task<City> GetById(int id) => (await appDbContext.Cities.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(City item)
         {

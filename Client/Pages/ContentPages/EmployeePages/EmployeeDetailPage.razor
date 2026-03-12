@@ -37,15 +37,15 @@
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">General Department:</h6> </td>
-                                        <td> @EmployeeDetails.Branch.Department.GeneralDepartment.Name </td>
+                                        <td> @EmployeeDetails.Branch?.Department?.GeneralDepartment?.Name </td>
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">Department:</h6> </td>
-                                        <td> @EmployeeDetails.Branch.Department.Name </td>
+                                        <td> @EmployeeDetails.Branch?.Department?.Name </td>
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">Branch:</h6> </td>
-                                        <td> @EmployeeDetails.Branch.Name </td>
+                                        <td> @EmployeeDetails.Branch?.Name </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -56,15 +56,15 @@
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">Country:</h6> </td>
-                                        <td> @EmployeeDetails.Town.City.Country.Name </td>
+                                        <td> @EmployeeDetails.Town?.City?.Country?.Name </td>
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">City:</h6> </td>
-                                        <td> @EmployeeDetails.Town.City.Name </td>
+                                        <td> @EmployeeDetails.Town?.City?.Name </td>
                                     </tr>
                                     <tr>
                                         <td> <h6 class="fw-bold">Town:</h6> </td>
-                                        <td> @EmployeeDetails.Town.Name </td>
+                                        <td> @EmployeeDetails.Town?.Name </td>
                                     </tr>
                                 </tbody>
                             </table>
