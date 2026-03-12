@@ -35,7 +35,7 @@ namespace ServerLibrary.Repositories.Implementations
                     .ToListAsync();
 
         public async Task<VacationType> GetById(int id) => 
-            await appDbContext.VacationTypes.FindAsync(id);
+            (await appDbContext.VacationTypes.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(VacationType item) 
         { 

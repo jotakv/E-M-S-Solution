@@ -23,7 +23,7 @@ namespace ServerLibrary.Repositories.Implementations
             .AsNoTracking()
             .ToListAsync();
 
-        public async Task<OvertimeType> GetById(int id) => await appDbContext.OvertimeTypes.FindAsync(id);
+        public async Task<OvertimeType> GetById(int id) => (await appDbContext.OvertimeTypes.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(OvertimeType item)
         {
