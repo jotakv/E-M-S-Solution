@@ -25,7 +25,7 @@ namespace ServerLibrary.Repositories.Implementations
             .ToListAsync();
 
         public async Task<Vacation> GetById(int id) =>
-            await appDbContext.Vacations.FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+            (await appDbContext.Vacations.FirstOrDefaultAsync(eid => eid.EmployeeId == id))!;
 
         public async Task<GeneralResponse> Insert(Vacation item)
         {

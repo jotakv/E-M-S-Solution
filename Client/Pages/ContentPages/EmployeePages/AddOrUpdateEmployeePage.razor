@@ -330,7 +330,7 @@
         if (file.ContentType != "image/png" && file.ContentType != "image/x-png")
         {
             ImageUploadMessage = "PNG file needed.";
-            EmployeeGroup1.Photo = null;
+            EmployeeGroup1.Photo = string.Empty;
 
             // Optional: log to browser console
             Console.WriteLine($"Upload failed: invalid file type {file.ContentType}");

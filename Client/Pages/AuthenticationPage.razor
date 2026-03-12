@@ -1,7 +1,7 @@
 ﻿@page "/"
 
 @code {
-    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationState;
