@@ -95,8 +95,17 @@
     protected async override Task OnInitializedAsync()
     {
         await GetTypes();
+
+        allState.UpdateDashboardAction += RefreshGrid;
+
         await GetOvertime();
         allState.Action += StateHasChanged;
+    }
+
+    private async void RefreshGrid()
+    {
+        await GetOvertime(); 
+        StateHasChanged();     
     }
 
     private async Task GetTypes() =>
@@ -135,7 +144,10 @@
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)
+        {
             await GetOvertime();
+            allState.UpdateDashboardAction?.Invoke();
+        }
     }
 
     private async Task<bool> DisplayMessage(bool flag, string message)
@@ -164,6 +176,9 @@
 
 
 
-    public void Dispose() => allState.Action -= StateHasChanged;
- 
+    public void Dispose() { 
+        allState.Action -= StateHasChanged; 
+        allState.UpdateDashboardAction -= RefreshGrid;
+    }
+
 }

@@ -72,12 +72,6 @@
     public List<Vacation> Vacations { get; set; } = new();
     public List<Doctor> Health { get; set; } = new();
 
-    protected async override Task OnInitializedAsync()
-    {
-        allState.Action += StateHasChanged;
-        await LoadDefaults();
-    }
-
     async Task LoadDefaults()
     {
         Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
@@ -95,6 +89,26 @@
     void VacationClicked() => allState.VacationClicked();
     void DepartmentClicked() => allState.DepartmentClicked();
 
-    public void Dispose() => allState.Action -= StateHasChanged;
+    protected async override Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+
+        allState.UpdateDashboardAction += RefreshDashboard;
+
+        await LoadDefaults();
+    }
+
+    private async void RefreshDashboard()
+    {
+        await LoadDefaults();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+
+        allState.UpdateDashboardAction -= RefreshDashboard;
+    }
 
 }
