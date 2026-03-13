@@ -160,13 +160,12 @@
     }
 
     //Excel export / PDF Export
-    public Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
-        //if (args.Item.Text == "Excel Export")
-            //await this.DefaultGrid!.ExcelExport();
+        if (args.Item.Text == "Excel Export")
+            await DefaultGrid!.ExportToExcelAsync();
 
-        //if (args.Item.Text == "PDF Export")
-           // await this.DefaultGrid!.PdfExport();
-        return Task.CompletedTask;
+        if (args.Item.Text == "PDF Export")
+            await DefaultGrid!.ExportToPdfAsync();
     }
 }

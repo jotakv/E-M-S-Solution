@@ -18,6 +18,8 @@
                                 var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
                             }
                             <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+                                <GridEvents OnToolbarClick="ToolbarClickHandler"
+                                            TValue="Employee"></GridEvents>
                                 <GridColumns>
                                     <GridColumn HeaderText="Employee Image">
                                         <Template>
@@ -439,7 +441,7 @@
         {
             await this.DefaultGrid!.ExportToExcelAsync();
         }
-        else if (args.Item.Text == "Pdf Export")
+        else if (args.Item.Text == "PDF Export")
         {
             await this.DefaultGrid!.ExportToPdfAsync();
         }
