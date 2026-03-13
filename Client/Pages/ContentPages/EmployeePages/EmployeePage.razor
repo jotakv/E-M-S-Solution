@@ -329,6 +329,7 @@
         {
             SelectedEmployee = new();
             doctorDialog!.CloseDialog();
+            allState.NotifyDataRefresh();
         }
     }
 
@@ -355,6 +356,7 @@
             SelectedEmployee = new();
             Overtime = new();
             overtimeDialog!.CloseDialog();
+            allState.NotifyDataRefresh();
         }
     }
 
@@ -381,6 +383,7 @@
             SelectedEmployee = new();
             Sanction = new();
             sanctionDialog!.CloseDialog();
+            allState.NotifyDataRefresh();
         }
     }
 
@@ -407,6 +410,7 @@
             SelectedEmployee = new();
             Vacation = new();
             vacationDialog!.CloseDialog();
+            allState.NotifyDataRefresh();
         }
     }
 

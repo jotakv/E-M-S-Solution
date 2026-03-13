@@ -1,4 +1,6 @@
-﻿<div class="container-fluid">
+﻿@implements IDisposable
+
+<div class="container-fluid">
     <div class="row">
 
         <div class="col-lg-2 cursorStyle" @onclick="EmployeeClicked">
@@ -75,6 +77,7 @@
     protected async override Task OnInitializedAsync()
     {
         allState.Action += StateHasChanged;
+        allState.DataRefreshAction += HandleDataRefresh;
         await LoadDefaults();
     }
 
@@ -88,6 +91,12 @@
         Health = await doctorService.GetAll(Constants.DoctorBaseUrl);
     }
 
+    private async void HandleDataRefresh()
+    {
+        await LoadDefaults();
+        StateHasChanged();
+    }
+
     void HealthClicked() => allState.HealthClicked();
     void EmployeeClicked() => allState.EmployeeClicked();
     void OvertimeClicked() => allState.OvertimeClicked();
@@ -95,6 +104,10 @@
     void VacationClicked() => allState.VacationClicked();
     void DepartmentClicked() => allState.DepartmentClicked();
 
-    public void Dispose() => allState.Action -= StateHasChanged;
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+        allState.DataRefreshAction -= HandleDataRefresh;
+    }
 
 }

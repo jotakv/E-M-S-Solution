@@ -5,6 +5,11 @@
         //Scope action
         public Action? Action { get; set; }
 
+        // Fires whenever Vacation/Overtime/Health/Sanction data changes so
+        // subscribers (e.g. TableBanner) can refresh their counts immediately.
+        public Action? DataRefreshAction { get; set; }
+        public void NotifyDataRefresh() => DataRefreshAction?.Invoke();
+
         // General Department
         public bool ShowGeneralDepartment { get; set; }
         public void GeneralDepartmentClicked()
