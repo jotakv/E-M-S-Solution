@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using Server.Middleware;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
 using System.Text;
 
-// ── Serilog bootstrap logger (captures startup errors before host is built) ──
+// ── Serilog bootstrap logger (captures startup errors before host builds) ─────
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
@@ -18,14 +19,25 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // ── Serilog: replace default .NET logging with Serilog ──────────────────
+    // ── Serilog: replace default .NET logging ────────────────────────────────
     builder.Host.UseSerilog((ctx, services, cfg) =>
     {
-        cfg.ReadFrom.Configuration(ctx.Configuration)   // reads "Serilog" section from appsettings
-           .ReadFrom.Services(services)
-           .Enrich.FromLogContext()
-           .WriteTo.Console()
-           .WriteTo.Seq(ctx.Configuration["Serilog:SeqUrl"] ?? "http://localhost:5341");
+        cfg
+            // Read MinimumLevel overrides and extra sinks from appsettings
+            .ReadFrom.Configuration(ctx.Configuration)
+            .ReadFrom.Services(services)
+
+            // Context enrichment — appears on every log event
+            .Enrich.FromLogContext()                             // per-request properties (CorrelationId)
+            .Enrich.WithMachineName()                           // hostname (useful in multi-server deployments)
+            .Enrich.WithEnvironmentName()                       // Development / Staging / Production
+            .Enrich.WithProperty("Application", "EMS-API")     // identify this service in Seq
+
+            // Sinks
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Seq(
+                ctx.Configuration["Serilog:SeqUrl"] ?? "http://localhost:5341");
     });
 
     // ── Services ─────────────────────────────────────────────────────────────
@@ -103,7 +115,17 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseSerilogRequestLogging();     // structured HTTP request logs
+    app.UseMiddleware<CorrelationIdMiddleware>();   // push CorrelationId before request log
+    app.UseSerilogRequestLogging(opts =>
+    {
+        // Enrich the structured request completion log with extra fields
+        opts.EnrichDiagnosticContext = (diagCtx, httpCtx) =>
+        {
+            diagCtx.Set("RequestHost", httpCtx.Request.Host.Value ?? "");
+            diagCtx.Set("RequestScheme", httpCtx.Request.Scheme);
+            diagCtx.Set("UserAgent", httpCtx.Request.Headers["User-Agent"].ToString());
+        };
+    });
     app.UseCors("AllowBlazorWasm");
     app.UseAuthentication();
     app.UseAuthorization();
