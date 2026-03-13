@@ -298,6 +298,7 @@
         {
             SelectedEmployee = new();
             await LoadEmployees();
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
@@ -329,6 +330,7 @@
         {
             SelectedEmployee = new();
             doctorDialog!.CloseDialog();
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
@@ -355,6 +357,7 @@
             SelectedEmployee = new();
             Overtime = new();
             overtimeDialog!.CloseDialog();
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
@@ -381,6 +384,7 @@
             SelectedEmployee = new();
             Sanction = new();
             sanctionDialog!.CloseDialog();
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
@@ -407,6 +411,7 @@
             SelectedEmployee = new();
             Vacation = new();
             vacationDialog!.CloseDialog();
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 

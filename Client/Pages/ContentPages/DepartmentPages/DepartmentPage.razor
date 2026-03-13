@@ -91,7 +91,7 @@
     public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
     public List<Department> Departments { get; set; } = new();
 
-    
+
     public void Dispose()
     {
         allState.Action -= StateHasChanged;
@@ -141,6 +141,8 @@
             departmentDialog?.ChangeTitle("Add");
 
             departmentDialog?.CloseDialog();
+
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
@@ -174,7 +176,10 @@
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)
+        {
             await GetDepartments();
+            allState.UpdateDashboardAction?.Invoke();
+        }
     }
 
     private async Task<bool> DisplayMessage(bool flag, string message)

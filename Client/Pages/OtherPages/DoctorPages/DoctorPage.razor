@@ -88,8 +88,15 @@
 
     protected async override Task OnInitializedAsync()
     {
+        allState.UpdateDashboardAction += RefreshGrid;
         await GetHealth();
         allState.Action += StateHasChanged;
+    }
+
+    private async void RefreshGrid()
+    {
+        await GetHealth(); 
+        StateHasChanged();    
     }
 
     private async Task GetHealth() => Doctors = await doctorService.GetAll(Constants.DoctorBaseUrl);
@@ -127,7 +134,10 @@
         var response = await doctorService.DeleteById(item.EmployeeId, Constants.DoctorBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
         if (result)
+        {
             await GetHealth();
+            allState.UpdateDashboardAction?.Invoke();
+        }
     }
 
     private async Task<bool> DisplayMessage(bool flag, string message)
@@ -144,7 +154,10 @@
         }
     }
 
-    public void Dispose() => allState.Action -= StateHasChanged;
+    public void Dispose() { 
+        allState.Action -= StateHasChanged; 
+        allState.UpdateDashboardAction -= RefreshGrid;
+    }
 
     //Excel export / PDF Export
     public Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
