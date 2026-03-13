@@ -6,22 +6,37 @@
 
 <AuthorizeView>
     <Authorized>
-        <TableBanner />
-        <GeneralDepartmentPage />
-        <DepartmentPage />
-        <BranchPage />
-        <CountryPage />
-        <CityPage />
-        <TownPage />
-        <UserPage />
-        <DoctorPage />
-        <OvertimePage />
-        <SanctionPage />
-        <VacationPage />
-        <VacationTypePage />
-        <OvertimeTypePage />
-        <SanctionTypePage />
-        <EmployeePage />
+        @if (isInitializing)
+        {
+            <div class="d-flex flex-column align-items-center justify-content-center py-5" role="status" aria-live="polite">
+                <div class="spinner-border text-primary" aria-hidden="true"></div>
+                <span class="mt-3">Loading dashboard...</span>
+            </div>
+        }
+        else
+        {
+            <TableBanner InitialEmployees="dashboardEmployees"
+                         InitialDepartments="dashboardDepartments"
+                         InitialOvertimes="dashboardOvertimes"
+                         InitialSanctions="dashboardSanctions"
+                         InitialVacations="dashboardVacations"
+                         InitialHealth="dashboardHealth" />
+            <GeneralDepartmentPage />
+            <DepartmentPage />
+            <BranchPage />
+            <CountryPage />
+            <CityPage />
+            <TownPage />
+            <UserPage />
+            <DoctorPage />
+            <OvertimePage />
+            <SanctionPage />
+            <VacationPage />
+            <VacationTypePage />
+            <OvertimeTypePage />
+            <SanctionTypePage />
+            <EmployeePage InitialEmployees="dashboardEmployees" />
+        }
     </Authorized>
 
     <NotAuthorized>
@@ -42,17 +57,37 @@
 
 
 @code {
-    // [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
-    // protected async override Task OnInitializedAsync()
-    // {
-    //     await CheckUserAuthentication();
-    // }
-    // private async Task CheckUserAuthentication()
-    // {
-    //     var user = (await AuthenticationState).User;
-    //     bool isUserAuthenticated = user.Identity!.IsAuthenticated;
-    //     if (!isUserAuthenticated)
-    //         NavManager.NavigateTo("/identity/account/login");
-    // }
+    private bool isInitializing = true;
+    private List<Employee>? dashboardEmployees;
+    private List<Department>? dashboardDepartments;
+    private List<Overtime>? dashboardOvertimes;
+    private List<Sanction>? dashboardSanctions;
+    private List<Vacation>? dashboardVacations;
+    private List<Doctor>? dashboardHealth;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var employeesTask = employeeService.GetAll(Constants.EmployeeBaseUrl);
+        var departmentsTask = departmentService.GetAll(Constants.DepartmentBaseUrl);
+        var overtimesTask = overtimeService.GetAll(Constants.OvertimeBaseUrl);
+        var sanctionsTask = sanctionService.GetAll(Constants.SanctionBaseUrl);
+        var vacationsTask = vacationService.GetAll(Constants.VacationBaseUrl);
+        var healthTask = doctorService.GetAll(Constants.DoctorBaseUrl);
+
+        await Task.WhenAll(
+            employeesTask,
+            departmentsTask,
+            overtimesTask,
+            sanctionsTask,
+            vacationsTask,
+            healthTask);
+
+        dashboardEmployees = await employeesTask;
+        dashboardDepartments = await departmentsTask;
+        dashboardOvertimes = await overtimesTask;
+        dashboardSanctions = await sanctionsTask;
+        dashboardVacations = await vacationsTask;
+        dashboardHealth = await healthTask;
+        isInitializing = false;
+    }
 }
