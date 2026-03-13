@@ -5,6 +5,8 @@
         //Scope action
         public Action? Action { get; set; }
 
+        public Action? UpdateDashboardAction { get; set; }
+
         // General Department
         public bool ShowGeneralDepartment { get; set; }
         public void GeneralDepartmentClicked()
