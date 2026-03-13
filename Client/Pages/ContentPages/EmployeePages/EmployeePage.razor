@@ -2,7 +2,14 @@
 
 @if (allState.ShowEmployee)
 {
-    if (ShowMainPage)
+    if (isLoading)
+    {
+        <div class="d-flex align-items-center justify-content-center py-5" role="status" aria-live="polite">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading employees...</span>
+        </div>
+    }
+    else if (ShowMainPage)
     {
         <div class="container-fluid mt-5">
             <div class="row">
@@ -99,7 +106,10 @@
                     HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 
 @code {
+    [Parameter] public List<Employee>? InitialEmployees { get; set; }
+
     private bool _previousShowEmployeeState = false;
+    private bool isLoading = true;
     private SfGrid<Employee>? DefaultGrid;
 
     AddOrUpdateEmployeePage? addOrUpdateEmployee;
@@ -122,8 +132,22 @@
     protected async override Task OnInitializedAsync()
     {
         allState.Action += HandleGlobalStateChanged;
-        await LoadEmployees();
-        await LoadDefaults();
+
+        var defaultsTask = LoadDefaults();
+
+        if (InitialEmployees is not null)
+        {
+            Employees = InitialEmployees.ToList();
+            isLoading = false;
+        }
+        else
+        {
+            await LoadEmployees();
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        await defaultsTask;
     }
 
     private void HandleGlobalStateChanged()
