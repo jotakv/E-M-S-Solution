@@ -84,9 +84,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Important: CORS must come **before** Authentication/Authorization
-app.UseHttpsRedirection();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
