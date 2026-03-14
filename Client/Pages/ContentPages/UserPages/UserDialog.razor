@@ -57,6 +57,11 @@
             await dialogService.AlertAsync("You need to provide Role name.", "Alert!");
         else
             await HandleSaveOperationEvent.InvokeAsync(ManageUser);
+
+        //Save() method in the dialog should also close the dialog if the update succeeds
+
+        // Close after save
+        IsVisible = false;
     }
 
     public void OpenDialog()
@@ -64,6 +69,13 @@
         IsVisible = true;
         StateHasChanged();
     }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
 
     public void ChangeTitle(string title)
     {
