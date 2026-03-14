@@ -1,4 +1,5 @@
-﻿@implements IDisposable
+@implements IDisposable
+@inject ICountrySyncClientService countrySyncService
 
 @if (allState.ShowCountry)
 {
@@ -9,12 +10,40 @@
 
                     <div class="card-header">
                         <h4 class="float-start">Countries</h4>
-                        <button class="btn btn-outline-success float-end" @onclick="AddButtonClicked">
-                            <i class="bi bi-plus-circle-dotted"></i>
-                        </button>
+                        <div class="float-end d-flex gap-2">
+                          @*   <AuthorizeView Roles="Admin">
+                                <Authorized> *@
+                                    <button class="btn btn-outline-primary" @onclick="SyncCountriesClicked" disabled="@isSyncingCountries">
+                                        @if (isSyncingCountries)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                            <span>Syncing...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Sync Countries</span>
+                                        }
+                                    </button>
+                             @*    </Authorized>
+                            </AuthorizeView> *@
+
+                            <button class="btn btn-outline-success" @onclick="AddButtonClicked">
+                                <i class="bi bi-plus-circle-dotted"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="card-body" style="max-height: 580px; overflow-x:hidden; overflow-y:scroll;">
+                        @if (lastSyncResult is not null)
+                        {
+                            <div class="alert alert-success" role="alert">
+                                Synced @lastSyncResult.TotalProcessed countries.
+                                Inserted: @lastSyncResult.Inserted |
+                                Updated: @lastSyncResult.Updated |
+                                Skipped: @lastSyncResult.Skipped
+                            </div>
+                        }
+
                         <table class="table table-striped">
                             <thead>
                                 <tr>
@@ -76,8 +105,8 @@
 </style>
 
 <CountryDialog @ref="countryDialog"
-              HandleSaveOperationEvent="HandleSaveOperationEvent"
-              Country="Country"/>
+               HandleSaveOperationEvent="HandleSaveOperationEvent"
+               Country="Country" />
 
 @code {
 
@@ -85,6 +114,8 @@
     CountryDialog? countryDialog;
     Country Country = new();
     public List<Country> Countries { get; set; } = new();
+    private CountrySyncResultDto? lastSyncResult;
+    private bool isSyncingCountries;
 
 
     public void Dispose()
@@ -105,7 +136,35 @@
         Countries = await countryService.GetAll(Constants.CountryBaseUrl);
     }
 
+    private async Task SyncCountriesClicked()
+    {
+        if (isSyncingCountries)
+        {
+            return;
+        }
 
+        try
+        {
+            isSyncingCountries = true;
+            lastSyncResult = await countrySyncService.SyncCountriesAsync();
+
+            if (lastSyncResult is not null)
+            {
+                await GetCountries();
+                await dialogService.AlertAsync(
+                    $"Inserted: {lastSyncResult.Inserted}, Updated: {lastSyncResult.Updated}, Skipped: {lastSyncResult.Skipped}.",
+                    "Success Operation");
+            }
+        }
+        catch (Exception ex)
+        {
+            await dialogService.AlertAsync(ex.Message, "Alert!");
+        }
+        finally
+        {
+            isSyncingCountries = false;
+        }
+    }
 
     private void AddButtonClicked()
     {
@@ -176,8 +235,4 @@
         await dialogService.AlertAsync(message, "Alert!");
         return false;
     }
-
-
 }
-
-
