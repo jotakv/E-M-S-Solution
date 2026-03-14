@@ -32,8 +32,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Employee deleted successfully — EmployeeId: {EmployeeId}, Name: {Name}",
-                id, item.Name);
+                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
+                "Deleted", "Employee", id, item.Name);
 
             return Success();
         }
@@ -92,8 +92,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Employee created successfully — EmployeeId: {EmployeeId}, Name: {Name}",
-                    item.Id, item.Name);
+                    "Audit: {Action} on {Entity} {EntityId}. Name: {Name}, JobName: {JobName}, BranchId: {BranchId}, TownId: {TownId}",
+                    "Created", "Employee", item.Id, item.Name, item.JobName, item.BranchId, item.TownId);
 
                 return Success();
             }
@@ -123,6 +123,31 @@ namespace ServerLibrary.Repositories.Implementations
                 return new GeneralResponse(false, "Employee does not exist");
             }
 
+            // Build a change list — only include fields that actually changed so the
+            // audit log stays concise and Seq can filter on specific field changes.
+            var changes = new List<object>();
+
+            if (findUser.Name != employee.Name)
+                changes.Add(new { Field = "Name", OldValue = findUser.Name, NewValue = employee.Name });
+            if (findUser.JobName != employee.JobName)
+                changes.Add(new { Field = "JobName", OldValue = findUser.JobName, NewValue = employee.JobName });
+            if (findUser.Address != employee.Address)
+                changes.Add(new { Field = "Address", OldValue = findUser.Address, NewValue = employee.Address });
+            if (findUser.TelephoneNumber != employee.TelephoneNumber)
+                changes.Add(new { Field = "TelephoneNumber", OldValue = findUser.TelephoneNumber, NewValue = employee.TelephoneNumber });
+            if (findUser.CivilId != employee.CivilId)
+                changes.Add(new { Field = "CivilId", OldValue = findUser.CivilId, NewValue = employee.CivilId });
+            if (findUser.FileNumber != employee.FileNumber)
+                changes.Add(new { Field = "FileNumber", OldValue = findUser.FileNumber, NewValue = employee.FileNumber });
+            if (findUser.BranchId != employee.BranchId)
+                changes.Add(new { Field = "BranchId", OldValue = findUser.BranchId, NewValue = employee.BranchId });
+            if (findUser.TownId != employee.TownId)
+                changes.Add(new { Field = "TownId", OldValue = findUser.TownId, NewValue = employee.TownId });
+            if (findUser.Photo != employee.Photo)
+                changes.Add(new { Field = "Photo", OldValue = "[previous]", NewValue = "[updated]" });
+            if (findUser.Other != employee.Other)
+                changes.Add(new { Field = "Other", OldValue = findUser.Other, NewValue = employee.Other });
+
             findUser.Name            = employee.Name;
             findUser.Other           = employee.Other;
             findUser.Address         = employee.Address;
@@ -138,8 +163,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Employee updated successfully — EmployeeId: {EmployeeId}, Name: {Name}",
-                employee.Id, employee.Name);
+                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
+                "Updated", "Employee", employee.Id, changes);
 
             return Success();
         }

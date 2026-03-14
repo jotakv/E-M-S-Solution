@@ -1,5 +1,6 @@
 using BaseLibrary.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Implementations;
@@ -16,7 +17,8 @@ public class EmployeeRepositoryTests
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
-        var repository = new EmployeeRepository(dbContextMock.Object);
+        var loggerMock = new Mock<ILogger<EmployeeRepository>>();
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
         var newEmployee = CreateEmployee(2, "aLiCe");
 
         // Act
@@ -36,7 +38,8 @@ public class EmployeeRepositoryTests
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
-        var repository = new EmployeeRepository(dbContextMock.Object);
+        var loggerMock = new Mock<ILogger<EmployeeRepository>>();
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
         var newEmployee = CreateEmployee(2, "Bob");
 
         // Act
@@ -57,7 +60,8 @@ public class EmployeeRepositoryTests
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
-        var repository = new EmployeeRepository(dbContextMock.Object);
+        var loggerMock = new Mock<ILogger<EmployeeRepository>>();
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
         var employeeToUpdate = CreateEmployee(999, "Ghost");
 
         // Act
@@ -76,7 +80,8 @@ public class EmployeeRepositoryTests
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
-        var repository = new EmployeeRepository(dbContextMock.Object);
+        var loggerMock = new Mock<ILogger<EmployeeRepository>>();
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
         var updatedEmployee = CreateEmployee(1, "Alice Updated");
         updatedEmployee.CivilId = "CIV-UPDATED";
         updatedEmployee.FileNumber = "FILE-UPDATED";
@@ -115,7 +120,8 @@ public class EmployeeRepositoryTests
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
-        var repository = new EmployeeRepository(dbContextMock.Object);
+        var loggerMock = new Mock<ILogger<EmployeeRepository>>();
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
 
         // Act
         var result = await repository.DeleteById(999);

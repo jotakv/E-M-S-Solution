@@ -44,6 +44,7 @@ try
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithEnvironmentName()
+            .Enrich.WithEnvironmentUserName()
             .Enrich.WithThreadId()
             .Enrich.WithProcessId();
     });
@@ -155,6 +156,11 @@ try
 
     app.UseCors("AllowBlazorWasm");
     app.UseAuthentication();
+
+    // Audit enrichment: runs AFTER authentication so HttpContext.User is populated.
+    // Pushes UserId, IpAddress, RequestPath, and RequestId into every log entry.
+    app.UseMiddleware<AuditEnrichmentMiddleware>();
+
     app.UseAuthorization();
 
     app.MapControllers();
