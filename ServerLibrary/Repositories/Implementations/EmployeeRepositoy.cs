@@ -4,11 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace ServerLibrary.Repositories.Implementations
 {
@@ -40,7 +36,11 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<List<Employee>> GetAll()
         {
-            logger.LogDebug("Fetching all employees with related data");
+            // ── Performance diagnostic ────────────────────────────────────────────
+            // This query eager-loads Town → City → Country and
+            // Branch → Department → GeneralDepartment for every employee row.
+            // Monitoring elapsed time detects slow DB response before users notice.
+            var sw = Stopwatch.StartNew();
 
             var employees = await appDbContext.Employees
                 .AsNoTracking()
@@ -52,7 +52,20 @@ namespace ServerLibrary.Repositories.Implementations
                         .ThenInclude(gd => gd!.GeneralDepartment)
                 .ToListAsync();
 
-            logger.LogDebug("Fetched {Count} employees", employees.Count);
+            sw.Stop();
+
+            logger.LogDebug(
+                "EmployeeRepository.GetAll fetched {Count} employees in {ElapsedMs}ms",
+                employees.Count, sw.ElapsedMilliseconds);
+
+            // Warn when the query is abnormally slow (e.g. missing index, lock, cold cache).
+            if (sw.ElapsedMilliseconds > 500)
+            {
+                logger.LogWarning(
+                    "Slow query: EmployeeRepository.GetAll returned {Count} employees in {ElapsedMs}ms " +
+                    "(threshold 500ms). Consider verifying indexes on TownId and BranchId.",
+                    employees.Count, sw.ElapsedMilliseconds);
+            }
 
             return employees;
         }
@@ -159,7 +172,9 @@ namespace ServerLibrary.Repositories.Implementations
             findUser.JobName         = employee.JobName;
             findUser.Photo           = employee.Photo;
 
-            await appDbContext.SaveChangesAsync();
+            // BUG FIX: only one SaveChangesAsync is needed here.
+            // Previously both appDbContext.SaveChangesAsync() and Commit() were called,
+            // causing two redundant round-trips to the database on every employee update.
             await Commit();
 
             logger.LogInformation(

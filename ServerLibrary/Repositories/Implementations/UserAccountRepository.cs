@@ -12,6 +12,7 @@ using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
 using ServiceStack.Text;
 using System;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -94,24 +95,45 @@ namespace ServerLibrary.Repositories.Implementations
                 return new LoginResponse(false, "Model is empty");
             }
 
-            logger.LogInformation(
-                "Sign-in attempt for {Email}", user.Email);
+            logger.LogInformation("Sign-in attempt for {Email}", user.Email);
 
+            // ── Overall login timer ───────────────────────────────────────────────
+            var totalSw = Stopwatch.StartNew();
+
+            // ── Phase 1: Database user lookup ─────────────────────────────────────
+            // Slow here → DB connection issue, missing email index, or cold start.
+            var lookupSw = Stopwatch.StartNew();
             var applicationUser = await FindUserByEmail(user.Email);
+            lookupSw.Stop();
+            logger.LogDebug(
+                "Login perf phase 1 (user lookup): {ElapsedMs}ms for {Email}",
+                lookupSw.ElapsedMilliseconds, user.Email);
+
             if (applicationUser is null)
             {
-                logger.LogWarning(
-                    "Sign-in failed — user not found: {Email}", user.Email);
+                logger.LogWarning("Sign-in failed — user not found: {Email}", user.Email);
                 return new LoginResponse(false, "User not found");
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(user.Password, applicationUser.Password))
+            // ── Phase 2: BCrypt password verification (intentionally CPU-intensive) ──
+            // BCrypt work-factor makes brute-force impractical but adds ~100–300ms.
+            // If this phase is unexpectedly fast (<50ms), the hash may be weak.
+            var bcryptSw = Stopwatch.StartNew();
+            var passwordValid = BCrypt.Net.BCrypt.Verify(user.Password, applicationUser.Password);
+            bcryptSw.Stop();
+            logger.LogDebug(
+                "Login perf phase 2 (BCrypt verify): {ElapsedMs}ms",
+                bcryptSw.ElapsedMilliseconds);
+
+            if (!passwordValid)
             {
                 logger.LogWarning(
                     "Sign-in failed — invalid credentials for {Email}", user.Email);
                 return new LoginResponse(false, "Email/Password not valid");
             }
 
+            // ── Phase 3: Role lookup ──────────────────────────────────────────────
+            var roleSw = Stopwatch.StartNew();
             var userRole = await appDbContext.UserRoles
                 .FirstOrDefaultAsync(ur => ur.UserId == applicationUser.Id);
 
@@ -133,7 +155,15 @@ namespace ServerLibrary.Repositories.Implementations
                 return new LoginResponse(false, "Role not found");
             }
 
-            string jwtToken    = GenerateToken(applicationUser, role.Name);
+            roleSw.Stop();
+            logger.LogDebug(
+                "Login perf phase 3 (role lookup): {ElapsedMs}ms",
+                roleSw.ElapsedMilliseconds);
+
+            // ── Phase 4: Token generation + refresh token persistence ─────────────
+            // Slow here → HMAC key derivation issue or DB write bottleneck.
+            var tokenSw = Stopwatch.StartNew();
+            string jwtToken     = GenerateToken(applicationUser, role.Name);
             string refreshToken = GenerateRefreshToken();
 
             var refresh = await appDbContext.RefreshTokenInfos
@@ -150,10 +180,28 @@ namespace ServerLibrary.Repositories.Implementations
             }
 
             await appDbContext.SaveChangesAsync();
+            tokenSw.Stop();
+            logger.LogDebug(
+                "Login perf phase 4 (token gen + persist): {ElapsedMs}ms",
+                tokenSw.ElapsedMilliseconds);
 
+            // ── Total summary ─────────────────────────────────────────────────────
+            totalSw.Stop();
             logger.LogInformation(
-                "Sign-in successful — UserId: {UserId}, Email: {Email}, Role: {Role}",
-                applicationUser.Id, applicationUser.Email, role.Name);
+                "Sign-in successful — UserId: {UserId}, Email: {Email}, Role: {Role}. " +
+                "Perf: Lookup {LookupMs}ms | BCrypt {BCryptMs}ms | Roles {RolesMs}ms | Token {TokenMs}ms | Total {TotalMs}ms",
+                applicationUser.Id, applicationUser.Email, role.Name,
+                lookupSw.ElapsedMilliseconds, bcryptSw.ElapsedMilliseconds,
+                roleSw.ElapsedMilliseconds, tokenSw.ElapsedMilliseconds,
+                totalSw.ElapsedMilliseconds);
+
+            if (totalSw.ElapsedMilliseconds > 1000)
+            {
+                logger.LogWarning(
+                    "Slow login for {Email}: total {TotalMs}ms exceeds 1000ms threshold. " +
+                    "BCrypt phase was {BCryptMs}ms (expected 100–400ms for work-factor 11).",
+                    user.Email, totalSw.ElapsedMilliseconds, bcryptSw.ElapsedMilliseconds);
+            }
 
             return new LoginResponse(true, "Login successfully", jwtToken, refreshToken);
         }
