@@ -6,6 +6,8 @@ using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
+using ServerLibrary.Services.Contracts;
+using ServerLibrary.Services.Implementations;
 using Syncfusion.Licensing;
 using System.Text;
 
@@ -57,8 +59,16 @@ builder.Services.AddScoped<IGenericRepositoryInterface<Department>, DepartmentRe
 builder.Services.AddScoped<IGenericRepositoryInterface<Branch>, BranchRepository>();
 
 builder.Services.AddScoped<IGenericRepositoryInterface<Country>, CountryRepository>();
+builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 builder.Services.AddScoped<IGenericRepositoryInterface<City>, CityRepository>();
 builder.Services.AddScoped<IGenericRepositoryInterface<Town>, TownRepository>();
+builder.Services.AddScoped<ICountrySyncService, CountrySyncService>();
+
+builder.Services.AddHttpClient("RestCountries", client =>
+{
+    client.BaseAddress = new Uri("https://restcountries.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddScoped<IGenericRepositoryInterface<Overtime>, OvertimeRepository>();
 builder.Services.AddScoped<IGenericRepositoryInterface<OvertimeType>, OvertimeTypeRepository>();

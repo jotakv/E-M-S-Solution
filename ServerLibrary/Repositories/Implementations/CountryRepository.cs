@@ -7,7 +7,7 @@ using ServerLibrary.Repositories.Contracts;
 
 namespace ServerLibrary.Repositories.Implementations
 {
-    public class CountryRepository(AppDbContext appDbContext) : IGenericRepositoryInterface<Country>
+    public class CountryRepository(AppDbContext appDbContext) : ICountryRepository
     {
         public async Task<GeneralResponse> DeleteById(int id)
         {
@@ -21,6 +21,19 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<List<Country>> GetAll() => await appDbContext.Countries.ToListAsync();
         public async Task<Country> GetById(int id) => (await appDbContext.Countries.FindAsync(id))!;
+        public async Task<Country?> GetByCode2Async(string code2)
+        {
+            var normalizedCode = code2.Trim().ToUpperInvariant();
+            return await appDbContext.Countries.FirstOrDefaultAsync(country =>
+                country.Code2 != null && country.Code2.ToUpper() == normalizedCode);
+        }
+
+        public async Task<Country?> GetByNameAsync(string name)
+        {
+            var normalizedName = name.Trim().ToLower();
+            return await appDbContext.Countries.FirstOrDefaultAsync(country =>
+                country.Name.ToLower() == normalizedName);
+        }
 
         public async Task<GeneralResponse> Insert(Country item)
         {
@@ -38,6 +51,9 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
 
         }
+
+        public async Task AddAsync(Country country) => await appDbContext.Countries.AddAsync(country);
+        public async Task SaveChangesAsync() => await appDbContext.SaveChangesAsync();
 
         private async Task Commit() => await appDbContext.SaveChangesAsync();
         private static GeneralResponse NotFound() => new(false, "Sorry Country not found");

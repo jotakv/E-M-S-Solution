@@ -45,6 +45,7 @@ builder.Services.AddScoped<IGenericServiceInterface<Branch>, GenericServiceImple
 
 //Country / City / Town
 builder.Services.AddScoped<IGenericServiceInterface<Country>, GenericServiceImplementation<Country>>();
+builder.Services.AddScoped<ICountrySyncClientService, CountrySyncClientService>();
 builder.Services.AddScoped<IGenericServiceInterface<City>, GenericServiceImplementation<City>>();
 builder.Services.AddScoped<IGenericServiceInterface<Town>, GenericServiceImplementation<Town>>();
 
