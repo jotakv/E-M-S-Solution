@@ -1,74 +1,95 @@
-﻿using BaseLibrary.Entities;
+using BaseLibrary.Entities;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ServerLibrary.Repositories.Implementations
 {
-    public class VacationTypeRepository(AppDbContext appDbContext) : IGenericRepositoryInterface<VacationType>
+    public class VacationTypeRepository(
+        AppDbContext appDbContext,
+        ILogger<VacationTypeRepository> logger) : IGenericRepositoryInterface<VacationType>
     {
-        public async Task<GeneralResponse> DeleteById(int id)
-        {
-            var item = await appDbContext
-                        .VacationTypes.FindAsync(id); 
-            
-            if (item is null) return NotFound();
+        public async Task<List<VacationType>> GetAll() =>
+            await appDbContext.VacationTypes.AsNoTracking().ToListAsync();
 
-            appDbContext
-                .VacationTypes.Remove(item); 
-            
-            await Commit(); 
-            
+        public async Task<VacationType> GetById(int id) =>
+            (await appDbContext.VacationTypes.FindAsync(id))!;
+
+        public async Task<GeneralResponse> Insert(VacationType item)
+        {
+            if (!await CheckName(item.Name!))
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
+                    "Create", "VacationType", item.Name);
+                return new GeneralResponse(false, "Vacation Type already added");
+            }
+
+            appDbContext.VacationTypes.Add(item);
+            await Commit();
+
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
+                "Created", "VacationType", item.Id, item.Name);
+
             return Success();
         }
 
-        public async Task<List<VacationType>> GetAll() => 
-            await appDbContext
-                    .VacationTypes
-                    .AsNoTracking()
-                    .ToListAsync();
+        public async Task<GeneralResponse> Update(VacationType item)
+        {
+            var obj = await appDbContext.VacationTypes.FindAsync(item.Id);
+            if (obj is null)
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
+                    "Update", "VacationType", item.Id);
+                return NotFound();
+            }
 
-        public async Task<VacationType> GetById(int id) => 
-            (await appDbContext.VacationTypes.FindAsync(id))!;
+            var oldName = obj.Name;
+            obj.Name = item.Name;
+            await Commit();
 
-        public async Task<GeneralResponse> Insert(VacationType item) 
-        { 
-            if (!await CheckName(item.Name!)) 
-                return new GeneralResponse(false, "Vacation Type already added"); 
-            
-            appDbContext.VacationTypes.Add(item); 
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
+                "Updated", "VacationType", item.Id,
+                new { Field = "Name", OldValue = oldName, NewValue = item.Name });
 
-            await Commit(); 
-            return Success(); 
+            return Success();
         }
 
-        public async Task<GeneralResponse> Update(VacationType item) 
-        { 
-            var obj = await appDbContext
-                            .VacationTypes
-                            .FindAsync(item.Id); 
+        public async Task<GeneralResponse> DeleteById(int id)
+        {
+            var item = await appDbContext.VacationTypes.FindAsync(id);
+            if (item is null)
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
+                    "Delete", "VacationType", id);
+                return NotFound();
+            }
 
-            if (obj is null) return NotFound(); 
-            obj.Name = item.Name; 
+            appDbContext.VacationTypes.Remove(item);
+            await Commit();
 
-            await Commit(); 
-            return Success(); 
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
+                "Deleted", "VacationType", id, item.Name);
+
+            return Success();
         }
 
-        private async Task Commit() => 
-            await appDbContext.SaveChangesAsync(); 
-        
-        private static GeneralResponse NotFound() => 
-            new(false, "Sorry Vacation Type not found"); 
-        
-        private static GeneralResponse Success() => new(true, "Process completed");
+        private async Task Commit() => await appDbContext.SaveChangesAsync();
+        private static GeneralResponse NotFound() => new(false, "Sorry vacation type not found");
+        private static GeneralResponse Success()  => new(true,  "Process completed");
 
-        private async Task<bool> CheckName(string name) { var item = await appDbContext.VacationTypes.FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower())); return item is null; }
+        private async Task<bool> CheckName(string name)
+        {
+            var item = await appDbContext.VacationTypes
+                .FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower()));
+            return item is null;
+        }
     }
 }
