@@ -133,12 +133,26 @@ try
         opts.MessageTemplate =
             "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
 
+        // ── Performance-aware log level ───────────────────────────────────────
+        // Slow requests (>1 s) are promoted to Warning so they surface in Seq
+        // dashboards without a custom query filter.  5xx and exceptions → Error.
+        opts.GetLevel = (httpContext, elapsed, ex) =>
+        {
+            if (ex != null || httpContext.Response.StatusCode >= 500)
+                return Serilog.Events.LogEventLevel.Error;
+            if (elapsed > 1000 || httpContext.Response.StatusCode >= 400)
+                return Serilog.Events.LogEventLevel.Warning;
+            return Serilog.Events.LogEventLevel.Information;
+        };
+
         opts.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
         {
             diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
             diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
             diagnosticContext.Set("UserAgent",
                 httpContext.Request.Headers["User-Agent"].ToString());
+            diagnosticContext.Set("ContentType",
+                httpContext.Response.ContentType ?? string.Empty);
         };
     });
 

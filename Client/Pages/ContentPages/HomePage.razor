@@ -58,22 +58,33 @@
 
 @code {
     private bool isInitializing = true;
-    private List<Employee>? dashboardEmployees;
-    private List<Department>? dashboardDepartments;
-    private List<Overtime>? dashboardOvertimes;
-    private List<Sanction>? dashboardSanctions;
-    private List<Vacation>? dashboardVacations;
-    private List<Doctor>? dashboardHealth;
+    private List<Employee>?    dashboardEmployees;
+    private List<Department>?  dashboardDepartments;
+    private List<Overtime>?    dashboardOvertimes;
+    private List<Sanction>?    dashboardSanctions;
+    private List<Vacation>?    dashboardVacations;
+    private List<Doctor>?      dashboardHealth;
 
     protected override async Task OnInitializedAsync()
     {
-        var employeesTask = employeeService.GetAll(Constants.EmployeeBaseUrl);
-        var departmentsTask = departmentService.GetAll(Constants.DepartmentBaseUrl);
-        var overtimesTask = overtimeService.GetAll(Constants.OvertimeBaseUrl);
-        var sanctionsTask = sanctionService.GetAll(Constants.SanctionBaseUrl);
-        var vacationsTask = vacationService.GetAll(Constants.VacationBaseUrl);
-        var healthTask = doctorService.GetAll(Constants.DoctorBaseUrl);
+        // ── Performance diagnostics ───────────────────────────────────────────
+        // All six API calls launch simultaneously (Task.WhenAll) so total wall-
+        // clock time equals the SLOWEST single call, not their sum.
+        // Timings are logged to the browser DevTools Console (F12 → Console).
+        var totalSw = System.Diagnostics.Stopwatch.StartNew();
 
+        // Record individual start times so we can report per-endpoint latency.
+        var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+
+        var employeesTask   = employeeService.GetAll(Constants.EmployeeBaseUrl);
+        var departmentsTask = departmentService.GetAll(Constants.DepartmentBaseUrl);
+        var overtimesTask   = overtimeService.GetAll(Constants.OvertimeBaseUrl);
+        var sanctionsTask   = sanctionService.GetAll(Constants.SanctionBaseUrl);
+        var vacationsTask   = vacationService.GetAll(Constants.VacationBaseUrl);
+        var healthTask      = doctorService.GetAll(Constants.DoctorBaseUrl);
+
+        // Wait for all API responses before rendering (ensures TableBanner gets
+        // complete data so its HasInitialData() check passes, avoiding duplicate loads).
         await Task.WhenAll(
             employeesTask,
             departmentsTask,
@@ -82,12 +93,36 @@
             vacationsTask,
             healthTask);
 
-        dashboardEmployees = await employeesTask;
+        var fetchElapsed = System.Diagnostics.Stopwatch.GetElapsedTime(t0);
+
+        dashboardEmployees   = await employeesTask;
         dashboardDepartments = await departmentsTask;
-        dashboardOvertimes = await overtimesTask;
-        dashboardSanctions = await sanctionsTask;
-        dashboardVacations = await vacationsTask;
-        dashboardHealth = await healthTask;
+        dashboardOvertimes   = await overtimesTask;
+        dashboardSanctions   = await sanctionsTask;
+        dashboardVacations   = await vacationsTask;
+        dashboardHealth      = await healthTask;
+
         isInitializing = false;
+
+        totalSw.Stop();
+
+        // ── Performance report (browser console) ──────────────────────────────
+        Console.WriteLine(
+            $"[Perf] Dashboard parallel fetch: {fetchElapsed.TotalMilliseconds:F0}ms " +
+            $"({dashboardEmployees?.Count ?? 0} employees, " +
+            $"{dashboardDepartments?.Count ?? 0} departments, " +
+            $"{dashboardOvertimes?.Count ?? 0} overtimes, " +
+            $"{dashboardSanctions?.Count ?? 0} sanctions, " +
+            $"{dashboardVacations?.Count ?? 0} vacations, " +
+            $"{dashboardHealth?.Count ?? 0} health records)");
+
+        Console.WriteLine(
+            $"[Perf] Dashboard OnInitializedAsync total: {totalSw.ElapsedMilliseconds}ms");
+
+        if (totalSw.ElapsedMilliseconds > 3000)
+            Console.WriteLine(
+                $"[Perf Warning] Dashboard initial load exceeded 3000ms " +
+                $"({totalSw.ElapsedMilliseconds}ms). Inspect individual API timings " +
+                $"in Server Serilog logs (look for Warning-level entries with Elapsed > 1000).");
     }
 }

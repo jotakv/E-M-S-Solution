@@ -67,7 +67,22 @@
     {
         ShowLoadingButton = true;
 
+        // ── Client-side login performance diagnostics ─────────────────────────
+        // Measures wall-clock time visible in the browser DevTools Console tab.
+        // Phase A: API round-trip (network + BCrypt + DB on server)
+        var loginSw = System.Diagnostics.Stopwatch.StartNew();
+
         var result = await accountService.SignInAsync(User);
+
+        loginSw.Stop();
+        Console.WriteLine(
+            $"[Perf] Login API round-trip: {loginSw.ElapsedMilliseconds}ms " +
+            $"(success={result.Flag})");
+
+        if (result.Flag && loginSw.ElapsedMilliseconds > 2000)
+            Console.WriteLine(
+                $"[Perf Warning] Login API exceeded 2000ms ({loginSw.ElapsedMilliseconds}ms). " +
+                $"BCrypt is ~100–400ms by design; the rest may be DB or network.");
 
         if (!result.Flag)
         {
@@ -76,16 +91,22 @@
             return;
         }
 
-        // Update auth state FIRST
+        // Phase B: update Blazor auth state (localStorage write + JWT claim parse)
+        var authSw = System.Diagnostics.Stopwatch.StartNew();
+
         var customAuthStateProvider =
             (CustomAuthenticationStateProvider)AuthStateProvider;
 
         await customAuthStateProvider.UpdateAuthenticationState(
             new UserSession
             {
-                Token = result.Token,
+                Token        = result.Token,
                 RefreshToken = result.RefreshToken
             });
+
+        authSw.Stop();
+        Console.WriteLine(
+            $"[Perf] Auth state update: {authSw.ElapsedMilliseconds}ms");
 
         // show success dialog
         await DisplayDialog("Login successfully", "Success");
