@@ -102,6 +102,9 @@
         {
             ManageUser = new();
             await GetUsers();
+
+            // CLOSE THE DIALOG
+            userDialog?.CloseDialog();
         }
     }
 

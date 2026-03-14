@@ -1,23 +1,19 @@
-﻿using BaseLibrary.Entities;
+using BaseLibrary.Entities;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
-
 
 namespace ServerLibrary.Repositories.Implementations
 {
     public class CountryRepository(AppDbContext appDbContext) : ICountryRepository
+    public class CountryRepository(
+        AppDbContext appDbContext,
+        ILogger<CountryRepository> logger) : IGenericRepositoryInterface<Country>
     {
-        public async Task<GeneralResponse> DeleteById(int id)
-        {
-            var dep = await appDbContext.Countries.FindAsync(id);
-            if (dep is null) return NotFound();
-
-            appDbContext.Countries.Remove(dep);
-            await Commit();
-            return Success();
-        }
+        public async Task<List<Country>> GetAll() =>
+            await appDbContext.Countries.ToListAsync();
 
         public async Task<List<Country>> GetAll() => await appDbContext.Countries.ToListAsync();
         public async Task<Country> GetById(int id) => (await appDbContext.Countries.FindAsync(id))!;
@@ -34,33 +30,84 @@ namespace ServerLibrary.Repositories.Implementations
             return await appDbContext.Countries.FirstOrDefaultAsync(country =>
                 country.Name.ToLower() == normalizedName);
         }
+        public async Task<Country> GetById(int id) =>
+            (await appDbContext.Countries.FindAsync(id))!;
 
         public async Task<GeneralResponse> Insert(Country item)
         {
-            if (!await CheckName(item.Name!)) return new GeneralResponse(false, "Country already added");
+            if (!await CheckName(item.Name!))
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
+                    "Create", "Country", item.Name);
+                return new GeneralResponse(false, "Country already added");
+            }
+
             appDbContext.Countries.Add(item);
             await Commit();
+
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
+                "Created", "Country", item.Id, item.Name);
+
             return Success();
         }
+
         public async Task<GeneralResponse> Update(Country item)
         {
             var dep = await appDbContext.Countries.FindAsync(item.Id);
-            if (dep is null) return NotFound();
+            if (dep is null)
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
+                    "Update", "Country", item.Id);
+                return NotFound();
+            }
+
+            var oldName = dep.Name;
             dep.Name = item.Name;
             await Commit();
-            return Success();
 
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
+                "Updated", "Country", item.Id,
+                new { Field = "Name", OldValue = oldName, NewValue = item.Name });
+
+            return Success();
+        }
+
+        public async Task<GeneralResponse> DeleteById(int id)
+        {
+            var dep = await appDbContext.Countries.FindAsync(id);
+            if (dep is null)
+            {
+                logger.LogWarning(
+                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
+                    "Delete", "Country", id);
+                return NotFound();
+            }
+
+            appDbContext.Countries.Remove(dep);
+            await Commit();
+
+            logger.LogInformation(
+                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
+                "Deleted", "Country", id, dep.Name);
+
+            return Success();
         }
 
         public async Task AddAsync(Country country) => await appDbContext.Countries.AddAsync(country);
         public async Task SaveChangesAsync() => await appDbContext.SaveChangesAsync();
 
         private async Task Commit() => await appDbContext.SaveChangesAsync();
-        private static GeneralResponse NotFound() => new(false, "Sorry Country not found");
-        private static GeneralResponse Success() => new(true, "Process completed");
+        private static GeneralResponse NotFound() => new(false, "Sorry country not found");
+        private static GeneralResponse Success()  => new(true,  "Process completed");
+
         private async Task<bool> CheckName(string name)
         {
-            var item = await appDbContext.Countries.FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower()));
+            var item = await appDbContext.Countries
+                .FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower()));
             return item is null;
         }
     }
