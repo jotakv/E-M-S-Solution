@@ -128,7 +128,7 @@ public class EmployeeRepositoryTests
 
         // Assert
         Assert.False(result.Flag);
-        Assert.Equal("Sorry branch not found", result.Message);
+        Assert.Equal("Sorry employee not found", result.Message);
         employeeSetMock.Verify(set => set.Remove(It.IsAny<Employee>()), Times.Never);
         dbContextMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
