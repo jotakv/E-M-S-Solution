@@ -10,12 +10,12 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             // Authenticated user → go to dashboard
-            Nav.NavigateTo("/home/dashboard", replace: true);
+            NavManager.NavigateTo("/home/dashboard", replace: true);
         }
         else
         {
             // Unauthenticated user → go to login page
-            Nav.NavigateTo("/identity/account/login", replace: true);
+            NavManager.NavigateTo("/identity/account/login", replace: true);
         }
     }
 }

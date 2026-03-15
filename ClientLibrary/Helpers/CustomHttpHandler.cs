@@ -50,14 +50,34 @@ namespace ClientLibrary.Helpers
             // Handle 401 → refresh token
             if (result.StatusCode == HttpStatusCode.Unauthorized)
             {
+                Console.WriteLine(
+                    $"[EMS] 401 Unauthorized detected — Path: {request.RequestUri?.PathAndQuery}, " +
+                    $"Token-Expired header present: {result.Headers.Contains("Token-Expired")}, " +
+                    $"Timestamp: {DateTime.UtcNow:o}");
+
                 var json = await localStorageService.GetToken();
-                if (json == null) return result;
+                if (json == null)
+                {
+                    Console.WriteLine(
+                        $"[EMS] Token refresh failed — user must log in again. Path: {request.RequestUri?.PathAndQuery}");
+                    return result;
+                }
 
                 var session = JsonSerializer.Deserialize<UserSession>(json);
-                if (session == null) return result;
+                if (session == null)
+                {
+                    Console.WriteLine(
+                        $"[EMS] Token refresh failed — user must log in again. Path: {request.RequestUri?.PathAndQuery}");
+                    return result;
+                }
 
                 var refreshResponse = await accountService.RefreshTokenAsync();
-                if (!refreshResponse.Flag) return result;
+                if (!refreshResponse.Flag)
+                {
+                    Console.WriteLine(
+                        $"[EMS] Token refresh failed — user must log in again. Path: {request.RequestUri?.PathAndQuery}");
+                    return result;
+                }
 
                 var newSession = new UserSession
                 {
@@ -66,6 +86,9 @@ namespace ClientLibrary.Helpers
                 };
 
                 await localStorageService.SetToken(JsonSerializer.Serialize(newSession));
+
+                Console.WriteLine(
+                    $"[EMS] Token refreshed successfully — retrying: {request.RequestUri?.PathAndQuery}");
 
                 // Retry with new token
                 request.Headers.Authorization =

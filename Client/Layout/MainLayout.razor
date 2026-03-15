@@ -1,4 +1,5 @@
 ﻿@using Client.Pages.OtherPages
+@using Blazored.Toast
 @using Microsoft.AspNetCore.Authorization
 @inherits LayoutComponentBase
 @attribute  [Authorize]
@@ -19,6 +20,10 @@
     </main>
 </div>
 <Syncfusion.Blazor.Popups.SfDialogProvider />
+<BlazoredToasts Position="Blazored.Toast.Configuration.ToastPosition.TopRight"
+                Timeout="4"
+                ShowProgressBar="true"
+                ShowCloseButton="true" />
 @code {
     async Task LogoutClicked()
     {

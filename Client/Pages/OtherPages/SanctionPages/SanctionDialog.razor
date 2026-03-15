@@ -1,7 +1,6 @@
 ﻿@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@inject SfDialogService dialogService
 
 <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
@@ -77,7 +76,7 @@
     {
         if (ItemModel.SanctionTypeId <= 0)
         {
-            await dialogService.AlertAsync("You need to provide type.", "Alert!");
+            toastService.ShowError("You need to provide type.");
             return;
         }
 

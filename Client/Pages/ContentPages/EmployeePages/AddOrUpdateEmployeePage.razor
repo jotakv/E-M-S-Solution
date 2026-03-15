@@ -4,6 +4,8 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Collections.Generic
 @using System.Threading.Tasks
+@using BaseLibrary.DTOs
+@using ClientLibrary.Helpers
 
 @implements IDisposable
 @if (allState.ShowEmployee)
@@ -287,6 +289,8 @@
 </style>
 
 @code {
+    [Inject] GetHttpClient _getHttpClient { get; set; } = default!;
+
     [Parameter] public Employee Employee { get; set; } = new();
     [Parameter] public bool ShowAddOrUpdateEmployee { get; set; }
     [Parameter] public EmployeeGrouping1 EmployeeGroup1 { get; set; } = new();
@@ -326,28 +330,55 @@
     {
         var file = e.File;
 
+        Console.WriteLine(
+            $"[EMS] Image upload attempt — FileName: {file.Name}, " +
+            $"ContentType: {file.ContentType}, SizeBytes: {file.Size}, " +
+            $"Timestamp: {DateTime.UtcNow:o}");
+
         // Accept ONLY real PNG files by MIME type
         if (file.ContentType != "image/png" && file.ContentType != "image/x-png")
         {
             ImageUploadMessage = "PNG file needed.";
             EmployeeGroup1.Photo = string.Empty;
 
-            // Optional: log to browser console
-            Console.WriteLine($"Upload failed: invalid file type {file.ContentType}");
-
+            Console.WriteLine(
+                $"[EMS] Image upload FAILED — invalid type: {file.ContentType}, FileName: {file.Name}");
+            await AuditImageUploadAsync(false, $"InvalidContentType:{file.ContentType}", file.Name);
             return;
         }
 
-        // Resize and convert to Base64
-        var resized = await file.RequestImageFileAsync("image/png", 300, 300);
-        var buffer = new byte[resized.Size];
-        await resized.OpenReadStream().ReadAsync(buffer);
+        try
+        {
+            // Resize and convert to Base64
+            var resized = await file.RequestImageFileAsync("image/png", 300, 300);
+            var buffer = new byte[resized.Size];
+            await resized.OpenReadStream().ReadAsync(buffer);
 
-        EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
-        ImageUploadMessage = "";
+            EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
+            ImageUploadMessage = "";
 
-        // Optional: log success
-        Console.WriteLine("PNG uploaded successfully");
+            Console.WriteLine(
+                $"[EMS] Image upload SUCCESS — FileName: {file.Name}, " +
+                $"SizeBytes: {file.Size}, Timestamp: {DateTime.UtcNow:o}");
+            await AuditImageUploadAsync(true, "OK", file.Name);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"[EMS] Image upload EXCEPTION — FileName: {file.Name}, Error: {ex.Message}");
+            await AuditImageUploadAsync(false, $"Exception:{ex.Message}", file.Name);
+        }
+    }
+
+    private async Task AuditImageUploadAsync(bool success, string reason, string fileName)
+    {
+        try
+        {
+            var dto = new ImageUploadAuditDto { Success = success, FileName = fileName, Reason = reason };
+            var client = await _getHttpClient.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/image-upload", dto);
+        }
+        catch { /* silently ignore */ }
     }
 
 

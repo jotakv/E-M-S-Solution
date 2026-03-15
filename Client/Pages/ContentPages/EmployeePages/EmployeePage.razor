@@ -1,4 +1,7 @@
-﻿@implements IDisposable
+﻿@using BaseLibrary.DTOs
+@using ClientLibrary.Helpers
+
+@implements IDisposable
 
 @if (allState.ShowEmployee)
 {
@@ -106,6 +109,8 @@
                     HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 
 @code {
+    [Inject] GetHttpClient _getHttpClient { get; set; } = default!;
+
     [Parameter] public List<Employee>? InitialEmployees { get; set; }
 
     private bool _previousShowEmployeeState = false;
@@ -328,9 +333,12 @@
         }
     }
 
-    private void ViewClicked()
+    private async Task ViewClicked()
     {
-        Employee = SelectedEmployee;
+        // Re-fetch employee by ID to ensure all navigation properties are populated
+        // (Branch → Department → GeneralDepartment, Town → City → Country)
+        Employee = await employeeService.GetById(SelectedEmployee.Id, Constants.EmployeeBaseUrl)
+                   ?? SelectedEmployee;
         contextMenu!.CloseContextMenu();
         ShowDetailsPage = true;
         ShowMainPage = false;
@@ -464,25 +472,46 @@
         if (args.Item.Text == "Excel Export")
         {
             await this.DefaultGrid!.ExportToExcelAsync();
+            await AuditExportAsync("Excel", "Employee", Employees?.Count ?? 0);
         }
         else if (args.Item.Text == "PDF Export")
         {
             await this.DefaultGrid!.ExportToPdfAsync();
+            await AuditExportAsync("PDF", "Employee", Employees?.Count ?? 0);
+        }
+        else if (args.Item.Text == "Print")
+        {
+            await AuditPrintAsync("Employee", Employees?.Count ?? 0);
         }
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private async Task AuditExportAsync(string exportType, string entityType, int count)
     {
-        if (flag)
+        try
         {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
+            var client = await _getHttpClient.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto { ExportType = exportType, EntityType = entityType, RecordCount = count });
         }
-        else
+        catch { /* silently ignore */ }
+    }
+
+    private async Task AuditPrintAsync(string entityType, int count)
+    {
+        try
         {
-            await dialogService.AlertAsync(message, "Alert!");
-            return false;
+            var client = await _getHttpClient.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/print",
+                new PrintAuditDto { EntityType = entityType, RecordCount = count });
         }
+        catch { /* silently ignore */ }
+    }
+
+    private Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag) toastService.ShowSuccess(message);
+        else toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     public void Dispose() => allState.Action -= HandleGlobalStateChanged;

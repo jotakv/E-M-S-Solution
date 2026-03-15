@@ -1,4 +1,4 @@
-﻿@using System.Net.Http
+@using System.Net.Http
 @using System.Net.Http.Json
 @using BaseLibrary.Entities
 @using Client.ApplicationStates
@@ -28,20 +28,12 @@
 @using ClientLibrary.Services.Contracts
 @using Syncfusion.Blazor.Grids
 @using Syncfusion.Licensing;
-
 @using Syncfusion.Blazor.DropDowns
-
-
-@*Add*@
 @using Syncfusion.Blazor.Popups
-
+@using Blazored.Toast.Services
 
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavManager
-@inject SfDialogService dialogService
-
-@*Add*@
-@inject NavigationManager Nav 
 
 @* /Authentication *@
 @inject IUserAccountService accountService
@@ -49,8 +41,11 @@
 @* /Navbar tabs communication state handling *@
 @inject AllState allState
 
-@* /Syncfusion dialog service *@
+@* /Syncfusion dialog service (kept for ConfirmAsync on delete) *@
 @inject SfDialogService dialogService
+
+@* /Toast notifications — non-blocking alternative to AlertAsync *@
+@inject IToastService toastService
 
 @* /General Departments / Department / Branch *@
 @inject IGenericServiceInterface<GeneralDepartment> generalDepartmentService
@@ -62,15 +57,14 @@
 @inject IGenericServiceInterface<City> cityService
 @inject IGenericServiceInterface<Town> townService
 
-
-@* / Suplementary tables *@ 
+@* /Supplementary tables *@
 @inject IGenericServiceInterface<Overtime> overtimeService
 @inject IGenericServiceInterface<OvertimeType> overtimeTypeService
-@inject IGenericServiceInterface<Vacation> vacationService 
+@inject IGenericServiceInterface<Vacation> vacationService
 @inject IGenericServiceInterface<VacationType> vacationTypeService
-@inject IGenericServiceInterface<Sanction> sanctionService 
+@inject IGenericServiceInterface<Sanction> sanctionService
 @inject IGenericServiceInterface<SanctionType> sanctionTypeService
 @inject IGenericServiceInterface<Doctor> doctorService
 
-@* //Employee *@
+@* /Employee *@
 @inject IGenericServiceInterface<Employee> employeeService

@@ -8,6 +8,7 @@ using ClientLibrary.Services.Implementations;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Blazored.Toast;
 using Syncfusion.Blazor;
 using Syncfusion.Blazor.Popups;
 using Syncfusion.Licensing;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<IGenericServiceInterface<Employee>, GenericServiceImp
 
 builder.Services.AddScoped<AllState>();
 
+builder.Services.AddBlazoredToast();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddScoped<SfDialogService>();
 

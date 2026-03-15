@@ -176,16 +176,11 @@
             await GetBranches();
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
-        if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
-
-        await dialogService.AlertAsync(message, "Alert!");
-        return false;
+        if (flag) toastService.ShowSuccess(message);
+        else toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
 

@@ -1,4 +1,7 @@
-﻿@implements IDisposable
+﻿@using BaseLibrary.DTOs
+@using ClientLibrary.Helpers
+
+@implements IDisposable
 
 @if (allState.ShowVacation)
 {
@@ -101,6 +104,8 @@
                 HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
+    [Inject] GetHttpClient _getHttpClient { get; set; } = default!;
+
     private SfGrid<Vacation>? DefaultGrid;
     VacationDialog? vacationDialog;
 
@@ -168,26 +173,54 @@
         }
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
-        if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
-
-        await dialogService.AlertAsync(message, "Alert!");
-        return false;
+        if (flag) toastService.ShowSuccess(message);
+        else toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     // Excel / PDF Export
     public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
         if (args.Item.Text == "Excel Export")
+        {
             await DefaultGrid!.ExportToExcelAsync();
+            await AuditExportAsync("Excel", "Vacation", Vacations?.Count ?? 0);
+        }
 
         if (args.Item.Text == "PDF Export")
+        {
             await DefaultGrid!.ExportToPdfAsync();
+            await AuditExportAsync("PDF", "Vacation", Vacations?.Count ?? 0);
+        }
+
+        if (args.Item.Text == "Print")
+        {
+            await AuditPrintAsync("Vacation", Vacations?.Count ?? 0);
+        }
+    }
+
+    private async Task AuditExportAsync(string exportType, string entityType, int count)
+    {
+        try
+        {
+            var client = await _getHttpClient.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto { ExportType = exportType, EntityType = entityType, RecordCount = count });
+        }
+        catch { /* silently ignore */ }
+    }
+
+    private async Task AuditPrintAsync(string entityType, int count)
+    {
+        try
+        {
+            var client = await _getHttpClient.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/print",
+                new PrintAuditDto { EntityType = entityType, RecordCount = count });
+        }
+        catch { /* silently ignore */ }
     }
 
 
