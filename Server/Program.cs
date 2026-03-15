@@ -142,6 +142,11 @@ try
         // dashboards without a custom query filter.  5xx and exceptions → Error.
         opts.GetLevel = (httpContext, elapsed, ex) =>
         {
+            // Health checks are logged at Verbose so they are suppressed at the
+            // default Information minimum — no noise in production access logs.
+            if (httpContext.Request.Path.StartsWithSegments("/api/health"))
+                return Serilog.Events.LogEventLevel.Verbose;
+
             if (ex != null || httpContext.Response.StatusCode >= 500)
                 return Serilog.Events.LogEventLevel.Error;
             if (elapsed > 1000 || httpContext.Response.StatusCode >= 400)
@@ -151,12 +156,15 @@ try
 
         opts.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
         {
-            diagnosticContext.Set("RequestHost",   httpContext.Request.Host.Value);
-            diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+            diagnosticContext.Set("RequestHost",     httpContext.Request.Host.Value);
+            diagnosticContext.Set("RequestScheme",   httpContext.Request.Scheme);
             diagnosticContext.Set("UserAgent",
                 httpContext.Request.Headers["User-Agent"].ToString());
             diagnosticContext.Set("ContentType",
                 httpContext.Response.ContentType ?? string.Empty);
+            // Capture response payload size for bandwidth / performance analysis.
+            if (httpContext.Response.ContentLength.HasValue)
+                diagnosticContext.Set("ContentLength", httpContext.Response.ContentLength.Value);
         };
     });
 
