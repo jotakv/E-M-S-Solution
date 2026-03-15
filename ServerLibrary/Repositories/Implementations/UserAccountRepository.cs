@@ -10,6 +10,7 @@ using Microsoft.VisualBasic;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
+using ServerLibrary.Services.Contracts;
 using ServiceStack.Text;
 using System;
 using System.Diagnostics;
@@ -25,8 +26,10 @@ namespace ServerLibrary.Repositories.Implementations
     public class UserAccountRepository(
         IOptions<JwtSection> config,
         AppDbContext appDbContext,
-        ILogger<UserAccountRepository> logger) : IUserAccount
+        ILogger<UserAccountRepository> logger,
+        IEventBus eventBus) : IUserAccount
     {
+        private readonly IEventBus _eventBus = eventBus;
         public async Task<GeneralResponse> CreateAsync(Register user)
         {
             if (user == null)
@@ -83,6 +86,13 @@ namespace ServerLibrary.Repositories.Implementations
             logger.LogInformation(
                 "User registered successfully — UserId: {UserId}, Email: {Email}, Role: {Role}",
                 applicationUser.Id, applicationUser.Email, Constants.User);
+
+            _eventBus.Publish("ems.auth.user-registered", new
+            {
+                UserId    = applicationUser.Id,
+                Email     = applicationUser.Email,
+                Timestamp = DateTime.UtcNow
+            });
 
             return new GeneralResponse(true, "Account created!");
         }
@@ -203,6 +213,13 @@ namespace ServerLibrary.Repositories.Implementations
                     user.Email, totalSw.ElapsedMilliseconds, bcryptSw.ElapsedMilliseconds);
             }
 
+            _eventBus.Publish("ems.auth.user-logged-in", new
+            {
+                UserId    = applicationUser.Id,
+                Email     = applicationUser.Email,
+                Timestamp = DateTime.UtcNow
+            });
+
             return new LoginResponse(true, "Login successfully", jwtToken, refreshToken);
         }
 
@@ -257,6 +274,10 @@ namespace ServerLibrary.Repositories.Implementations
             var findToken = await appDbContext.RefreshTokenInfos
                 .FirstOrDefaultAsync(_ => _.Token!.Equals(token.Refreshtoken));
 
+            logger.LogWarning(
+                "Token refresh failed — refresh token not found in database. " +
+                "Possible token reuse or forged token attempt.");
+
             if (findToken is null)
             {
                 logger.LogWarning("Token refresh failed — refresh token not found in store");
@@ -294,6 +315,16 @@ namespace ServerLibrary.Repositories.Implementations
             logger.LogInformation(
                 "Token refreshed successfully — UserId: {UserId}, Email: {Email}",
                 user.Id, user.Email);
+
+            logger.LogInformation(
+                "Token refreshed successfully — UserId: {UserId}, NewTokenIssuedAt: {IssuedAt}",
+                updateRefreshToken.UserId, DateTime.UtcNow);
+
+            _eventBus.Publish("ems.auth.token-refreshed", new
+            {
+                UserId    = updateRefreshToken.UserId,
+                Timestamp = DateTime.UtcNow
+            });
 
             return new LoginResponse(true, "Token refreshed successfully", jwtToken, refreshToken);
         }

@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using Server.BackgroundServices;
 using Server.Middleware;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
+using ServerLibrary.Services.Contracts;
+using ServerLibrary.Services.Implementations;
 using System.Text;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -58,6 +61,11 @@ try
     builder.Services.Configure<JwtSection>(builder.Configuration.GetSection("JwtSection"));
     var jwtSection = builder.Configuration.GetSection(nameof(JwtSection)).Get<JwtSection>();
 
+    // ── RabbitMQ and Event Bus ─────────────────────────────────────────────────
+    builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection("RabbitMQ"));
+    builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
+    builder.Services.AddHostedService<EmsAuditConsumer>();
+
     // ── Database ──────────────────────────────────────────────────────────────
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
@@ -83,6 +91,49 @@ try
             ValidAudience            = jwtSection!.Audience,
             IssuerSigningKey         = new SymmetricSecurityKey(
                                            Encoding.UTF8.GetBytes(jwtSection.Key!))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
+
+                if (context.Exception is SecurityTokenExpiredException expEx)
+                {
+                    logger.LogWarning(
+                        "Token expired — Path: {Path}, ExpiredAt: {ExpiredAt}, IP: {IP}",
+                        context.HttpContext.Request.Path,
+                        expEx.Expires.ToString("o"),
+                        context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+                    context.Response.Headers["Token-Expired"] = "true";
+                }
+                else
+                {
+                    logger.LogWarning(
+                        "Invalid token — Path: {Path}, Error: {ErrorMessage}, IP: {IP}",
+                        context.HttpContext.Request.Path,
+                        context.Exception.Message,
+                        context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+                }
+                return Task.CompletedTask;
+            },
+
+            OnChallenge = context =>
+            {
+                if (!context.Handled)
+                {
+                    var logger = context.HttpContext.RequestServices
+                        .GetRequiredService<ILogger<Program>>();
+                    logger.LogInformation(
+                        "Auth challenge (401) — Path: {Path}, ErrorDescription: {Desc}",
+                        context.HttpContext.Request.Path,
+                        context.ErrorDescription ?? "n/a");
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
