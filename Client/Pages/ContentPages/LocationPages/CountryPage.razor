@@ -11,9 +11,9 @@
                     <div class="card-header">
                         <h4 class="float-start">Countries</h4>
                         <div class="float-end d-flex gap-2">
-                          @*   <AuthorizeView Roles="Admin">
-                                <Authorized> *@
-                                    <button class="btn btn-outline-primary" @onclick="SyncCountriesClicked" disabled="@isSyncingCountries">
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <button class="btn btn-outline-primary" @onclick="SyncCountriesClicked" disabled="@(isSyncingCountries || isSyncingCapitals)">
                                         @if (isSyncingCountries)
                                         {
                                             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -24,8 +24,20 @@
                                             <span>Sync Countries</span>
                                         }
                                     </button>
-                             @*    </Authorized>
-                            </AuthorizeView> *@
+
+                                    <button class="btn btn-outline-info" @onclick="SyncCapitalsClicked" disabled="@(isSyncingCountries || isSyncingCapitals)">
+                                        @if (isSyncingCapitals)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                            <span>Syncing...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Sync Capitals</span>
+                                        }
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>
 
                             <button class="btn btn-outline-success" @onclick="AddButtonClicked">
                                 <i class="bi bi-plus-circle-dotted"></i>
@@ -34,13 +46,25 @@
                     </div>
 
                     <div class="card-body" style="max-height: 580px; overflow-x:hidden; overflow-y:scroll;">
-                        @if (lastSyncResult is not null)
+                        @if (lastCountrySyncResult is not null)
                         {
                             <div class="alert alert-success" role="alert">
-                                Synced @lastSyncResult.TotalProcessed countries.
-                                Inserted: @lastSyncResult.Inserted |
-                                Updated: @lastSyncResult.Updated |
-                                Skipped: @lastSyncResult.Skipped
+                                Country sync completed.
+                                Processed: @lastCountrySyncResult.TotalProcessed |
+                                Inserted: @lastCountrySyncResult.Inserted |
+                                Updated: @lastCountrySyncResult.Updated |
+                                Skipped: @lastCountrySyncResult.Skipped
+                            </div>
+                        }
+
+                        @if (lastCapitalSyncResult is not null)
+                        {
+                            <div class="alert alert-success" role="alert">
+                                Capital sync completed.
+                                Matched: @lastCapitalSyncResult.CountriesMatched |
+                                Skipped: @lastCapitalSyncResult.CountriesSkipped |
+                                Cities inserted/updated: @lastCapitalSyncResult.CitiesInserted/@lastCapitalSyncResult.CitiesUpdated |
+                                Towns inserted/updated: @lastCapitalSyncResult.TownsInserted/@lastCapitalSyncResult.TownsUpdated
                             </div>
                         }
 
@@ -114,22 +138,35 @@
     CountryDialog? countryDialog;
     Country Country = new();
     public List<Country> Countries { get; set; } = new();
-    private CountrySyncResultDto? lastSyncResult;
+    private CountrySyncResultDto? lastCountrySyncResult;
+    private CapitalSyncResultDto? lastCapitalSyncResult;
     private bool isSyncingCountries;
+    private bool isSyncingCapitals;
 
 
     public void Dispose()
     {
-        allState.Action -= StateHasChanged;
+        allState.Action -= HandleStateChanged;
     }
 
     protected override async Task OnInitializedAsync()
     {
         await GetCountries();
-        allState.Action += StateHasChanged;
+        allState.Action += HandleStateChanged;
     }
 
+    private void HandleStateChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (allState.ShowCountry)
+            {
+                await GetCountries();
+            }
 
+            StateHasChanged();
+        });
+    }
 
     private async Task GetCountries()
     {
@@ -146,13 +183,13 @@
         try
         {
             isSyncingCountries = true;
-            lastSyncResult = await countrySyncService.SyncCountriesAsync();
+            lastCountrySyncResult = await countrySyncService.SyncCountriesAsync();
 
-            if (lastSyncResult is not null)
+            if (lastCountrySyncResult is not null)
             {
                 await GetCountries();
                 await dialogService.AlertAsync(
-                    $"Inserted: {lastSyncResult.Inserted}, Updated: {lastSyncResult.Updated}, Skipped: {lastSyncResult.Skipped}.",
+                    $"Inserted: {lastCountrySyncResult.Inserted}, Updated: {lastCountrySyncResult.Updated}, Skipped: {lastCountrySyncResult.Skipped}.",
                     "Success Operation");
             }
         }
@@ -163,6 +200,36 @@
         finally
         {
             isSyncingCountries = false;
+        }
+    }
+
+    private async Task SyncCapitalsClicked()
+    {
+        if (isSyncingCapitals)
+        {
+            return;
+        }
+
+        try
+        {
+            isSyncingCapitals = true;
+            lastCapitalSyncResult = await countrySyncService.SyncCapitalsAsync();
+
+            if (lastCapitalSyncResult is not null)
+            {
+                await GetCountries();
+                await dialogService.AlertAsync(
+                    $"Matched: {lastCapitalSyncResult.CountriesMatched}, Skipped: {lastCapitalSyncResult.CountriesSkipped}, Cities inserted/updated: {lastCapitalSyncResult.CitiesInserted}/{lastCapitalSyncResult.CitiesUpdated}, Towns inserted/updated: {lastCapitalSyncResult.TownsInserted}/{lastCapitalSyncResult.TownsUpdated}.",
+                    "Success Operation");
+            }
+        }
+        catch (Exception ex)
+        {
+            await dialogService.AlertAsync(ex.Message, "Alert!");
+        }
+        finally
+        {
+            isSyncingCapitals = false;
         }
     }
 

@@ -93,8 +93,11 @@ try
     builder.Services.AddScoped<IGenericRepositoryInterface<Country>, CountryRepository>();
     builder.Services.AddScoped<ICountryRepository, CountryRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<City>, CityRepository>();
+    builder.Services.AddScoped<ICityRepository, CityRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<Town>, TownRepository>();
+    builder.Services.AddScoped<ITownRepository, TownRepository>();
     builder.Services.AddScoped<ICountrySyncService, CountrySyncService>();
+    builder.Services.AddScoped<ICapitalSyncService, CapitalSyncService>();
 
     builder.Services.AddHttpClient("RestCountries", client =>
     {

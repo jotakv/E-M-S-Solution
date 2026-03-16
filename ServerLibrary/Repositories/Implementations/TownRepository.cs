@@ -9,7 +9,7 @@ namespace ServerLibrary.Repositories.Implementations
 {
     public class TownRepository(
         AppDbContext appDbContext,
-        ILogger<TownRepository> logger) : IGenericRepositoryInterface<Town>
+        ILogger<TownRepository> logger) : IGenericRepositoryInterface<Town>, ITownRepository
     {
         public async Task<List<Town>> GetAll() =>
             await appDbContext.Towns
@@ -19,6 +19,19 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<Town> GetById(int id) =>
             (await appDbContext.Towns.FindAsync(id))!;
+
+        public async Task<List<Town>> GetAllForSyncAsync() =>
+            await appDbContext.Towns.ToListAsync();
+
+        public async Task<Town?> GetByCityIdAndNameAsync(int cityId, string townName)
+        {
+            var normalizedTownName = townName.Trim();
+
+            return await appDbContext.Towns.FirstOrDefaultAsync(town =>
+                town.CityId == cityId &&
+                town.Name != null &&
+                town.Name.Equals(normalizedTownName, StringComparison.OrdinalIgnoreCase));
+        }
 
         public async Task<GeneralResponse> Insert(Town item)
         {
@@ -88,6 +101,9 @@ namespace ServerLibrary.Repositories.Implementations
 
             return Success();
         }
+
+        public async Task AddAsync(Town town) =>
+            await appDbContext.Towns.AddAsync(town);
 
         private async Task Commit() => await appDbContext.SaveChangesAsync();
         private static GeneralResponse NotFound() => new(false, "Sorry town not found");
