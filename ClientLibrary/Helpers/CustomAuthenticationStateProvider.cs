@@ -30,20 +30,15 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
         if (session == null || string.IsNullOrWhiteSpace(session.Token))
             return Unauthenticated();
 
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(session.Token);
+        var claims = ParseClaimsFromJwt(session.Token);
 
-        var claims = jwt.Claims.ToList();
+        var identity = new ClaimsIdentity(
+            claims,
+            authenticationType: "jwt",
+            nameType: JwtRegisteredClaimNames.Name,
+            roleType: "role"
+        );
 
-        // ⭐ THIS IS THE FIX ⭐
-        var roleClaims = claims
-            .Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
-            .Select(c => new Claim(ClaimTypes.Role, c.Value))
-            .ToList();
-
-        claims.AddRange(roleClaims);
-
-        var identity = new ClaimsIdentity(claims, "jwt");
         var user = new ClaimsPrincipal(identity);
 
         return new AuthenticationState(user);
@@ -63,6 +58,46 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
         await _localStorage.SetItemAsStringAsync(TokenKey, JsonSerializer.Serialize(session));
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
+
+    private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
+    {
+        var payload = jwt.Split('.')[1];
+
+        // Fix base64url padding
+        switch (payload.Length % 4)
+        {
+            case 2: payload += "=="; break;
+            case 3: payload += "="; break;
+        }
+
+        var jsonBytes = Convert.FromBase64String(payload);
+        var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonBytes)!;
+
+        var claims = new List<Claim>();
+
+        foreach (var kvp in keyValuePairs)
+        {
+            // Handle role as array or single value
+            if (kvp.Key == "role")
+            {
+                if (kvp.Value.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var role in kvp.Value.EnumerateArray())
+                        claims.Add(new Claim("role", role.GetString()!));
+                }
+                else
+                {
+                    claims.Add(new Claim("role", kvp.Value.GetString()!));
+                }
+            }
+            else
+            {
+                claims.Add(new Claim(kvp.Key, kvp.Value.ToString()));
+            }
+        }
+
+        return claims;
     }
 
     public async Task Logout()

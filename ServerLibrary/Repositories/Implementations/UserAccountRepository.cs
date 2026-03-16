@@ -216,7 +216,7 @@ namespace ServerLibrary.Repositories.Implementations
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name,            user.Fullname!),
                 new Claim(ClaimTypes.Email,           user.Email!),
-                new Claim(ClaimTypes.Role,            role!),
+                new Claim("role",            role!),
             };
 
             var token = new JwtSecurityToken(
