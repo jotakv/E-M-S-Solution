@@ -78,7 +78,21 @@
     {
         await GetCities();
         await GetTowns();
-        allState.Action += StateHasChanged;
+        allState.Action += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (allState.ShowTown)
+            {
+                await GetCities();
+                await GetTowns();
+            }
+
+            StateHasChanged();
+        });
     }
 
     private async Task GetCities()
@@ -165,6 +179,6 @@
 
     public void Dispose()
     {
-        allState.Action -= StateHasChanged;
+        allState.Action -= HandleStateChanged;
     }
 }

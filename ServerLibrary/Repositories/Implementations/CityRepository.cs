@@ -9,7 +9,7 @@ namespace ServerLibrary.Repositories.Implementations
 {
     public class CityRepository(
         AppDbContext appDbContext,
-        ILogger<CityRepository> logger) : IGenericRepositoryInterface<City>
+        ILogger<CityRepository> logger) : IGenericRepositoryInterface<City>, ICityRepository
     {
         public async Task<List<City>> GetAll() =>
             await appDbContext.Cities
@@ -19,6 +19,19 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<City> GetById(int id) =>
             (await appDbContext.Cities.FindAsync(id))!;
+
+        public async Task<List<City>> GetAllForSyncAsync() =>
+            await appDbContext.Cities.ToListAsync();
+
+        public async Task<City?> GetByCountryIdAndNameAsync(int countryId, string cityName)
+        {
+            var normalizedCityName = cityName.Trim();
+
+            return await appDbContext.Cities.FirstOrDefaultAsync(city =>
+                city.CountryId == countryId &&
+                city.Name != null &&
+                city.Name.Equals(normalizedCityName, StringComparison.OrdinalIgnoreCase));
+        }
 
         public async Task<GeneralResponse> Insert(City item)
         {
@@ -88,6 +101,9 @@ namespace ServerLibrary.Repositories.Implementations
 
             return Success();
         }
+
+        public async Task AddAsync(City city) =>
+            await appDbContext.Cities.AddAsync(city);
 
         private async Task Commit() => await appDbContext.SaveChangesAsync();
         private static GeneralResponse NotFound() => new(false, "Sorry city not found");
