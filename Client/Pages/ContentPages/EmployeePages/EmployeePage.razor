@@ -43,8 +43,8 @@
                                     <GridColumn Field="@nameof(Employee.Name)" HeaderText="Name"></GridColumn>
                                     <GridColumn Field="@nameof(Employee.TelephoneNumber)" HeaderText="Telephone"></GridColumn>
                                     <GridColumn Field="@nameof(Employee.JobName)" HeaderText="Job Name"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.Branch.Name)" HeaderText="Branch"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.Town.Name)" HeaderText="Town"></GridColumn>
+                                    <GridColumn Field="Branch.Name" HeaderText="Branch"></GridColumn>
+                                    <GridColumn Field="Town.Name" HeaderText="Town"></GridColumn>
                                     <GridColumn HeaderText="Menu" HeaderTextAlign="TextAlign.Left">
                                         <Template>
                                             @{
