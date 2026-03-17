@@ -124,6 +124,61 @@ public class CountrySyncServiceTests
         repositoryMock.Verify(repository => repository.SaveChangesAsync(), Times.Once);
     }
 
+    [Fact]
+    public async Task SyncFromRestCountriesAsync_WhenApiReturnsErrorStatusCode_ThrowsHttpRequestException()
+    {
+        // Arrange
+        var repositoryMock = CreateRepositoryMock([]);
+        var httpClientFactoryMock = CreateHttpClientFactoryMock(HttpStatusCode.InternalServerError, "Server Error");
+
+        var service = new CountrySyncService(repositoryMock.Object, httpClientFactoryMock.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => service.SyncFromRestCountriesAsync());
+
+        Assert.Contains("REST Countries request failed with status code 500", exception.Message);
+
+        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Country>()), Times.Never);
+        repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncFromRestCountriesAsync_WhenApiReturnsEmptyArray_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var repositoryMock = CreateRepositoryMock([]);
+        var httpClientFactoryMock = CreateHttpClientFactoryMock(HttpStatusCode.OK, "[]");
+
+        var service = new CountrySyncService(repositoryMock.Object, httpClientFactoryMock.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SyncFromRestCountriesAsync());
+
+        Assert.Equal("REST Countries returned no country data.", exception.Message);
+        repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncFromRestCountriesAsync_WhenNetworkExceptionOccurs_LetsExceptionBubbleUp()
+    {
+        // Arrange
+        var repositoryMock = CreateRepositoryMock([]);
+
+        var handler = new FakeHttpMessageHandler(_ => throw new HttpRequestException("Network down"));
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://restcountries.com/") };
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        httpClientFactoryMock.Setup(f => f.CreateClient("RestCountries")).Returns(httpClient);
+
+        var service = new CountrySyncService(repositoryMock.Object, httpClientFactoryMock.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => service.SyncFromRestCountriesAsync());
+
+        Assert.Equal("Network down", exception.Message);
+        repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
     private static Mock<ICountryRepository> CreateRepositoryMock(List<Country> countries)
     {
         var repositoryMock = new Mock<ICountryRepository>();
