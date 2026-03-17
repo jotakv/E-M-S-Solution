@@ -288,22 +288,22 @@
         addOrUpdateEmployee!.EmployeeGroup2.TownId = SelectedEmployee.TownId;
 
         if (SelectedEmployee.Branch?.Department?.GeneralDepartment != null)
-            addOrUpdateEmployee!.GeneralDepartment = SelectedEmployee.Branch.Department.GeneralDepartment.Name;
+            addOrUpdateEmployee!.GeneralDepartment = SelectedEmployee.Branch.Department.GeneralDepartment.Id.ToString();
 
         if (SelectedEmployee.Branch?.Department != null)
-            addOrUpdateEmployee!.Department = SelectedEmployee.Branch.Department.Name;
+            addOrUpdateEmployee!.Department = SelectedEmployee.Branch.Department.Id.ToString();
 
         if (SelectedEmployee.Branch != null)
-            addOrUpdateEmployee!.Branch = SelectedEmployee.Branch.Name;
+            addOrUpdateEmployee!.Branch = SelectedEmployee.Branch.Id.ToString();
 
         if (SelectedEmployee.Town?.City?.Country != null)
-            addOrUpdateEmployee!.Country = SelectedEmployee.Town.City.Country.Name;
+            addOrUpdateEmployee!.Country = SelectedEmployee.Town.City.Country.Id.ToString();
 
         if (SelectedEmployee.Town?.City != null)
-            addOrUpdateEmployee!.City = SelectedEmployee.Town.City.Name;
+            addOrUpdateEmployee!.City = SelectedEmployee.Town.City.Id.ToString();
 
         if (SelectedEmployee.Town != null)
-            addOrUpdateEmployee!.Town = SelectedEmployee.Town.Name;
+            addOrUpdateEmployee!.Town = SelectedEmployee.Town.Id.ToString();
 
         SelectedEmployee = new();
         contextMenu!.CloseContextMenu();
