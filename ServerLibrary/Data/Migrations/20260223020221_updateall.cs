@@ -63,13 +63,6 @@ namespace ServerLibrary.Data.Migrations
                 name: "Other",
                 table: "Doctors");
 
-            migrationBuilder.AddColumn<int>(
-                name: "EmployeeId",
-                table: "Vacations",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
             migrationBuilder.AlterColumn<int>(
                 name: "SanctionTypeId",
                 table: "Sanctions",
@@ -80,26 +73,6 @@ namespace ServerLibrary.Data.Migrations
                 oldType: "int",
                 oldNullable: true);
 
-            migrationBuilder.AddColumn<int>(
-                name: "EmployeeId",
-                table: "Sanctions",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "EmployeeId",
-                table: "Overtimes",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "EmployeeId",
-                table: "Doctors",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Sanctions_SanctionTypes_SanctionTypeId",
@@ -116,22 +89,6 @@ namespace ServerLibrary.Data.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Sanctions_SanctionTypes_SanctionTypeId",
                 table: "Sanctions");
-
-            migrationBuilder.DropColumn(
-                name: "EmployeeId",
-                table: "Vacations");
-
-            migrationBuilder.DropColumn(
-                name: "EmployeeId",
-                table: "Sanctions");
-
-            migrationBuilder.DropColumn(
-                name: "EmployeeId",
-                table: "Overtimes");
-
-            migrationBuilder.DropColumn(
-                name: "EmployeeId",
-                table: "Doctors");
 
             migrationBuilder.AddColumn<string>(
                 name: "Civilld",

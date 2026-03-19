@@ -16,6 +16,6 @@ namespace BaseLibrary.Entities
 
         [Required]
         public int VacationTypeId { get; set; }
-
+        public Employee Employee { get; set; }
     }
 }

@@ -33,6 +33,7 @@ try
         Environment.MachineName);
 
     var builder = WebApplication.CreateBuilder(args);
+    var seedDemoDataOnStartup = builder.Configuration.GetValue<bool>("SeedDemoDataOnStartup");
 
     // ──────────────────────────────────────────────────────────────────────────
     // Stage-2: replace the bootstrap logger with the full configuration from
@@ -127,6 +128,11 @@ try
     });
 
     var app = builder.Build();
+
+    if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
+    {
+        await DevelopmentDataSeeder.SeedAsync(app.Services);
+    }
 
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();

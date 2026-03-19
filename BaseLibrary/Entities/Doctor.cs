@@ -13,5 +13,6 @@ namespace BaseLibrary.Entities
 
         [Required]
         public string MedicalRecommendation { get; set; } = string.Empty;
+        public Employee Employee { get; set; }
     }
 }

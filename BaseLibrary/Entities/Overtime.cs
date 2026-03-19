@@ -15,6 +15,7 @@ namespace BaseLibrary.Entities
         public OvertimeType? OvertimeType { get; set; }
         [Required]
         public int OvertimeTypeld { get; set; }
+        public Employee Employee { get; set; }
     }
 
 }
