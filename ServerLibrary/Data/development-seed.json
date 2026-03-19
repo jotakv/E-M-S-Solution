@@ -1,0 +1,362 @@
+{
+  "roles": [ "Admin", "User" ],
+
+  "users": [
+    {
+      "fullname": "System Administrator",
+      "email": "admin@ems.local",
+      "password": "Admin123!",
+      "role": "Admin"
+    },
+    {
+      "fullname": "Olivia Carter",
+      "email": "hr@ems.local",
+      "password": "User123!",
+      "role": "User"
+    },
+    {
+      "fullname": "Ethan Brooks",
+      "email": "manager@ems.local",
+      "password": "User123!",
+      "role": "User"
+    }
+  ],
+
+  "generalDepartments": [
+    { "name": "Information Technology" },
+    { "name": "Human Resources" },
+    { "name": "Sales" },
+    { "name": "Marketing" },
+    { "name": "Finance" },
+    { "name": "Operations" }
+  ],
+
+  "departments": [
+    {
+      "name": "Infrastructure",
+      "generalDepartment": "Information Technology"
+    },
+    {
+      "name": "Quality Assurance",
+      "generalDepartment": "Information Technology"
+    },
+    {
+      "name": "Recruitment",
+      "generalDepartment": "Human Resources"
+    },
+    {
+      "name": "Employee Relations",
+      "generalDepartment": "Human Resources"
+    },
+    {
+      "name": "Corporate Sales",
+      "generalDepartment": "Sales"
+    },
+    {
+      "name": "Digital Marketing",
+      "generalDepartment": "Marketing"
+    },
+    {
+      "name": "Accounting",
+      "generalDepartment": "Finance"
+    },
+    {
+      "name": "Logistics",
+      "generalDepartment": "Operations"
+    }
+  ],
+
+  "branches": [
+    {
+      "name": "Dublin Tech Hub",
+      "department": "Infrastructure"
+    },
+    {
+      "name": "Dublin QA Center",
+      "department": "Quality Assurance"
+    },
+    {
+      "name": "Madrid Talent Office",
+      "department": "Recruitment"
+    },
+    {
+      "name": "Barcelona People Office",
+      "department": "Employee Relations"
+    },
+    {
+      "name": "London Sales Branch",
+      "department": "Corporate Sales"
+    },
+    {
+      "name": "Berlin Marketing Studio",
+      "department": "Digital Marketing"
+    },
+    {
+      "name": "Paris Finance Desk",
+      "department": "Accounting"
+    },
+    {
+      "name": "Amsterdam Operations Hub",
+      "department": "Logistics"
+    }
+  ],
+
+  "countries": [
+    {
+      "name": "Ireland",
+      "code2": "IE"
+    },
+    {
+      "name": "Spain",
+      "code2": "ES"
+    },
+    {
+      "name": "United Kingdom",
+      "code2": "GB"
+    },
+    {
+      "name": "Germany",
+      "code2": "DE"
+    },
+    {
+      "name": "France",
+      "code2": "FR"
+    },
+    {
+      "name": "Netherlands",
+      "code2": "NL"
+    }
+  ],
+
+  "cities": [
+    {
+      "name": "Dublin",
+      "country": "Ireland"
+    },
+    {
+      "name": "Madrid",
+      "country": "Spain"
+    },
+    {
+      "name": "London",
+      "country": "United Kingdom"
+    },
+    {
+      "name": "Berlin",
+      "country": "Germany"
+    },
+    {
+      "name": "Paris",
+      "country": "France"
+    },
+    {
+      "name": "Amsterdam",
+      "country": "Netherlands"
+    }
+  ],
+
+  "towns": [
+    {
+      "name": "Dublin",
+      "city": "Dublin"
+    },
+    {
+      "name": "Madrid",
+      "city": "Madrid"
+    },
+    {
+      "name": "London",
+      "city": "London"
+    },
+    {
+      "name": "Berlin",
+      "city": "Berlin"
+    },
+    {
+      "name": "Paris",
+      "city": "Paris"
+    },
+    {
+      "name": "Amsterdam",
+      "city": "Amsterdam"
+    }
+  ],
+
+  "overtimeTypes": [
+    { "name": "Regular Overtime" },
+    { "name": "Weekend Overtime" },
+    { "name": "Holiday Overtime" },
+    { "name": "Night Shift Overtime" },
+    { "name": "Emergency Overtime" }
+  ],
+
+  "sanctionTypes": [
+    { "name": "Verbal Warning" },
+    { "name": "Written Warning" },
+    { "name": "Final Warning" },
+    { "name": "Suspension" },
+    { "name": "Policy Violation" }
+  ],
+
+  "vacationTypes": [
+    { "name": "Annual Leave" },
+    { "name": "Sick Leave" },
+    { "name": "Maternity Leave" },
+    { "name": "Paternity Leave" },
+    { "name": "Unpaid Leave" }
+  ],
+
+  "employees": [
+    {
+      "name": "Kevin Walsh",
+      "civilId": "CIV-001",
+      "fileNumber": "EMP-001",
+      "jobName": "Infrastructure Engineer",
+      "address": "14 River Liffey Quay, Dublin",
+      "telephoneNumber": "+353 1 555 0101",
+      "branch": "Dublin Tech Hub",
+      "town": "Dublin",
+      "other": "Azure infrastructure lead for the platform squad.",
+      "backgroundColor": "#1F3C88",
+      "foregroundColor": "#F6F1E9"
+    },
+    {
+      "name": "Laura Garcia",
+      "civilId": "CIV-002",
+      "fileNumber": "EMP-002",
+      "jobName": "Talent Acquisition Specialist",
+      "address": "28 Gran Via, Madrid",
+      "telephoneNumber": "+34 91 555 0102",
+      "branch": "Madrid Talent Office",
+      "town": "Madrid",
+      "other": "Focuses on technical recruitment across Iberia.",
+      "backgroundColor": "#8A1538",
+      "foregroundColor": "#FFF4E6"
+    },
+    {
+      "name": "Daniel Smith",
+      "civilId": "CIV-003",
+      "fileNumber": "EMP-003",
+      "jobName": "Account Executive",
+      "address": "52 Bishopsgate, London",
+      "telephoneNumber": "+44 20 5550 0103",
+      "branch": "London Sales Branch",
+      "town": "London",
+      "other": "Owns enterprise accounts in the UK market.",
+      "backgroundColor": "#0B6E4F",
+      "foregroundColor": "#F4F1DE"
+    },
+    {
+      "name": "Sofia Martinez",
+      "civilId": "CIV-004",
+      "fileNumber": "EMP-004",
+      "jobName": "People Operations Partner",
+      "address": "91 Calle de Alcala, Madrid",
+      "telephoneNumber": "+34 91 555 0104",
+      "branch": "Barcelona People Office",
+      "town": "Madrid",
+      "other": "Supports onboarding, policy updates, and employee relations.",
+      "backgroundColor": "#D35400",
+      "foregroundColor": "#FFF7ED"
+    },
+    {
+      "name": "Marta Fischer",
+      "civilId": "CIV-005",
+      "fileNumber": "EMP-005",
+      "jobName": "Marketing Campaign Manager",
+      "address": "18 Friedrichstrasse, Berlin",
+      "telephoneNumber": "+49 30 555 0105",
+      "branch": "Berlin Marketing Studio",
+      "town": "Berlin",
+      "other": "Leads digital campaign planning for central Europe.",
+      "backgroundColor": "#6C3483",
+      "foregroundColor": "#F8F4FF"
+    },
+    {
+      "name": "Lucas Bernard",
+      "civilId": "CIV-006",
+      "fileNumber": "EMP-006",
+      "jobName": "Financial Analyst",
+      "address": "7 Rue de Rivoli, Paris",
+      "telephoneNumber": "+33 1 55 50 0106",
+      "branch": "Paris Finance Desk",
+      "town": "Paris",
+      "other": "Owns monthly forecasting and budget tracking.",
+      "backgroundColor": "#2E4053",
+      "foregroundColor": "#F4F6F7"
+    },
+    {
+      "name": "Emma Johnson",
+      "civilId": "CIV-007",
+      "fileNumber": "EMP-007",
+      "jobName": "QA Analyst",
+      "address": "5 Spencer Dock, Dublin",
+      "telephoneNumber": "+353 1 555 0107",
+      "branch": "Dublin QA Center",
+      "town": "Dublin",
+      "other": "Maintains regression coverage for release candidates.",
+      "backgroundColor": "#146356",
+      "foregroundColor": "#F2F7F2"
+    },
+    {
+      "name": "Noah de Vries",
+      "civilId": "CIV-008",
+      "fileNumber": "EMP-008",
+      "jobName": "Operations Coordinator",
+      "address": "33 Singel, Amsterdam",
+      "telephoneNumber": "+31 20 555 0108",
+      "branch": "Amsterdam Operations Hub",
+      "town": "Amsterdam",
+      "other": "Coordinates vendors, logistics planning, and office services.",
+      "backgroundColor": "#1B4F72",
+      "foregroundColor": "#EEF6FB"
+    }
+  ],
+
+  "doctors": [
+    {
+      "employee": "Kevin Walsh",
+      "date": "2026-01-15",
+      "medicalDiagnose": "Mild lower back strain after an extended maintenance shift.",
+      "medicalRecommendation": "Physiotherapy stretches twice daily and no heavy lifting for one week."
+    },
+    {
+      "employee": "Laura Garcia",
+      "date": "2026-01-20",
+      "medicalDiagnose": "Seasonal flu symptoms with moderate fatigue.",
+      "medicalRecommendation": "Rest for 48 hours, hydration, and remote work on recovery days."
+    }
+  ],
+
+  "overtimes": [
+    {
+      "employee": "Kevin Walsh",
+      "type": "Weekend Overtime",
+      "date": "2026-03-01"
+    },
+    {
+      "employee": "Laura Garcia",
+      "type": "Regular Overtime",
+      "date": "2026-03-02"
+    }
+  ],
+
+  "sanctions": [
+    {
+      "employee": "Daniel Smith",
+      "type": "Verbal Warning",
+      "date": "2026-01-10",
+      "punishmentDate": "2026-01-12",
+      "punishment": "Coaching session and attendance review."
+    }
+  ],
+
+  "vacations": [
+    {
+      "employee": "Kevin Walsh",
+      "type": "Annual Leave",
+      "startDate": "2026-04-01",
+      "numberOfDays": 5
+    }
+  ]
+}

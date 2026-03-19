@@ -1,16 +1,15 @@
-using BaseLibrary.Entities;
+﻿using BaseLibrary.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Helpers;
+using System.Text.Json;
+using ServerLibrary.Data.DTO;
 
 namespace ServerLibrary.Data
 {
     public static class DevelopmentDataSeeder
     {
-        private static readonly DateTime DemoCountrySyncedAtUtc = new(2026, 3, 1, 9, 0, 0, DateTimeKind.Utc);
-
         public static async Task SeedAsync(IServiceProvider services)
         {
             using var scope = services.CreateScope();
@@ -20,7 +19,7 @@ namespace ServerLibrary.Data
                 .GetService<ILoggerFactory>()?
                 .CreateLogger(nameof(DevelopmentDataSeeder));
 
-            logger?.LogInformation("Applying migrations before development demo seeding.");
+            logger?.LogInformation("Applying migrations...");
             await context.Database.MigrateAsync();
 
             await SeedAsync(context, logger);
@@ -31,686 +30,545 @@ namespace ServerLibrary.Data
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
-            if (await HasMeaningfulDataAsync(context, cancellationToken))
-            {
-                logger?.LogInformation(
-                    "Skipping development demo seeding because meaningful data already exists.");
-                return;
-            }
+            var seedData = await LoadSeedDataAsync();
 
-            IDbContextTransaction? transaction = null;
-
-            if (context.Database.IsRelational())
-            {
-                transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-            }
+            await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
-                logger?.LogInformation("Seeding development demo data.");
+                logger?.LogInformation("Starting seeding process...");
 
-                var roles = await EnsureRolesAsync(context, cancellationToken);
-                await SeedUsersAsync(context, roles, cancellationToken);
+                var roles = await EnsureRolesAsync(context, seedData, logger, cancellationToken);
+                var users = await SeedUsersOnlyAsync(context, seedData, logger, cancellationToken);
+                await SeedUserRolesAsync(context, seedData, users, roles, logger, cancellationToken);
 
-                var generalDepartments = await SeedGeneralDepartmentsAsync(context, cancellationToken);
-                var departments = await SeedDepartmentsAsync(context, generalDepartments, cancellationToken);
-                var branches = await SeedBranchesAsync(context, departments, cancellationToken);
+                var generalDepartments = await SeedGeneralDepartmentsAsync(context, seedData, logger, cancellationToken);
+                var departments = await SeedDepartmentsAsync(context, seedData, generalDepartments, logger, cancellationToken);
+                var branches = await SeedBranchesAsync(context, seedData, departments, logger, cancellationToken);
 
-                var countries = await SeedCountriesAsync(context, cancellationToken);
-                var cities = await SeedCitiesAsync(context, countries, cancellationToken);
-                var towns = await SeedTownsAsync(context, cities, cancellationToken);
+                var countries = await SeedCountriesAsync(context, seedData, logger, cancellationToken);
+                var cities = await SeedCitiesAsync(context, seedData, countries, logger, cancellationToken);
+                var towns = await SeedTownsAsync(context, seedData, cities, logger, cancellationToken);
 
-                var overtimeTypes = await SeedOvertimeTypesAsync(context, cancellationToken);
-                var sanctionTypes = await SeedSanctionTypesAsync(context, cancellationToken);
-                var vacationTypes = await SeedVacationTypesAsync(context, cancellationToken);
+                var overtimeTypes = await SeedOvertimeTypesAsync(context, seedData, logger, cancellationToken);
+                var sanctionTypes = await SeedSanctionTypesAsync(context, seedData, logger, cancellationToken);
+                var vacationTypes = await SeedVacationTypesAsync(context, seedData, logger, cancellationToken);
 
-                var employees = await SeedEmployeesAsync(context, branches, towns, cancellationToken);
+                var employees = await SeedEmployeesAsync(context, seedData, branches, towns, logger, cancellationToken);
 
-                await SeedDoctorsAsync(context, employees, cancellationToken);
-                await SeedOvertimesAsync(context, employees, overtimeTypes, cancellationToken);
-                await SeedSanctionsAsync(context, employees, sanctionTypes, cancellationToken);
-                await SeedVacationsAsync(context, employees, vacationTypes, cancellationToken);
+                await SeedDoctorsAsync(context, seedData, employees, logger, cancellationToken);
+                await SeedOvertimesAsync(context, seedData, employees, overtimeTypes, logger, cancellationToken);
+                await SeedSanctionsAsync(context, seedData, employees, sanctionTypes, logger, cancellationToken);
+                await SeedVacationsAsync(context, seedData, employees, vacationTypes, logger, cancellationToken);
 
-                if (transaction is not null)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
+                await context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
 
-                logger?.LogInformation("Development demo data seeded successfully.");
+                logger?.LogInformation("Seeding completed successfully.");
             }
-            catch
+            catch (Exception ex)
             {
-                if (transaction is not null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
-
+                logger?.LogError(ex, "Seeding failed. Rolling back...");
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
-            finally
-            {
-                if (transaction is not null)
-                {
-                    await transaction.DisposeAsync();
-                }
-            }
         }
 
-        private static async Task<bool> HasMeaningfulDataAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
+        #region Load JSON
+
+        private static async Task<SeedData> LoadSeedDataAsync()
         {
-            return await context.ApplicationUsers.AnyAsync(cancellationToken)
-                || await context.GeneralDepartments.AnyAsync(cancellationToken)
-                || await context.Departments.AnyAsync(cancellationToken)
-                || await context.Branches.AnyAsync(cancellationToken)
-                || await context.Countries.AnyAsync(cancellationToken)
-                || await context.Cities.AnyAsync(cancellationToken)
-                || await context.Towns.AnyAsync(cancellationToken)
-                || await context.OvertimeTypes.AnyAsync(cancellationToken)
-                || await context.SanctionTypes.AnyAsync(cancellationToken)
-                || await context.VacationTypes.AnyAsync(cancellationToken)
-                || await context.Employees.AnyAsync(cancellationToken)
-                || await context.Doctors.AnyAsync(cancellationToken)
-                || await context.Overtimes.AnyAsync(cancellationToken)
-                || await context.Sanctions.AnyAsync(cancellationToken)
-                || await context.Vacations.AnyAsync(cancellationToken);
+            var path = Path.Combine(AppContext.BaseDirectory, "Data", "development-seed.json");
+
+            if (!File.Exists(path))
+                throw new FileNotFoundException("Seed file not found", path);
+
+            var json = await File.ReadAllTextAsync(path);
+
+            return JsonSerializer.Deserialize<SeedData>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
         }
+
+        #endregion
+
+        #region Roles & Users
 
         private static async Task<Dictionary<string, SystemRole>> EnsureRolesAsync(
             AppDbContext context,
-            CancellationToken cancellationToken)
+            SeedData seedData,
+            ILogger? logger,
+            CancellationToken ct)
         {
-            var roles = await context.SystemRoles
-                .Where(role => role.Name == Constants.Admin || role.Name == Constants.User)
-                .ToListAsync(cancellationToken);
+            var existing = await context.SystemRoles.ToListAsync(ct);
+            var dict = existing.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
 
-            var existingRoles = roles.ToDictionary(role => role.Name, StringComparer.OrdinalIgnoreCase);
-            var rolesAdded = false;
-
-            if (!existingRoles.ContainsKey(Constants.Admin))
+            foreach (var roleName in seedData.Roles)
             {
-                context.SystemRoles.Add(new SystemRole { Name = Constants.Admin });
-                rolesAdded = true;
+                if (!dict.ContainsKey(roleName))
+                {
+                    var role = new SystemRole { Name = roleName };
+                    context.SystemRoles.Add(role);
+                    dict[roleName] = role;
+
+                    logger?.LogInformation("Added role {Role}", roleName);
+                }
             }
 
-            if (!existingRoles.ContainsKey(Constants.User))
+            return dict;
+        }
+
+        private static async Task<Dictionary<string, ApplicationUser>> SeedUsersOnlyAsync(
+            AppDbContext context,
+            SeedData seedData,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existing = await context.ApplicationUsers
+                .ToDictionaryAsync(x => x.Email, StringComparer.OrdinalIgnoreCase, ct);
+
+            foreach (var dto in seedData.Users)
             {
-                context.SystemRoles.Add(new SystemRole { Name = Constants.User });
-                rolesAdded = true;
+                if (!existing.ContainsKey(dto.Email))
+                {
+                    var user = new ApplicationUser
+                    {
+                        Fullname = dto.Fullname,
+                        Email = dto.Email,
+                        Password = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                    };
+
+                    context.ApplicationUsers.Add(user);
+                    existing[dto.Email] = user;
+
+                    logger?.LogInformation("Added user {Email}", dto.Email);
+                }
             }
 
-            if (rolesAdded)
+            return existing;
+        }
+
+        private static async Task SeedUserRolesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, ApplicationUser> users,
+            Dictionary<string, SystemRole> roles,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existingInDb = await context.UserRoles
+                .Select(x => new { x.UserId, x.RoleId })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(int UserId, int RoleId)>();
+
+            foreach (var dto in seedData.Users)
             {
-                await context.SaveChangesAsync(cancellationToken);
-                roles = await context.SystemRoles
-                    .Where(role => role.Name == Constants.Admin || role.Name == Constants.User)
-                    .ToListAsync(cancellationToken);
+                if (!roles.TryGetValue(dto.Role, out var role))
+                    throw new Exception($"Role not found: {dto.Role}");
+
+                if (!users.TryGetValue(dto.Email, out var user))
+                    throw new Exception($"User not found: {dto.Email}");
+
+                var alreadyInDb = existingInDb.Any(x => x.UserId == user.Id && x.RoleId == role.Id);
+                var alreadyInMemory = addedInMemory.Contains((user.Id, role.Id));
+
+                if (!alreadyInDb && !alreadyInMemory)
+                {
+                    context.UserRoles.Add(new UserRole
+                    {
+                        User = user,  
+                        Role = role  
+                    });
+
+                    addedInMemory.Add((user.Id, role.Id));
+
+                    logger?.LogInformation("Assigned role {Role} to user {Email}", dto.Role, dto.Email);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Generic Seed Helpers
+
+        private static async Task<Dictionary<string, T>> AddIfNotExistsAsync<T>(
+            DbSet<T> dbSet,
+            IEnumerable<T> items,
+            Func<T, string> keySelector,
+            ILogger? logger,
+            CancellationToken ct) where T : class
+        {
+            var existing = await dbSet.ToListAsync(ct);
+            var dict = existing.ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in items)
+            {
+                var key = keySelector(item);
+
+                if (!dict.ContainsKey(key))
+                {
+                    await dbSet.AddAsync(item, ct);
+                    dict[key] = item;
+                }
             }
 
-            return roles.ToDictionary(role => role.Name, StringComparer.OrdinalIgnoreCase);
+            return dict;
         }
 
-        private static async Task SeedUsersAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, SystemRole> roles,
-            CancellationToken cancellationToken)
-        {
-            var demoUsers = new[]
-            {
-                new DemoUserSeed("System Administrator", "admin@ems.local", "Admin123!", Constants.Admin),
-                new DemoUserSeed("Olivia Carter", "hr@ems.local", "User123!", Constants.User),
-                new DemoUserSeed("Ethan Brooks", "manager@ems.local", "User123!", Constants.User)
-            };
+        #endregion
 
-            var applicationUsers = demoUsers
-                .Select(user => new ApplicationUser
-                {
-                    Fullname = user.Fullname,
-                    Email = user.Email,
-                    Password = BCrypt.Net.BCrypt.HashPassword(user.Password)
-                })
-                .ToList();
-
-            await context.ApplicationUsers.AddRangeAsync(applicationUsers, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            var userRoles = applicationUsers
-                .Zip(demoUsers, (user, seed) => new UserRole
-                {
-                    UserId = user.Id,
-                    RoleId = roles[seed.RoleName].Id
-                })
-                .ToList();
-
-            await context.UserRoles.AddRangeAsync(userRoles, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-        }
-
-        private static async Task<Dictionary<string, GeneralDepartment>> SeedGeneralDepartmentsAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
-        {
-            var items = new[]
-            {
-                new GeneralDepartment { Name = "Information Technology" },
-                new GeneralDepartment { Name = "Human Resources" },
-                new GeneralDepartment { Name = "Sales" },
-                new GeneralDepartment { Name = "Marketing" },
-                new GeneralDepartment { Name = "Finance" },
-                new GeneralDepartment { Name = "Operations" }
-            };
-
-            await context.GeneralDepartments.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, Department>> SeedDepartmentsAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, GeneralDepartment> generalDepartments,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new NameWithParentSeed("Infrastructure", "Information Technology"),
-                new NameWithParentSeed("Quality Assurance", "Information Technology"),
-                new NameWithParentSeed("Recruitment", "Human Resources"),
-                new NameWithParentSeed("Employee Relations", "Human Resources"),
-                new NameWithParentSeed("Corporate Sales", "Sales"),
-                new NameWithParentSeed("Digital Marketing", "Marketing"),
-                new NameWithParentSeed("Accounting", "Finance"),
-                new NameWithParentSeed("Logistics", "Operations")
-            };
-
-            var items = seeds
-                .Select(seed => new Department
-                {
-                    Name = seed.Name,
-                    GeneralDepartmentId = generalDepartments[seed.ParentName].Id
-                })
-                .ToList();
-
-            await context.Departments.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, Branch>> SeedBranchesAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, Department> departments,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new NameWithParentSeed("Dublin Tech Hub", "Infrastructure"),
-                new NameWithParentSeed("Dublin QA Center", "Quality Assurance"),
-                new NameWithParentSeed("Madrid Talent Office", "Recruitment"),
-                new NameWithParentSeed("Barcelona People Office", "Employee Relations"),
-                new NameWithParentSeed("London Sales Branch", "Corporate Sales"),
-                new NameWithParentSeed("Berlin Marketing Studio", "Digital Marketing"),
-                new NameWithParentSeed("Paris Finance Desk", "Accounting"),
-                new NameWithParentSeed("Amsterdam Operations Hub", "Logistics")
-            };
-
-            var items = seeds
-                .Select(seed => new Branch
-                {
-                    Name = seed.Name,
-                    DepartmentId = departments[seed.ParentName].Id
-                })
-                .ToList();
-
-            await context.Branches.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, Country>> SeedCountriesAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new CountrySeed("Ireland", "IE"),
-                new CountrySeed("Spain", "ES"),
-                new CountrySeed("United Kingdom", "GB"),
-                new CountrySeed("Germany", "DE"),
-                new CountrySeed("France", "FR"),
-                new CountrySeed("Netherlands", "NL")
-            };
-
-            var items = seeds
-                .Select(seed => new Country
-                {
-                    Name = seed.Name,
-                    Code2 = seed.Code2,
-                    Source = "Mock",
-                    FlagUrl = $"https://flagcdn.com/w80/{seed.Code2.ToLowerInvariant()}.png",
-                    LastSyncedAtUtc = DemoCountrySyncedAtUtc
-                })
-                .ToList();
-
-            await context.Countries.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, City>> SeedCitiesAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, Country> countries,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new NameWithParentSeed("Dublin", "Ireland"),
-                new NameWithParentSeed("Madrid", "Spain"),
-                new NameWithParentSeed("London", "United Kingdom"),
-                new NameWithParentSeed("Berlin", "Germany"),
-                new NameWithParentSeed("Paris", "France"),
-                new NameWithParentSeed("Amsterdam", "Netherlands")
-            };
-
-            var items = seeds
-                .Select(seed => new City
-                {
-                    Name = seed.Name,
-                    CountryId = countries[seed.ParentName].Id
-                })
-                .ToList();
-
-            await context.Cities.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, Town>> SeedTownsAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, City> cities,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new NameWithParentSeed("Dublin", "Dublin"),
-                new NameWithParentSeed("Madrid", "Madrid"),
-                new NameWithParentSeed("London", "London"),
-                new NameWithParentSeed("Berlin", "Berlin"),
-                new NameWithParentSeed("Paris", "Paris"),
-                new NameWithParentSeed("Amsterdam", "Amsterdam")
-            };
-
-            var items = seeds
-                .Select(seed => new Town
-                {
-                    Name = seed.Name,
-                    CityId = cities[seed.ParentName].Id
-                })
-                .ToList();
-
-            await context.Towns.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, OvertimeType>> SeedOvertimeTypesAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
-        {
-            var items = new[]
-            {
-                new OvertimeType { Name = "Regular Overtime" },
-                new OvertimeType { Name = "Weekend Overtime" },
-                new OvertimeType { Name = "Holiday Overtime" },
-                new OvertimeType { Name = "Night Shift Overtime" },
-                new OvertimeType { Name = "Emergency Overtime" }
-            };
-
-            await context.OvertimeTypes.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, SanctionType>> SeedSanctionTypesAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
-        {
-            var items = new[]
-            {
-                new SanctionType { Name = "Verbal Warning" },
-                new SanctionType { Name = "Written Warning" },
-                new SanctionType { Name = "Final Warning" },
-                new SanctionType { Name = "Suspension" },
-                new SanctionType { Name = "Policy Violation" }
-            };
-
-            await context.SanctionTypes.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static async Task<Dictionary<string, VacationType>> SeedVacationTypesAsync(
-            AppDbContext context,
-            CancellationToken cancellationToken)
-        {
-            var items = new[]
-            {
-                new VacationType { Name = "Annual Leave" },
-                new VacationType { Name = "Sick Leave" },
-                new VacationType { Name = "Maternity Leave" },
-                new VacationType { Name = "Paternity Leave" },
-                new VacationType { Name = "Unpaid Leave" }
-            };
-
-            await context.VacationTypes.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
+        #region Organization
 
         private static async Task<Dictionary<string, Employee>> SeedEmployeesAsync(
             AppDbContext context,
-            IReadOnlyDictionary<string, Branch> branches,
-            IReadOnlyDictionary<string, Town> towns,
-            CancellationToken cancellationToken)
+            SeedData seedData,
+            Dictionary<string, Branch> branches,
+            Dictionary<string, Town> towns,
+            ILogger? logger,
+            CancellationToken ct)
         {
-            var seeds = new[]
+            var existing = await context.Employees
+                .ToDictionaryAsync(x => x.Name, StringComparer.OrdinalIgnoreCase, ct);
+
+            foreach (var dto in seedData.Employees)
             {
-                new EmployeeSeed(
-                    "Kevin Walsh",
-                    "CIV-001",
-                    "EMP-001",
-                    "Infrastructure Engineer",
-                    "14 River Liffey Quay, Dublin",
-                    "+353 1 555 0101",
-                    "Dublin Tech Hub",
-                    "Dublin",
-                    "Azure infrastructure lead for the platform squad.",
-                    "#1F3C88",
-                    "#F6F1E9"),
-                new EmployeeSeed(
-                    "Laura Garcia",
-                    "CIV-002",
-                    "EMP-002",
-                    "Talent Acquisition Specialist",
-                    "28 Gran Via, Madrid",
-                    "+34 91 555 0102",
-                    "Madrid Talent Office",
-                    "Madrid",
-                    "Focuses on technical recruitment across Iberia.",
-                    "#8A1538",
-                    "#FFF4E6"),
-                new EmployeeSeed(
-                    "Daniel Smith",
-                    "CIV-003",
-                    "EMP-003",
-                    "Account Executive",
-                    "52 Bishopsgate, London",
-                    "+44 20 5550 0103",
-                    "London Sales Branch",
-                    "London",
-                    "Owns enterprise accounts in the UK market.",
-                    "#0B6E4F",
-                    "#F4F1DE"),
-                new EmployeeSeed(
-                    "Sofia Martinez",
-                    "CIV-004",
-                    "EMP-004",
-                    "People Operations Partner",
-                    "91 Calle de Alcala, Madrid",
-                    "+34 91 555 0104",
-                    "Barcelona People Office",
-                    "Madrid",
-                    "Supports onboarding, policy updates, and employee relations.",
-                    "#D35400",
-                    "#FFF7ED"),
-                new EmployeeSeed(
-                    "Marta Fischer",
-                    "CIV-005",
-                    "EMP-005",
-                    "Marketing Campaign Manager",
-                    "18 Friedrichstrasse, Berlin",
-                    "+49 30 555 0105",
-                    "Berlin Marketing Studio",
-                    "Berlin",
-                    "Leads digital campaign planning for central Europe.",
-                    "#6C3483",
-                    "#F8F4FF"),
-                new EmployeeSeed(
-                    "Lucas Bernard",
-                    "CIV-006",
-                    "EMP-006",
-                    "Financial Analyst",
-                    "7 Rue de Rivoli, Paris",
-                    "+33 1 55 50 0106",
-                    "Paris Finance Desk",
-                    "Paris",
-                    "Owns monthly forecasting and budget tracking.",
-                    "#2E4053",
-                    "#F4F6F7"),
-                new EmployeeSeed(
-                    "Emma Johnson",
-                    "CIV-007",
-                    "EMP-007",
-                    "QA Analyst",
-                    "5 Spencer Dock, Dublin",
-                    "+353 1 555 0107",
-                    "Dublin QA Center",
-                    "Dublin",
-                    "Maintains regression coverage for release candidates.",
-                    "#146356",
-                    "#F2F7F2"),
-                new EmployeeSeed(
-                    "Noah de Vries",
-                    "CIV-008",
-                    "EMP-008",
-                    "Operations Coordinator",
-                    "33 Singel, Amsterdam",
-                    "+31 20 555 0108",
-                    "Amsterdam Operations Hub",
-                    "Amsterdam",
-                    "Coordinates vendors, logistics planning, and office services.",
-                    "#1B4F72",
-                    "#EEF6FB")
-            };
+                if (existing.ContainsKey(dto.Name))
+                    continue;
 
-            var items = seeds
-                .Select(seed => new Employee
+                if (!branches.TryGetValue(dto.Branch, out var branch))
+                    throw new Exception($"Branch not found: {dto.Branch}");
+
+                if (!towns.TryGetValue(dto.Town, out var town))
+                    throw new Exception($"Town not found: {dto.Town}");
+
+                var employee = new Employee
                 {
-                    Name = seed.Name,
-                    CivilId = seed.CivilId,
-                    FileNumber = seed.FileNumber,
-                    JobName = seed.JobName,
-                    Address = seed.Address,
-                    TelephoneNumber = seed.TelephoneNumber,
-                    Photo = BuildAvatar(seed.Name, seed.BackgroundColor, seed.ForegroundColor),
-                    Other = seed.Other,
-                    BranchId = branches[seed.BranchName].Id,
-                    TownId = towns[seed.TownName].Id
-                })
-                .ToList();
+                    Name = dto.Name,
+                    CivilId = dto.CivilId,
+                    FileNumber = dto.FileNumber,
+                    JobName = dto.JobName,
+                    Address = dto.Address,
+                    TelephoneNumber = dto.TelephoneNumber,
+                    Branch = branch, 
+                    Town = town,   
+                    Other = dto.Other,
+                    Photo = BuildAvatar(dto.Name, dto.BackgroundColor, dto.ForegroundColor)
+                };
 
-            await context.Employees.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+                context.Employees.Add(employee);
+                existing[dto.Name] = employee;
 
-            return items.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
-        }
+                logger?.LogInformation("Added employee {Name}", dto.Name);
+            }
 
-        private static async Task SeedDoctorsAsync(
-            AppDbContext context,
-            IReadOnlyDictionary<string, Employee> employees,
-            CancellationToken cancellationToken)
-        {
-            var seeds = new[]
-            {
-                new DoctorSeed(
-                    "Kevin Walsh",
-                    new DateTime(2026, 1, 15),
-                    "Mild lower back strain after an extended maintenance shift.",
-                    "Physiotherapy stretches twice daily and no heavy lifting for one week."),
-                new DoctorSeed(
-                    "Laura Garcia",
-                    new DateTime(2026, 1, 20),
-                    "Seasonal flu symptoms with moderate fatigue.",
-                    "Rest for 48 hours, hydration, and remote work on recovery days."),
-                new DoctorSeed(
-                    "Daniel Smith",
-                    new DateTime(2026, 2, 3),
-                    "Migraine episode triggered by travel fatigue.",
-                    "Reduce screen exposure for 24 hours and resume work gradually."),
-                new DoctorSeed(
-                    "Marta Fischer",
-                    new DateTime(2026, 2, 10),
-                    "Wrist tendon irritation from repetitive keyboard use.",
-                    "Use ergonomic support and avoid long typing sessions for five days."),
-                new DoctorSeed(
-                    "Emma Johnson",
-                    new DateTime(2026, 2, 18),
-                    "Routine health review with no critical findings.",
-                    "Continue regular exercise and schedule the next check-up in six months.")
-            };
-
-            var items = seeds
-                .Select(seed => new Doctor
-                {
-                    EmployeeId = employees[seed.EmployeeName].Id,
-                    Date = seed.Date,
-                    MedicalDiagnose = seed.MedicalDiagnose,
-                    MedicalRecommendation = seed.MedicalRecommendation
-                })
-                .ToList();
-
-            await context.Doctors.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+            return existing;
         }
 
         private static async Task SeedOvertimesAsync(
             AppDbContext context,
-            IReadOnlyDictionary<string, Employee> employees,
-            IReadOnlyDictionary<string, OvertimeType> overtimeTypes,
-            CancellationToken cancellationToken)
+            SeedData seedData,
+            Dictionary<string, Employee> employees,
+            Dictionary<string, OvertimeType> types,
+            ILogger? logger,
+            CancellationToken ct)
         {
-            var seeds = new[]
+            var existing = await context.Overtimes
+                .Select(x => new { x.EmployeeId, x.StartDate })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(string EmployeeName, DateTime StartDate)>();
+
+            foreach (var dto in seedData.Overtimes)
             {
-                new ChildTypeSeed("Kevin Walsh", "Weekend Overtime", new DateTime(2026, 3, 1)),
-                new ChildTypeSeed("Laura Garcia", "Regular Overtime", new DateTime(2026, 3, 2)),
-                new ChildTypeSeed("Daniel Smith", "Holiday Overtime", new DateTime(2026, 3, 3)),
-                new ChildTypeSeed("Sofia Martinez", "Night Shift Overtime", new DateTime(2026, 3, 4)),
-                new ChildTypeSeed("Emma Johnson", "Emergency Overtime", new DateTime(2026, 3, 5)),
-                new ChildTypeSeed("Noah de Vries", "Weekend Overtime", new DateTime(2026, 3, 6))
-            };
+                if (!employees.TryGetValue(dto.Employee, out var employee))
+                    throw new Exception($"Employee not found: {dto.Employee}");
 
-            var items = seeds
-                .Select(seed =>
+                if (!types.TryGetValue(dto.Type, out var type))
+                    throw new Exception($"OvertimeType not found: {dto.Type}");
+
+                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.StartDate == dto.Date);
+                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.Date));
+
+                if (alreadyInDb || alreadyInMemory) continue;
+
+                context.Overtimes.Add(new Overtime
                 {
-                    var overtimeType = overtimeTypes[seed.TypeName];
+                    Employee = employee, 
+                    StartDate = dto.Date,
+                    EndDate = dto.Date.AddDays(1),
+                    OvertimeType = type      
+                });
 
-                    return new Overtime
-                    {
-                        EmployeeId = employees[seed.EmployeeName].Id,
-                        StartDate = seed.Date,
-                        EndDate = seed.Date.AddDays(1),
-                        OvertimeTypeld = overtimeType.Id,
-                        OvertimeType = overtimeType
-                    };
-                })
-                .ToList();
+                addedInMemory.Add((dto.Employee, dto.Date));
+                logger?.LogInformation("Added overtime for {Employee}", dto.Employee);
+            }
+        }
 
-            await context.Overtimes.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+        private static async Task SeedDoctorsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Employee> employees,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existing = await context.Doctors
+                .Select(x => new { x.EmployeeId, x.Date })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(string EmployeeName, DateTime Date)>();
+
+            foreach (var dto in seedData.Doctors)
+            {
+                if (!employees.TryGetValue(dto.Employee, out var employee))
+                    throw new Exception($"Employee not found: {dto.Employee}");
+
+                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.Date == dto.Date);
+                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.Date));
+
+                if (alreadyInDb || alreadyInMemory) continue;
+
+                context.Doctors.Add(new Doctor
+                {
+                    Employee = employee, 
+                    Date = dto.Date,
+                    MedicalDiagnose = dto.MedicalDiagnose,
+                    MedicalRecommendation = dto.MedicalRecommendation
+                });
+
+                addedInMemory.Add((dto.Employee, dto.Date));
+                logger?.LogInformation("Added doctor record for {Employee}", dto.Employee);
+            }
         }
 
         private static async Task SeedSanctionsAsync(
             AppDbContext context,
-            IReadOnlyDictionary<string, Employee> employees,
-            IReadOnlyDictionary<string, SanctionType> sanctionTypes,
-            CancellationToken cancellationToken)
+            SeedData seedData,
+            Dictionary<string, Employee> employees,
+            Dictionary<string, SanctionType> types,
+            ILogger? logger,
+            CancellationToken ct)
         {
-            var seeds = new[]
+            var existing = await context.Sanctions
+                .Select(x => new { x.EmployeeId, x.Date })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(string EmployeeName, DateTime Date)>();
+
+            foreach (var dto in seedData.Sanctions)
             {
-                new SanctionSeed(
-                    "Daniel Smith",
-                    "Verbal Warning",
-                    new DateTime(2026, 1, 10),
-                    new DateTime(2026, 1, 12),
-                    "Coaching session and attendance review."),
-                new SanctionSeed(
-                    "Sofia Martinez",
-                    "Written Warning",
-                    new DateTime(2026, 1, 18),
-                    new DateTime(2026, 1, 20),
-                    "Formal reminder to follow approval workflows."),
-                new SanctionSeed(
-                    "Marta Fischer",
-                    "Policy Violation",
-                    new DateTime(2026, 2, 5),
-                    new DateTime(2026, 2, 7),
-                    "Mandatory retraining on campaign compliance policies."),
-                new SanctionSeed(
-                    "Lucas Bernard",
-                    "Verbal Warning",
-                    new DateTime(2026, 2, 12),
-                    new DateTime(2026, 2, 13),
-                    "Documented coaching on reporting deadlines."),
-                new SanctionSeed(
-                    "Noah de Vries",
-                    "Final Warning",
-                    new DateTime(2026, 2, 20),
-                    new DateTime(2026, 2, 24),
-                    "Final written warning tied to repeated process deviations.")
-            };
+                if (!employees.TryGetValue(dto.Employee, out var employee))
+                    throw new Exception($"Employee not found: {dto.Employee}");
 
-            var items = seeds
-                .Select(seed => new Sanction
+                if (!types.TryGetValue(dto.Type, out var type))
+                    throw new Exception($"SanctionType not found: {dto.Type}");
+
+                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.Date == dto.Date);
+                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.Date));
+
+                if (alreadyInDb || alreadyInMemory) continue;
+
+                context.Sanctions.Add(new Sanction
                 {
-                    EmployeeId = employees[seed.EmployeeName].Id,
-                    SanctionTypeId = sanctionTypes[seed.SanctionTypeName].Id,
-                    Date = seed.Date,
-                    PunishmentDate = seed.PunishmentDate,
-                    Punishment = seed.Punishment
-                })
-                .ToList();
+                    Employee = employee,
+                    SanctionType = type,     
+                    Date = dto.Date,
+                    PunishmentDate = dto.PunishmentDate,
+                    Punishment = dto.Punishment
+                });
 
-            await context.Sanctions.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+                addedInMemory.Add((dto.Employee, dto.Date));
+                logger?.LogInformation("Added sanction for {Employee}", dto.Employee);
+            }
         }
 
         private static async Task SeedVacationsAsync(
             AppDbContext context,
-            IReadOnlyDictionary<string, Employee> employees,
-            IReadOnlyDictionary<string, VacationType> vacationTypes,
-            CancellationToken cancellationToken)
+            SeedData seedData,
+            Dictionary<string, Employee> employees,
+            Dictionary<string, VacationType> types,
+            ILogger? logger,
+            CancellationToken ct)
         {
-            var seeds = new[]
+            var existing = await context.Vacations
+                .Select(x => new { x.EmployeeId, x.StartDate })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(string EmployeeName, DateTime StartDate)>();
+
+            foreach (var dto in seedData.Vacations)
             {
-                new VacationSeed("Kevin Walsh", "Annual Leave", new DateTime(2026, 4, 1), 5),
-                new VacationSeed("Laura Garcia", "Sick Leave", new DateTime(2026, 4, 3), 2),
-                new VacationSeed("Emma Johnson", "Annual Leave", new DateTime(2026, 4, 8), 7),
-                new VacationSeed("Marta Fischer", "Unpaid Leave", new DateTime(2026, 4, 10), 3),
-                new VacationSeed("Lucas Bernard", "Paternity Leave", new DateTime(2026, 4, 12), 10),
-                new VacationSeed("Sofia Martinez", "Annual Leave", new DateTime(2026, 4, 15), 4)
-            };
+                if (!employees.TryGetValue(dto.Employee, out var employee))
+                    throw new Exception($"Employee not found: {dto.Employee}");
 
-            var items = seeds
-                .Select(seed => new Vacation
+                if (!types.TryGetValue(dto.Type, out var type))
+                    throw new Exception($"VacationType not found: {dto.Type}");
+
+                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.StartDate == dto.StartDate);
+                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.StartDate));
+
+                if (alreadyInDb || alreadyInMemory) continue;
+
+                context.Vacations.Add(new Vacation
                 {
-                    EmployeeId = employees[seed.EmployeeName].Id,
-                    VacationTypeId = vacationTypes[seed.VacationTypeName].Id,
-                    StartDate = seed.StartDate,
-                    NumberOfDays = seed.NumberOfDays
-                })
-                .ToList();
+                    Employee = employee, 
+                    VacationType = type,     
+                    StartDate = dto.StartDate,
+                    NumberOfDays = dto.NumberOfDays
+                });
 
-            await context.Vacations.AddRangeAsync(items, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+                addedInMemory.Add((dto.Employee, dto.StartDate));
+                logger?.LogInformation("Added vacation for {Employee}", dto.Employee);
+            }
         }
+
+        private static async Task<Dictionary<string, GeneralDepartment>> SeedGeneralDepartmentsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            return await AddIfNotExistsAsync(
+                context.GeneralDepartments,
+                seedData.GeneralDepartments.Select(x => new GeneralDepartment { Name = x.Name }),
+                x => x.Name,
+                logger,
+                ct);
+        }
+
+        private static async Task<Dictionary<string, Department>> SeedDepartmentsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, GeneralDepartment> parents,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var items = seedData.Departments.Select(x =>
+            {
+                if (!parents.TryGetValue(x.GeneralDepartment, out var parent))
+                    throw new Exception($"GeneralDepartment not found: {x.GeneralDepartment}");
+
+                return new Department
+                {
+                    Name = x.Name,
+                    GeneralDepartment = parent 
+                };
+            });
+
+            return await AddIfNotExistsAsync(context.Departments, items, x => x.Name, logger, ct);
+        }
+
+        private static async Task<Dictionary<string, Branch>> SeedBranchesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Department> parents,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var items = seedData.Branches.Select(x =>
+            {
+                if (!parents.TryGetValue(x.Department, out var parent))
+                    throw new Exception($"Department not found: {x.Department}");
+
+                return new Branch
+                {
+                    Name = x.Name,
+                    Department = parent 
+                };
+            });
+
+            return await AddIfNotExistsAsync(context.Branches, items, x => x.Name, logger, ct);
+        }
+
+        #endregion
+
+        #region Location
+
+        private static async Task<Dictionary<string, Country>> SeedCountriesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            return await AddIfNotExistsAsync(
+                context.Countries,
+                seedData.Countries.Select(x => new Country
+                {
+                    Name = x.Name,
+                    Code2 = x.Code2,
+                    Source = "Mock",
+                    FlagUrl = $"https://flagcdn.com/w80/{x.Code2.ToLower()}.png",
+                    LastSyncedAtUtc = DateTime.UtcNow
+                }),
+                x => x.Name,
+                logger,
+                ct);
+        }
+
+        private static async Task<Dictionary<string, City>> SeedCitiesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Country> parents,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var items = seedData.Cities.Select(x =>
+            {
+                if (!parents.TryGetValue(x.Country, out var parent))
+                    throw new Exception($"Country not found: {x.Country}");
+
+                return new City
+                {
+                    Name = x.Name,
+                    Country = parent 
+                };
+            });
+
+            return await AddIfNotExistsAsync(context.Cities, items, x => x.Name, logger, ct);
+        }
+
+        private static async Task<Dictionary<string, Town>> SeedTownsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, City> parents,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var items = seedData.Towns.Select(x =>
+            {
+                if (!parents.TryGetValue(x.City, out var parent))
+                    throw new Exception($"City not found: {x.City}");
+
+                return new Town
+                {
+                    Name = x.Name,
+                    City = parent 
+                };
+            });
+
+            return await AddIfNotExistsAsync(context.Towns, items, x => x.Name, logger, ct);
+        }
+
+        #endregion
+
+        #region Types
+
+        private static Task<Dictionary<string, OvertimeType>> SeedOvertimeTypesAsync(
+            AppDbContext context, SeedData seedData, ILogger? logger, CancellationToken ct)
+            => AddIfNotExistsAsync(context.OvertimeTypes,
+                seedData.OvertimeTypes.Select(x => new OvertimeType { Name = x.Name }),
+                x => x.Name, logger, ct);
+
+        private static Task<Dictionary<string, SanctionType>> SeedSanctionTypesAsync(
+            AppDbContext context, SeedData seedData, ILogger? logger, CancellationToken ct)
+            => AddIfNotExistsAsync(context.SanctionTypes,
+                seedData.SanctionTypes.Select(x => new SanctionType { Name = x.Name }),
+                x => x.Name, logger, ct);
+
+        private static Task<Dictionary<string, VacationType>> SeedVacationTypesAsync(
+            AppDbContext context, SeedData seedData, ILogger? logger, CancellationToken ct)
+            => AddIfNotExistsAsync(context.VacationTypes,
+                seedData.VacationTypes.Select(x => new VacationType { Name = x.Name }),
+                x => x.Name, logger, ct);
 
         private static string BuildAvatar(string fullName, string backgroundColor, string foregroundColor)
         {
@@ -729,37 +587,6 @@ namespace ServerLibrary.Data
             return $"data:image/svg+xml;utf8,{Uri.EscapeDataString(svg)}";
         }
 
-        private sealed record DemoUserSeed(string Fullname, string Email, string Password, string RoleName);
-        private sealed record NameWithParentSeed(string Name, string ParentName);
-        private sealed record CountrySeed(string Name, string Code2);
-        private sealed record EmployeeSeed(
-            string Name,
-            string CivilId,
-            string FileNumber,
-            string JobName,
-            string Address,
-            string TelephoneNumber,
-            string BranchName,
-            string TownName,
-            string Other,
-            string BackgroundColor,
-            string ForegroundColor);
-        private sealed record DoctorSeed(
-            string EmployeeName,
-            DateTime Date,
-            string MedicalDiagnose,
-            string MedicalRecommendation);
-        private sealed record ChildTypeSeed(string EmployeeName, string TypeName, DateTime Date);
-        private sealed record SanctionSeed(
-            string EmployeeName,
-            string SanctionTypeName,
-            DateTime Date,
-            DateTime PunishmentDate,
-            string Punishment);
-        private sealed record VacationSeed(
-            string EmployeeName,
-            string VacationTypeName,
-            DateTime StartDate,
-            int NumberOfDays);
+        #endregion
     }
 }
