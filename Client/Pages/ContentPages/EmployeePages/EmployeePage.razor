@@ -327,9 +327,10 @@
         }
     }
 
-    private void ViewClicked()
+    private async Task ViewClicked()
     {
-        Employee = SelectedEmployee;
+        Employee = await employeeService.GetById(SelectedEmployee.Id, Constants.EmployeeBaseUrl)
+                   ?? SelectedEmployee;
         contextMenu!.CloseContextMenu();
         ShowDetailsPage = true;
         ShowMainPage = false;
@@ -470,18 +471,13 @@
         }
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
         if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
+            toastService.ShowSuccess(message);
         else
-        {
-            await dialogService.AlertAsync(message, "Alert!");
-            return false;
-        }
+            toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     public void Dispose() => allState.Action -= HandleGlobalStateChanged;
