@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using Server.BackgroundServices;
 using Server.Middleware;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
@@ -117,6 +118,16 @@ try
 
     builder.Services.AddScoped<IGenericRepositoryInterface<Doctor>, DoctorRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<Employee>, EmployeeRepository>();
+
+    // ── RabbitMQ / Event Bus ──────────────────────────────────────────────────
+    // Bind RabbitMQ settings from appsettings.json → "RabbitMQ" section.
+    // RabbitMqEventBus is a singleton (one shared connection per process).
+    // App starts normally even if the broker is unreachable — events are dropped
+    // with a Warning log and normal request flow is unaffected.
+    builder.Services.Configure<RabbitMqSettings>(
+        builder.Configuration.GetSection("RabbitMQ"));
+    builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
+    builder.Services.AddHostedService<EmsAuditConsumer>();
 
     builder.Services.AddCors(options =>
     {
