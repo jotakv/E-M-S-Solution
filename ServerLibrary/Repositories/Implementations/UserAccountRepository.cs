@@ -311,8 +311,12 @@ namespace ServerLibrary.Repositories.Implementations
             foreach (var user in allUsers)
             {
                 var userRole = allUserRoles.FirstOrDefault(u => u.UserId == user.Id);
-                var roleName = allRoles.FirstOrDefault(u => u.Id == userRole!.RoleId);
-                users.Add(new ManageUser() { UserId = user.Id, Name = user.Fullname!, Email = user.Email!, Role = roleName!.Name! });
+                if (userRole is null) continue; // user exists but has no role assigned
+
+                var roleName = allRoles.FirstOrDefault(u => u.Id == userRole.RoleId);
+                if (roleName is null) continue; // role record missing from SystemRoles
+
+                users.Add(new ManageUser() { UserId = user.Id, Name = user.Fullname!, Email = user.Email!, Role = roleName.Name! });
             }
             return users;
         }
