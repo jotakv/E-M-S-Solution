@@ -14,13 +14,16 @@ namespace ServerLibrary.Repositories.Implementations
     {
         public async Task<GeneralResponse> DeleteById(int id)
         {
-            logger.LogInformation("Deleting employee — EmployeeId: {EmployeeId}", id);
+            logger.LogInformation(
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                "EmployeeDelete", "Delete", "Employee", id, "Attempt");
 
             var item = await appDbContext.Employees.FindAsync(id);
             if (item is null)
             {
                 logger.LogWarning(
-                    "Delete failed — employee not found: EmployeeId {EmployeeId}", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "EmployeeDelete", "Delete", "Employee", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -28,8 +31,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "Employee", id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "EmployeeDelete", "Delete", "Employee", id, item.Name, "Success");
 
             return Success();
         }
@@ -89,15 +92,16 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Insert(Employee item)
         {
             logger.LogInformation(
-                "Creating employee — Name: {Name}, JobName: {JobName}, BranchId: {BranchId}",
-                item.Name, item.JobName, item.BranchId);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | JobName: {JobName} | BranchId: {BranchId} | Result: {Result}",
+                "EmployeeCreate", "Create", "Employee", item.Name, item.JobName, item.BranchId, "Attempt");
 
             try
             {
                 if (!await CheckName(item.Name!))
                 {
                     logger.LogWarning(
-                        "Employee creation failed — duplicate name: {Name}", item.Name);
+                        "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                        "EmployeeCreate", "Create", "Employee", item.Name, "Failure:DuplicateName");
                     return new GeneralResponse(false, "Employee already added");
                 }
 
@@ -105,8 +109,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. Name: {Name}, JobName: {JobName}, BranchId: {BranchId}, TownId: {TownId}",
-                    "Created", "Employee", item.Id, item.Name, item.JobName, item.BranchId, item.TownId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | JobName: {JobName} | BranchId: {BranchId} | TownId: {TownId} | Result: {Result}",
+                    "EmployeeCreate", "Create", "Employee", item.Id, item.Name, item.JobName, item.BranchId, item.TownId, "Success");
 
                 return Success();
             }
@@ -114,7 +118,8 @@ namespace ServerLibrary.Repositories.Implementations
             {
                 logger.LogError(
                     ex,
-                    "Exception while creating employee — Name: {Name}", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "EmployeeCreate", "Create", "Employee", item.Name, "Failure:Exception");
 
                 return new GeneralResponse(false, ex.InnerException?.Message ?? ex.Message);
             }
@@ -123,8 +128,8 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Update(Employee employee)
         {
             logger.LogInformation(
-                "Updating employee — EmployeeId: {EmployeeId}, Name: {Name}",
-                employee.Id, employee.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "EmployeeUpdate", "Update", "Employee", employee.Id, employee.Name, "Attempt");
 
             var findUser = await appDbContext.Employees
                 .FirstOrDefaultAsync(e => e.Id == employee.Id);
@@ -132,7 +137,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (findUser is null)
             {
                 logger.LogWarning(
-                    "Update failed — employee not found: EmployeeId {EmployeeId}", employee.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "EmployeeUpdate", "Update", "Employee", employee.Id, "Failure:NotFound");
                 return new GeneralResponse(false, "Employee does not exist");
             }
 
@@ -178,8 +184,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "Employee", employee.Id, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "EmployeeUpdate", "Update", "Employee", employee.Id, changes, "Success");
 
             return Success();
         }

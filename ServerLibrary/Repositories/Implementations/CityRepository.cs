@@ -38,8 +38,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "City", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "CityCreate", "Create", "City", item.Name, "Failure:DuplicateName");
                 return new GeneralResponse(false, "City already added");
             }
 
@@ -47,8 +47,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}, CountryId: {CountryId}",
-                "Created", "City", item.Id, item.Name, item.CountryId);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | CountryId: {CountryId} | Result: {Result}",
+                "CityCreate", "Create", "City", item.Id, item.Name, item.CountryId, "Success");
 
             return Success();
         }
@@ -59,8 +59,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (city is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "City", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "CityUpdate", "Update", "City", item.Id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -75,8 +75,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "City", item.Id, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "CityUpdate", "Update", "City", item.Id, changes, "Success");
 
             return Success();
         }
@@ -87,8 +87,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "City", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "CityDelete", "Delete", "City", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -96,8 +96,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "City", id, dep.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "CityDelete", "Delete", "City", id, dep.Name, "Success");
 
             return Success();
         }

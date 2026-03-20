@@ -28,8 +28,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}, SanctionTypeId: {SanctionTypeId}, Date: {Date}, Punishment: {Punishment}",
-                    "Created", "Sanction", item.Id, item.EmployeeId, item.SanctionTypeId, item.Date, item.Punishment);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | SanctionTypeId: {SanctionTypeId} | Date: {Date} | Punishment: {Punishment} | Result: {Result}",
+                    "SanctionCreate", "Create", "Sanction", item.Id, item.EmployeeId, item.SanctionTypeId, item.Date, item.Punishment, "Success");
 
                 return Success();
             }
@@ -50,8 +50,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no sanction found for EmployeeId: {EmployeeId}",
-                    "Update", "Sanction", item.EmployeeId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "SanctionUpdate", "Update", "Sanction", item.EmployeeId, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -72,8 +72,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity}. EmployeeId: {EmployeeId}. Changes: {@Changes}",
-                "Updated", "Sanction", item.EmployeeId, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Changes: {@Changes} | Result: {Result}",
+                "SanctionUpdate", "Update", "Sanction", item.EmployeeId, changes, "Success");
 
             return Success();
         }
@@ -86,8 +86,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no sanction found for EmployeeId: {EmployeeId}",
-                    "Delete", "Sanction", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "SanctionDelete", "Delete", "Sanction", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -95,8 +95,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}",
-                "Deleted", "Sanction", item.Id, id);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Result: {Result}",
+                "SanctionDelete", "Delete", "Sanction", item.Id, id, "Success");
 
             return Success();
         }

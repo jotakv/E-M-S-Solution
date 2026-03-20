@@ -49,8 +49,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "Country", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "CountryCreate", "Create", "Country", item.Name, "Failure:DuplicateName");
 
                 return new GeneralResponse(false, "Country already added");
             }
@@ -59,8 +59,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Created", "Country", item.Id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "CountryCreate", "Create", "Country", item.Id, item.Name, "Success");
 
             return Success();
         }
@@ -71,8 +71,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "Country", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "CountryUpdate", "Update", "Country", item.Id, "Failure:NotFound");
 
                 return NotFound();
             }
@@ -95,8 +95,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "Country", item.Id,
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "CountryUpdate", "Update", "Country", item.Id,
                 new
                 {
                     OldValue = oldValues,
@@ -108,7 +108,7 @@ namespace ServerLibrary.Repositories.Implementations
                         item.LastSyncedAtUtc,
                         item.Source
                     }
-                });
+                }, "Success");
 
             return Success();
         }
@@ -119,8 +119,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "Country", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "CountryDelete", "Delete", "Country", id, "Failure:NotFound");
 
                 return NotFound();
             }
@@ -129,8 +129,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "Country", id, dep.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "CountryDelete", "Delete", "Country", id, dep.Name, "Success");
 
             return Success();
         }

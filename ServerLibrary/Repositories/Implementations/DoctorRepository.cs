@@ -27,8 +27,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}, Date: {Date}, Diagnose: {Diagnose}",
-                    "Created", "HealthRecord", item.Id, item.EmployeeId, item.Date, item.MedicalDiagnose);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Date: {Date} | Diagnose: {Diagnose} | Result: {Result}",
+                    "HealthRecordCreate", "Create", "HealthRecord", item.Id, item.EmployeeId, item.Date, item.MedicalDiagnose, "Success");
 
                 return Success();
             }
@@ -49,8 +49,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no health record found for EmployeeId: {EmployeeId}",
-                    "Update", "HealthRecord", item.EmployeeId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "HealthRecordUpdate", "Update", "HealthRecord", item.EmployeeId, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -68,8 +68,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity}. EmployeeId: {EmployeeId}. Changes: {@Changes}",
-                "Updated", "HealthRecord", item.EmployeeId, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Changes: {@Changes} | Result: {Result}",
+                "HealthRecordUpdate", "Update", "HealthRecord", item.EmployeeId, changes, "Success");
 
             return Success();
         }
@@ -82,8 +82,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no health record found for EmployeeId: {EmployeeId}",
-                    "Delete", "HealthRecord", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "HealthRecordDelete", "Delete", "HealthRecord", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -91,8 +91,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}",
-                "Deleted", "HealthRecord", item.Id, id);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Result: {Result}",
+                "HealthRecordDelete", "Delete", "HealthRecord", item.Id, id, "Success");
 
             return Success();
         }

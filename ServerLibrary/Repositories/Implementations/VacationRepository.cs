@@ -28,8 +28,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}, VacationTypeId: {VacationTypeId}, StartDate: {StartDate}, Days: {NumberOfDays}",
-                    "Created", "Vacation", item.Id, item.EmployeeId, item.VacationTypeId, item.StartDate, item.NumberOfDays);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | VacationTypeId: {VacationTypeId} | StartDate: {StartDate} | Days: {NumberOfDays} | Result: {Result}",
+                    "VacationCreate", "Create", "Vacation", item.Id, item.EmployeeId, item.VacationTypeId, item.StartDate, item.NumberOfDays, "Success");
 
                 return Success();
             }
@@ -50,8 +50,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no vacation found for EmployeeId: {EmployeeId}",
-                    "Update", "Vacation", item.EmployeeId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "VacationUpdate", "Update", "Vacation", item.EmployeeId, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -69,8 +69,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity}. EmployeeId: {EmployeeId}. Changes: {@Changes}",
-                "Updated", "Vacation", item.EmployeeId, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Changes: {@Changes} | Result: {Result}",
+                "VacationUpdate", "Update", "Vacation", item.EmployeeId, changes, "Success");
 
             return Success();
         }
@@ -83,8 +83,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no vacation found for EmployeeId: {EmployeeId}",
-                    "Delete", "Vacation", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "VacationDelete", "Delete", "Vacation", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -92,8 +92,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}",
-                "Deleted", "Vacation", item.Id, id);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Result: {Result}",
+                "VacationDelete", "Delete", "Vacation", item.Id, id, "Success");
 
             return Success();
         }

@@ -25,8 +25,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "Branch", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "BranchCreate", "Create", "Branch", item.Name, "Failure:DuplicateName");
                 return new GeneralResponse(false, "Branch already added");
             }
 
@@ -34,8 +34,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}, DepartmentId: {DepartmentId}",
-                "Created", "Branch", item.Id, item.Name, item.DepartmentId);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | DepartmentId: {DepartmentId} | Result: {Result}",
+                "BranchCreate", "Create", "Branch", item.Id, item.Name, item.DepartmentId, "Success");
 
             return Success();
         }
@@ -46,8 +46,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (branch is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "Branch", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "BranchUpdate", "Update", "Branch", item.Id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -62,8 +62,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "Branch", item.Id, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "BranchUpdate", "Update", "Branch", item.Id, changes, "Success");
 
             return Success();
         }
@@ -74,8 +74,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "Branch", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "BranchDelete", "Delete", "Branch", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -83,8 +83,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "Branch", id, dep.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "BranchDelete", "Delete", "Branch", id, dep.Name, "Success");
 
             return Success();
         }

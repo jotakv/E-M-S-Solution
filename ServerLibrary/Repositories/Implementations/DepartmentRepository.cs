@@ -25,8 +25,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "Department", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "DepartmentCreate", "Create", "Department", item.Name, "Failure:DuplicateName");
                 return new GeneralResponse(false, "Department already added");
             }
 
@@ -34,8 +34,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}, GeneralDepartmentId: {GeneralDepartmentId}",
-                "Created", "Department", item.Id, item.Name, item.GeneralDepartmentId);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | GeneralDepartmentId: {GeneralDepartmentId} | Result: {Result}",
+                "DepartmentCreate", "Create", "Department", item.Id, item.Name, item.GeneralDepartmentId, "Success");
 
             return Success();
         }
@@ -46,8 +46,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "Department", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "DepartmentUpdate", "Update", "Department", item.Id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -62,8 +62,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "Department", item.Id, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "DepartmentUpdate", "Update", "Department", item.Id, changes, "Success");
 
             return Success();
         }
@@ -74,8 +74,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (dep is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "Department", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "DepartmentDelete", "Delete", "Department", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -83,8 +83,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "Department", id, dep.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "DepartmentDelete", "Delete", "Department", id, dep.Name, "Success");
 
             return Success();
         }

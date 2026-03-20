@@ -28,8 +28,8 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}, OvertimeTypeId: {OvertimeTypeId}, StartDate: {StartDate}, EndDate: {EndDate}",
-                    "Created", "Overtime", item.Id, item.EmployeeId, item.OvertimeTypeld, item.StartDate, item.EndDate);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | OvertimeTypeId: {OvertimeTypeId} | StartDate: {StartDate} | EndDate: {EndDate} | Result: {Result}",
+                    "OvertimeCreate", "Create", "Overtime", item.Id, item.EmployeeId, item.OvertimeTypeld, item.StartDate, item.EndDate, "Success");
 
                 return Success();
             }
@@ -50,8 +50,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no overtime found for EmployeeId: {EmployeeId}",
-                    "Update", "Overtime", item.EmployeeId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "OvertimeUpdate", "Update", "Overtime", item.EmployeeId, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -69,8 +69,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity}. EmployeeId: {EmployeeId}. Changes: {@Changes}",
-                "Updated", "Overtime", item.EmployeeId, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Changes: {@Changes} | Result: {Result}",
+                "OvertimeUpdate", "Update", "Overtime", item.EmployeeId, changes, "Success");
 
             return Success();
         }
@@ -83,8 +83,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no overtime found for EmployeeId: {EmployeeId}",
-                    "Delete", "Overtime", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "OvertimeDelete", "Delete", "Overtime", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -92,8 +92,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}",
-                "Deleted", "Overtime", item.Id, id);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Result: {Result}",
+                "OvertimeDelete", "Delete", "Overtime", item.Id, id, "Success");
 
             return Success();
         }
