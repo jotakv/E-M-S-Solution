@@ -4,12 +4,15 @@
 @using Blazored.Toast.Services
 @inject IToastService toastService
 
-<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+<SfDialog Width="280px"
+          IsModal="true"
+          ShowCloseIcon="true"
+          @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Sanction</Header>
 
         <Content>
-            <EditForm Model="ItemModel" OnSubmit="Save">
+            <EditForm Model="ItemModel">
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -40,7 +43,7 @@
                                             Placeholder="Select Type"
                                             DataSource="@SanctionTypes"
                                             @bind-Value="ItemModel.SanctionTypeId">
-                                <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListFieldSettings Value="Id" Text="Name" />
                             </SfDropDownList>
                         </div>
 
@@ -50,7 +53,10 @@
         </Content>
 
         <FooterTemplate>
-            <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
+            <button class="btn btn-primary"
+                    type="button"
+                    disabled="@IsSaving"
+                    @onclick="Save">
                 @if (IsSaving)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -74,6 +80,16 @@
     private bool IsVisible { get; set; } = false;
     public bool IsSaving { get; set; } = false;
 
+    private int OriginalId;
+
+    public void SetItem(Sanction item)
+    {
+        ItemModel = item;
+        OriginalId = item.Id;
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
     private async Task Save()
     {
         if (ItemModel.SanctionTypeId <= 0)
@@ -82,22 +98,32 @@
             return;
         }
 
+        // Restore ID so update works
+        ItemModel.Id = OriginalId;
+
         IsSaving = true;
         StateHasChanged();
 
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
+
+        // Close after save (works for EmployeePage and SanctionPage)
+        CloseDialog();
     }
 
     public void OpenDialog(int employeeId = 0)
     {
         IsVisible = true;
 
-        if (employeeId > 0) ItemModel.EmployeeId = employeeId;
+        if (employeeId > 0)
+            ItemModel.EmployeeId = employeeId;
 
-        if (ItemModel.Date.Date == DateTime.MinValue.Date) ItemModel.Date = DateTime.Now;
-        if (ItemModel.PunishmentDate.Date == DateTime.MinValue.Date) ItemModel.PunishmentDate = DateTime.Now;
+        if (ItemModel.Date.Date == DateTime.MinValue.Date)
+            ItemModel.Date = DateTime.Now;
+
+        if (ItemModel.PunishmentDate.Date == DateTime.MinValue.Date)
+            ItemModel.PunishmentDate = DateTime.Now;
 
         StateHasChanged();
     }
@@ -106,10 +132,5 @@
     {
         IsVisible = false;
         StateHasChanged();
-    }
-
-    public void ChangeTitle(string title)
-    {
-        Title = title;
     }
 }

@@ -44,7 +44,7 @@
                                             @{
                                                 var item = context as Vacation;
                                             }
-                                            <div>@item!.VacationType!.Name</div>
+                                            <div>@(item?.VacationType?.Name ?? "—")</div>
                                         </Template>
                                     </GridColumn>
 
@@ -158,7 +158,7 @@
 
         if (!confirm) return;
 
-        var response = await vacationService.DeleteById(item.EmployeeId, Constants.VacationBaseUrl);
+        var response = await vacationService.DeleteById(item.Id, Constants.VacationBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)
@@ -186,7 +186,6 @@
         if (args.Item.Text == "PDF Export")
             await DefaultGrid!.ExportToPdfAsync();
     }
-
 
     public void Dispose()
     {

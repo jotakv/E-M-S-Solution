@@ -1,14 +1,14 @@
 ﻿@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@inject SfDialogService dialogService
+@inject IToastService toastService
 
 <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Vacation</Header>
 
         <Content>
-            <EditForm Model="ItemModel" OnSubmit="Save">
+            <EditForm Model="ItemModel">
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -77,7 +77,7 @@
     {
         if (ItemModel.VacationTypeId <= 0)
         {
-            await dialogService.AlertAsync("You need to provide type.", "Alert!");
+            toastService.ShowError("Please select a Vacation Type before saving.");
             return;
         }
 
@@ -87,6 +87,9 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
+
+        // ⭐ FIX: Close the dialog after saving
+        CloseDialog();
     }
 
     public void OpenDialog(int employeeId = 0)

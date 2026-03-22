@@ -5,7 +5,7 @@
     <DialogTemplates>
         <Header> Add Employee Health Issue </Header>
         <Content>
-            <EditForm Model="Doctor" OnSubmit="Save">
+            <EditForm Model="Doctor">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
@@ -62,6 +62,9 @@
         await HandleSaveOperationEvent.InvokeAsync(Doctor);
 
         IsSaving = false;
+
+        // ⭐ FIX: Close the dialog after saving
+        CloseDialog();
     }
 
     public void OpenDialog(int employeeId = 0)

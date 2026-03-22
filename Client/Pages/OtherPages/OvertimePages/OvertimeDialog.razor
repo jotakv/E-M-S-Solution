@@ -8,7 +8,7 @@
         <Header>@Title Employee's Overtime</Header>
 
         <Content>
-            <EditForm Model="ItemModel" OnSubmit="Save">
+            <EditForm Model="ItemModel">
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -39,7 +39,7 @@
                                             DataSource="@OvertimeTypes"
                                             Placeholder="Select Type"
                                             @bind-Value="ItemModel.OvertimeTypeld">
-                                <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListFieldSettings Value="Id" Text="Name" />
                             </SfDropDownList>
                         </div>
 
@@ -52,7 +52,7 @@
             <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
                 @if (IsSaving)
                 {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="spinner-border spinner-border-sm"></span>
                     <span class="ms-1">Saving...</span>
                 }
                 else
@@ -73,23 +73,31 @@
     public string Title { get; set; } = "Add";
     public bool IsSaving { get; set; } = false;
 
+    // CLEAN ARCHITECTURE: Open only opens
     public void OpenDialog(int employeeId = 0)
     {
         IsVisible = true;
 
-        if (employeeId > 0) ItemModel.EmployeeId = employeeId;
+        if (employeeId > 0)
+            ItemModel.EmployeeId = employeeId;
 
-        if (ItemModel.StartDate.Date == DateTime.MinValue.Date) ItemModel.StartDate = DateTime.Now;
-        if (ItemModel.EndDate.Date == DateTime.MinValue.Date) ItemModel.EndDate = DateTime.Now;
+        if (ItemModel.StartDate == DateTime.MinValue)
+            ItemModel.StartDate = DateTime.Now;
+
+        if (ItemModel.EndDate == DateTime.MinValue)
+            ItemModel.EndDate = DateTime.Now;
 
         StateHasChanged();
     }
 
+    // CLEAN ARCHITECTURE: Close only closes
     public void CloseDialog()
     {
         IsVisible = false;
         StateHasChanged();
     }
+
+    public void ChangeTitle(string title) => Title = title;
 
     private async Task Save()
     {
@@ -105,7 +113,8 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
-    }
 
-    public void ChangeTitle(string title) => Title = title;
+        // CLEAN ARCHITECTURE: Close after successful save
+        CloseDialog();
+    }
 }

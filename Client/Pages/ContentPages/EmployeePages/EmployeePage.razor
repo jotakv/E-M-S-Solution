@@ -183,14 +183,20 @@
         OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
     }
 
-    private void HandleCountrySelectedEvent(int countryId) =>
+    private void HandleCountrySelectedEvent(int countryId)
+    {
+        SelectedTowns = new();
         SelectedCities = DefaultCities.Where(c => c.CountryId == countryId).ToList();
+    }
 
     private void HandleCitySelectedEvent(int cityId) =>
         SelectedTowns = DefaultTowns.Where(t => t.CityId == cityId).ToList();
 
-    void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId) =>
+    void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId)
+    {
+        SelectedBranches = new();
         SelectedDepartments = DefaultDepartments.Where(gd => gd.GeneralDepartmentId == generalDepartmentId).ToList();
+    }
 
     void HandleDepartmentSelectedEvent(int departmentId) =>
         SelectedBranches = DefaultBranches.Where(d => d.DepartmentId == departmentId).ToList();

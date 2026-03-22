@@ -19,6 +19,6 @@ namespace BaseLibrary.Entities
         public SanctionType? SanctionType { get; set; }
 
         public int SanctionTypeId { get; set; }
-        public Employee Employee { get; set; }
+        public Employee? Employee { get; set; }
     }
 }

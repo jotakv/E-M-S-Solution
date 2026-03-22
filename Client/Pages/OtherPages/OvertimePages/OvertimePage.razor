@@ -123,6 +123,7 @@
         if (successCheck)
         {
             ItemModel = new();
+            overtimeDialog?.CloseDialog();
             await GetOvertime();
         }
     }

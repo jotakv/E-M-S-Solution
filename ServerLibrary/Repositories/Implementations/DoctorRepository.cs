@@ -44,7 +44,7 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Update(Doctor item)
         {
             var obj = await appDbContext.Doctors
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == item.EmployeeId);
+                .FirstOrDefaultAsync(eid => eid.Id == item.Id);
 
             if (obj is null)
             {

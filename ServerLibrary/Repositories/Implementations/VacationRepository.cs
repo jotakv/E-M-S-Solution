@@ -45,7 +45,7 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Update(Vacation item)
         {
             var obj = await appDbContext.Vacations
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == item.EmployeeId);
+                .FirstOrDefaultAsync(eid => eid.Id == item.Id);
 
             if (obj is null)
             {

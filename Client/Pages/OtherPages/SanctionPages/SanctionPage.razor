@@ -141,15 +141,28 @@
         if (successCheck)
         {
             ItemModel = new();
+            sanctionDialog?.CloseDialog();
             await GetSanctions();
         }
     }
 
     private void EditClicked(Sanction item)
+{
+    ItemModel = new Sanction
     {
-        ItemModel = item;
-        OpenDialog();
-    }
+        Id = item.Id,
+        EmployeeId = item.EmployeeId,
+        SanctionTypeId = item.SanctionTypeId,
+        Date = item.Date,
+        Punishment = item.Punishment,
+        PunishmentDate = item.PunishmentDate
+    };
+
+    sanctionDialog!.SetItem(ItemModel);
+    sanctionDialog!.ChangeTitle("Edit");
+    sanctionDialog!.OpenDialog();
+}
+
 
     private async Task DeleteClicked(Sanction item)
     {

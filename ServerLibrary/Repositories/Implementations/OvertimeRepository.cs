@@ -45,7 +45,7 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Update(Overtime item)
         {
             var obj = await appDbContext.Overtimes
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == item.EmployeeId);
+                .FirstOrDefaultAsync(eid => eid.Id == item.Id);
 
             if (obj is null)
             {
