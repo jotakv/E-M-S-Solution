@@ -32,100 +32,34 @@
   ],
 
   "departments": [
-    {
-      "name": "Infrastructure",
-      "generalDepartment": "Information Technology"
-    },
-    {
-      "name": "Quality Assurance",
-      "generalDepartment": "Information Technology"
-    },
-    {
-      "name": "Recruitment",
-      "generalDepartment": "Human Resources"
-    },
-    {
-      "name": "Employee Relations",
-      "generalDepartment": "Human Resources"
-    },
-    {
-      "name": "Corporate Sales",
-      "generalDepartment": "Sales"
-    },
-    {
-      "name": "Digital Marketing",
-      "generalDepartment": "Marketing"
-    },
-    {
-      "name": "Accounting",
-      "generalDepartment": "Finance"
-    },
-    {
-      "name": "Logistics",
-      "generalDepartment": "Operations"
-    }
+    { "name": "Infrastructure",      "generalDepartment": "Information Technology" },
+    { "name": "Quality Assurance",   "generalDepartment": "Information Technology" },
+    { "name": "Recruitment",         "generalDepartment": "Human Resources" },
+    { "name": "Employee Relations",  "generalDepartment": "Human Resources" },
+    { "name": "Corporate Sales",     "generalDepartment": "Sales" },
+    { "name": "Digital Marketing",   "generalDepartment": "Marketing" },
+    { "name": "Accounting",          "generalDepartment": "Finance" },
+    { "name": "Logistics",           "generalDepartment": "Operations" }
   ],
 
   "branches": [
-    {
-      "name": "Dublin Tech Hub",
-      "department": "Infrastructure"
-    },
-    {
-      "name": "Dublin QA Center",
-      "department": "Quality Assurance"
-    },
-    {
-      "name": "Madrid Talent Office",
-      "department": "Recruitment"
-    },
-    {
-      "name": "Barcelona People Office",
-      "department": "Employee Relations"
-    },
-    {
-      "name": "London Sales Branch",
-      "department": "Corporate Sales"
-    },
-    {
-      "name": "Berlin Marketing Studio",
-      "department": "Digital Marketing"
-    },
-    {
-      "name": "Paris Finance Desk",
-      "department": "Accounting"
-    },
-    {
-      "name": "Amsterdam Operations Hub",
-      "department": "Logistics"
-    }
+    { "name": "Dublin Tech Hub",          "department": "Infrastructure" },
+    { "name": "Dublin QA Center",         "department": "Quality Assurance" },
+    { "name": "Madrid Talent Office",     "department": "Recruitment" },
+    { "name": "Barcelona People Office",  "department": "Employee Relations" },
+    { "name": "London Sales Branch",      "department": "Corporate Sales" },
+    { "name": "Berlin Marketing Studio",  "department": "Digital Marketing" },
+    { "name": "Paris Finance Desk",       "department": "Accounting" },
+    { "name": "Amsterdam Operations Hub", "department": "Logistics" }
   ],
 
   "countries": [
-    {
-      "name": "Ireland",
-      "code2": "IE"
-    },
-    {
-      "name": "Spain",
-      "code2": "ES"
-    },
-    {
-      "name": "United Kingdom",
-      "code2": "GB"
-    },
-    {
-      "name": "Germany",
-      "code2": "DE"
-    },
-    {
-      "name": "France",
-      "code2": "FR"
-    },
-    {
-      "name": "Netherlands",
-      "code2": "NL"
-    }
+    { "name": "Ireland",        "code2": "IE" },
+    { "name": "Spain",          "code2": "ES" },
+    { "name": "United Kingdom", "code2": "GB" },
+    { "name": "Germany",        "code2": "DE" },
+    { "name": "France",         "code2": "FR" },
+    { "name": "Netherlands",    "code2": "NL" }
   ],
 
   "cities": [
@@ -156,30 +90,12 @@
   ],
 
   "towns": [
-    {
-      "name": "Dublin",
-      "city": "Dublin"
-    },
-    {
-      "name": "Madrid",
-      "city": "Madrid"
-    },
-    {
-      "name": "London",
-      "city": "London"
-    },
-    {
-      "name": "Berlin",
-      "city": "Berlin"
-    },
-    {
-      "name": "Paris",
-      "city": "Paris"
-    },
-    {
-      "name": "Amsterdam",
-      "city": "Amsterdam"
-    }
+    { "name": "Dublin",    "city": "Dublin",    "country": "Ireland" },
+    { "name": "Madrid",    "city": "Madrid",    "country": "Spain" },
+    { "name": "London",    "city": "London",    "country": "United Kingdom" },
+    { "name": "Berlin",    "city": "Berlin",    "country": "Germany" },
+    { "name": "Paris",     "city": "Paris",     "country": "France" },
+    { "name": "Amsterdam", "city": "Amsterdam", "country": "Netherlands" }
   ],
 
   "overtimeTypes": [
@@ -329,16 +245,8 @@
   ],
 
   "overtimes": [
-    {
-      "employee": "Kevin Walsh",
-      "type": "Weekend Overtime",
-      "date": "2026-03-01"
-    },
-    {
-      "employee": "Laura Garcia",
-      "type": "Regular Overtime",
-      "date": "2026-03-02"
-    }
+    { "employee": "Kevin Walsh",  "type": "Weekend Overtime", "date": "2026-03-01" },
+    { "employee": "Laura Garcia", "type": "Regular Overtime", "date": "2026-03-02" }
   ],
 
   "sanctions": [
