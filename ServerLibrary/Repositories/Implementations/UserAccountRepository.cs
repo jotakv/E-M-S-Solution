@@ -36,13 +36,15 @@ namespace ServerLibrary.Repositories.Implementations
             }
 
             logger.LogInformation(
-                "Registration attempt for {Email}", user.Email);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                "UserRegister", "Register", "ApplicationUser", user.Email, "Attempt");
 
             var checkUser = await FindUserByEmail(user.Email!);
             if (checkUser != null)
             {
                 logger.LogWarning(
-                    "Registration failed — email already registered: {Email}", user.Email);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                    "UserRegister", "Register", "ApplicationUser", user.Email, "Failure:EmailTaken");
                 return new GeneralResponse(false, "User registered already");
             }
 
@@ -81,8 +83,9 @@ namespace ServerLibrary.Repositories.Implementations
             });
 
             logger.LogInformation(
-                "User registered successfully — UserId: {UserId}, Email: {Email}, Role: {Role}",
-                applicationUser.Id, applicationUser.Email, Constants.User);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Email: {Email} | Role: {Role} | Result: {Result}",
+                "UserRegister", "Register", "ApplicationUser",
+                applicationUser.Id, applicationUser.Email, Constants.User, "Success");
 
             return new GeneralResponse(true, "Account created!");
         }
@@ -95,7 +98,9 @@ namespace ServerLibrary.Repositories.Implementations
                 return new LoginResponse(false, "Model is empty");
             }
 
-            logger.LogInformation("Sign-in attempt for {Email}", user.Email);
+            logger.LogInformation(
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                "UserLogin", "Login", "ApplicationUser", user.Email, "Attempt");
 
             // ── Overall login timer ───────────────────────────────────────────────
             var totalSw = Stopwatch.StartNew();
@@ -111,7 +116,9 @@ namespace ServerLibrary.Repositories.Implementations
 
             if (applicationUser is null)
             {
-                logger.LogWarning("Sign-in failed — user not found: {Email}", user.Email);
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                    "UserLogin", "Login", "ApplicationUser", user.Email, "Failure:UserNotFound");
                 return new LoginResponse(false, "User not found");
             }
 
@@ -128,7 +135,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!passwordValid)
             {
                 logger.LogWarning(
-                    "Sign-in failed — invalid credentials for {Email}", user.Email);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                    "UserLogin", "Login", "ApplicationUser", user.Email, "Failure:InvalidPassword");
                 return new LoginResponse(false, "Email/Password not valid");
             }
 
@@ -140,7 +148,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (userRole is null)
             {
                 logger.LogWarning(
-                    "Sign-in failed — no role assigned to UserId: {UserId}", applicationUser.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                    "UserLogin", "Login", "ApplicationUser", applicationUser.Id, "Failure:NoRoleAssigned");
                 return new LoginResponse(false, "User has no role assigned");
             }
 
@@ -150,8 +159,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (role is null)
             {
                 logger.LogWarning(
-                    "Sign-in failed — role not found for UserId: {UserId}, RoleId: {RoleId}",
-                    applicationUser.Id, userRole.RoleId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | RoleId: {RoleId} | Result: {Result}",
+                    "UserLogin", "Login", "ApplicationUser", applicationUser.Id, userRole.RoleId, "Failure:RoleNotFound");
                 return new LoginResponse(false, "Role not found");
             }
 
@@ -188,9 +197,10 @@ namespace ServerLibrary.Repositories.Implementations
             // ── Total summary ─────────────────────────────────────────────────────
             totalSw.Stop();
             logger.LogInformation(
-                "Sign-in successful — UserId: {UserId}, Email: {Email}, Role: {Role}. " +
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Email: {Email} | Role: {Role} | Result: {Result} | " +
                 "Perf: Lookup {LookupMs}ms | BCrypt {BCryptMs}ms | Roles {RolesMs}ms | Token {TokenMs}ms | Total {TotalMs}ms",
-                applicationUser.Id, applicationUser.Email, role.Name,
+                "UserLogin", "Login", "ApplicationUser",
+                applicationUser.Id, applicationUser.Email, role.Name, "Success",
                 lookupSw.ElapsedMilliseconds, bcryptSw.ElapsedMilliseconds,
                 roleSw.ElapsedMilliseconds, tokenSw.ElapsedMilliseconds,
                 totalSw.ElapsedMilliseconds);
@@ -252,14 +262,18 @@ namespace ServerLibrary.Repositories.Implementations
                 return new LoginResponse(false, "Model is empty");
             }
 
-            logger.LogDebug("Token refresh attempt received");
+            logger.LogDebug(
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Result: {Result}",
+                "TokenRefresh", "Refresh", "ApplicationUser", "Attempt");
 
             var findToken = await appDbContext.RefreshTokenInfos
                 .FirstOrDefaultAsync(_ => _.Token!.Equals(token.Refreshtoken));
 
             if (findToken is null)
             {
-                logger.LogWarning("Token refresh failed — refresh token not found in store");
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Result: {Result}",
+                    "TokenRefresh", "Refresh", "ApplicationUser", "Failure:TokenNotFound");
                 return new LoginResponse(false, "Refresh token is required");
             }
 
@@ -269,7 +283,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (user is null)
             {
                 logger.LogWarning(
-                    "Token refresh failed — user not found for UserId: {UserId}", findToken.UserId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                    "TokenRefresh", "Refresh", "ApplicationUser", findToken.UserId, "Failure:UserNotFound");
                 return new LoginResponse(false, "Refresh token could not be generated because user not found");
             }
 
@@ -284,7 +299,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (updateRefreshToken is null)
             {
                 logger.LogWarning(
-                    "Token refresh failed — no existing refresh token record for UserId: {UserId}", user.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                    "TokenRefresh", "Refresh", "ApplicationUser", user.Id, "Failure:NoTokenRecord");
                 return new LoginResponse(false, "Refresh token could not be generated because user has not signed in");
             }
 
@@ -292,8 +308,8 @@ namespace ServerLibrary.Repositories.Implementations
             await appDbContext.SaveChangesAsync();
 
             logger.LogInformation(
-                "Token refreshed successfully — UserId: {UserId}, Email: {Email}",
-                user.Id, user.Email);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Email: {Email} | Result: {Result}",
+                "TokenRefresh", "Refresh", "ApplicationUser", user.Id, user.Email, "Success");
 
             return new LoginResponse(true, "Token refreshed successfully", jwtToken, refreshToken);
         }
@@ -311,8 +327,12 @@ namespace ServerLibrary.Repositories.Implementations
             foreach (var user in allUsers)
             {
                 var userRole = allUserRoles.FirstOrDefault(u => u.UserId == user.Id);
-                var roleName = allRoles.FirstOrDefault(u => u.Id == userRole!.RoleId);
-                users.Add(new ManageUser() { UserId = user.Id, Name = user.Fullname!, Email = user.Email!, Role = roleName!.Name! });
+                if (userRole is null) continue; // user exists but has no role assigned
+
+                var roleName = allRoles.FirstOrDefault(u => u.Id == userRole.RoleId);
+                if (roleName is null) continue; // role record missing from SystemRoles
+
+                users.Add(new ManageUser() { UserId = user.Id, Name = user.Fullname!, Email = user.Email!, Role = roleName.Name! });
             }
             return users;
         }
@@ -326,14 +346,17 @@ namespace ServerLibrary.Repositories.Implementations
             }
 
             logger.LogInformation(
-                "Updating user — UserId: {UserId}, NewRole: {Role}", model.UserId, model.Role);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | NewRole: {Role} | Result: {Result}",
+                "UserUpdate", "Update", "ApplicationUser", model.UserId, model.Role, "Attempt");
 
             var user = await appDbContext.ApplicationUsers
                 .FirstOrDefaultAsync(u => u.Id == model.UserId);
 
             if (user == null)
             {
-                logger.LogWarning("UpdateUser failed — user not found: UserId {UserId}", model.UserId);
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                    "UserUpdate", "Update", "ApplicationUser", model.UserId, "Failure:UserNotFound");
                 return new GeneralResponse(false, "User not found");
             }
 
@@ -346,7 +369,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (role == null)
             {
                 logger.LogWarning(
-                    "UpdateUser failed — role not found: {Role}", model.Role);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Role: {Role} | Result: {Result}",
+                    "UserUpdate", "Update", "ApplicationUser", model.UserId, model.Role, "Failure:RoleNotFound");
                 return new GeneralResponse(false, "Role not found");
             }
 
@@ -361,8 +385,8 @@ namespace ServerLibrary.Repositories.Implementations
             await appDbContext.SaveChangesAsync();
 
             logger.LogInformation(
-                "User updated successfully — UserId: {UserId}, Email: {Email}, Role: {Role}",
-                user.Id, user.Email, role.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Email: {Email} | Role: {Role} | Result: {Result}",
+                "UserUpdate", "Update", "ApplicationUser", user.Id, user.Email, role.Name, "Success");
 
             return new GeneralResponse(true, "User updated successfully");
         }
@@ -375,14 +399,18 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> DeleteUser(int id)
         {
-            logger.LogInformation("DeleteUser requested — UserId: {UserId}", id);
+            logger.LogInformation(
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                "UserDelete", "Delete", "ApplicationUser", id, "Attempt");
 
             var user = await appDbContext.ApplicationUsers
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null)
             {
-                logger.LogWarning("DeleteUser failed — user not found: UserId {UserId}", id);
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Result: {Result}",
+                    "UserDelete", "Delete", "ApplicationUser", id, "Failure:UserNotFound");
                 return new GeneralResponse(false, "User not found");
             }
 
@@ -390,7 +418,8 @@ namespace ServerLibrary.Repositories.Implementations
             await appDbContext.SaveChangesAsync();
 
             logger.LogInformation(
-                "User deleted successfully — UserId: {UserId}, Email: {Email}", id, user.Email);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | UserId: {UserId} | Email: {Email} | Result: {Result}",
+                "UserDelete", "Delete", "ApplicationUser", id, user.Email, "Success");
 
             return new GeneralResponse(true, "User successfully deleted");
         }

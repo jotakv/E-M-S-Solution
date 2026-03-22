@@ -8,8 +8,8 @@ using ServerLibrary.Repositories.Contracts;
 namespace ServerLibrary.Repositories.Implementations
 {
     public class SanctionRepository(
-        AppDbContext appDbContext,
-        ILogger<SanctionRepository> logger) : IGenericRepositoryInterface<Sanction>
+     AppDbContext appDbContext,
+     ILogger<SanctionRepository> logger) : IGenericRepositoryInterface<Sanction>
     {
         public async Task<List<Sanction>> GetAll() =>
             await appDbContext.Sanctions
@@ -17,8 +17,8 @@ namespace ServerLibrary.Repositories.Implementations
                 .Include(t => t.SanctionType)
                 .ToListAsync();
 
-        public async Task<Sanction> GetById(int id) =>
-            (await appDbContext.Sanctions.FirstOrDefaultAsync(eid => eid.EmployeeId == id))!;
+        public async Task<Sanction?> GetById(int id) =>
+            await appDbContext.Sanctions.FirstOrDefaultAsync(x => x.Id == id);
 
         public async Task<GeneralResponse> Insert(Sanction item)
         {
@@ -28,16 +28,14 @@ namespace ServerLibrary.Repositories.Implementations
                 await Commit();
 
                 logger.LogInformation(
-                    "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}, SanctionTypeId: {SanctionTypeId}, Date: {Date}, Punishment: {Punishment}",
-                    "Created", "Sanction", item.Id, item.EmployeeId, item.SanctionTypeId, item.Date, item.Punishment);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | SanctionTypeId: {SanctionTypeId} | Date: {Date} | Punishment: {Punishment} | Result: {Result}",
+                    "SanctionCreate", "Create", "Sanction", item.Id, item.EmployeeId, item.SanctionTypeId, item.Date, item.Punishment, "Success");
 
                 return Success();
             }
             catch (Exception ex)
             {
-                logger.LogError(
-                    ex,
-                    "Exception creating Sanction for EmployeeId: {EmployeeId}", item.EmployeeId);
+                logger.LogError(ex, "Exception creating Sanction for EmployeeId: {EmployeeId}", item.EmployeeId);
                 return new GeneralResponse(false, ex.InnerException?.Message ?? ex.Message);
             }
         }
@@ -45,13 +43,13 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Update(Sanction item)
         {
             var obj = await appDbContext.Sanctions
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == item.EmployeeId);
+                .FirstOrDefaultAsync(x => x.Id == item.Id);
 
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no sanction found for EmployeeId: {EmployeeId}",
-                    "Update", "Sanction", item.EmployeeId);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "SanctionUpdate", "Update", "Sanction", item.EmployeeId, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -66,14 +64,15 @@ namespace ServerLibrary.Repositories.Implementations
                 changes.Add(new { Field = "SanctionTypeId", OldValue = obj.SanctionTypeId, NewValue = item.SanctionTypeId });
 
             obj.PunishmentDate = item.PunishmentDate;
-            obj.Punishment     = item.Punishment;
-            obj.Date           = item.Date;
+            obj.Punishment = item.Punishment;
+            obj.Date = item.Date;
             obj.SanctionTypeId = item.SanctionTypeId;
+
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity}. EmployeeId: {EmployeeId}. Changes: {@Changes}",
-                "Updated", "Sanction", item.EmployeeId, changes);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Changes: {@Changes} | Result: {Result}",
+                "SanctionUpdate", "Update", "Sanction", item.EmployeeId, changes, "Success");
 
             return Success();
         }
@@ -81,13 +80,13 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> DeleteById(int id)
         {
             var item = await appDbContext.Sanctions
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} failed — no sanction found for EmployeeId: {EmployeeId}",
-                    "Delete", "Sanction", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EmployeeId: {EmployeeId} | Result: {Result}",
+                    "SanctionDelete", "Delete", "Sanction", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -95,14 +94,14 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. EmployeeId: {EmployeeId}",
-                "Deleted", "Sanction", item.Id, id);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | EmployeeId: {EmployeeId} | Result: {Result}",
+                "SanctionDelete", "Delete", "Sanction", item.Id, id, "Success");
 
             return Success();
         }
 
         private async Task Commit() => await appDbContext.SaveChangesAsync();
         private static GeneralResponse NotFound() => new(false, "Sorry data not found");
-        private static GeneralResponse Success()  => new(true,  "Process completed");
+        private static GeneralResponse Success() => new(true, "Process completed");
     }
 }

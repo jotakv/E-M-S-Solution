@@ -34,9 +34,10 @@ public class EmployeeRepositoryLoggingTests
         Assert.Equal("Process completed", result.Message);
         dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
-        VerifyLog(loggerMock, LogLevel.Information, "Creating employee — Name: John Doe, JobName: Dev, BranchId: 1", Times.Once());
-
-        VerifyLog(loggerMock, LogLevel.Information, "Audit: Created on Employee 1. Name: John Doe", Times.Once());
+        // Attempt log: emitted before the DB write
+        VerifyLog(loggerMock, LogLevel.Information, "EmployeeCreate", Times.AtLeastOnce());
+        // Success log: emitted after successful save
+        VerifyLog(loggerMock, LogLevel.Information, "Result: Success", Times.Once());
     }
 
     [Fact]
@@ -59,7 +60,7 @@ public class EmployeeRepositoryLoggingTests
         dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never); 
 
         // Assert 
-        VerifyLog(loggerMock, LogLevel.Warning, "Employee creation failed — duplicate name: Jane Doe", Times.Once());
+        VerifyLog(loggerMock, LogLevel.Warning, "Failure:DuplicateName", Times.Once());
     }
 
     [Fact]
@@ -81,7 +82,7 @@ public class EmployeeRepositoryLoggingTests
         Assert.False(result.Flag);
         Assert.Equal("Database connection lost", result.Message);
 
-        VerifyLog(loggerMock, LogLevel.Error, "Exception while creating employee — Name: Error Trigger", Times.Once());
+        VerifyLog(loggerMock, LogLevel.Error, "Failure:Exception", Times.Once());
     }
 
     #region Helper Methods

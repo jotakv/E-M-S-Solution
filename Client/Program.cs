@@ -1,5 +1,6 @@
 using BaseLibrary.Entities;
 using Blazored.LocalStorage;
+using Blazored.Toast;
 using Client;
 using Client.ApplicationStates;
 using ClientLibrary.Helpers;
@@ -64,6 +65,7 @@ builder.Services.AddScoped<IGenericServiceInterface<Employee>, GenericServiceImp
 
 builder.Services.AddScoped<AllState>();
 
+builder.Services.AddBlazoredToast();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddScoped<SfDialogService>();
 

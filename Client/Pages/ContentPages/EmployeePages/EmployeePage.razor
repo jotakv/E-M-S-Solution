@@ -183,14 +183,20 @@
         OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
     }
 
-    private void HandleCountrySelectedEvent(int countryId) =>
+    private void HandleCountrySelectedEvent(int countryId)
+    {
+        SelectedTowns = new();
         SelectedCities = DefaultCities.Where(c => c.CountryId == countryId).ToList();
+    }
 
     private void HandleCitySelectedEvent(int cityId) =>
         SelectedTowns = DefaultTowns.Where(t => t.CityId == cityId).ToList();
 
-    void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId) =>
+    void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId)
+    {
+        SelectedBranches = new();
         SelectedDepartments = DefaultDepartments.Where(gd => gd.GeneralDepartmentId == generalDepartmentId).ToList();
+    }
 
     void HandleDepartmentSelectedEvent(int departmentId) =>
         SelectedBranches = DefaultBranches.Where(d => d.DepartmentId == departmentId).ToList();
@@ -327,9 +333,10 @@
         }
     }
 
-    private void ViewClicked()
+    private async Task ViewClicked()
     {
-        Employee = SelectedEmployee;
+        Employee = await employeeService.GetById(SelectedEmployee.Id, Constants.EmployeeBaseUrl)
+                   ?? SelectedEmployee;
         contextMenu!.CloseContextMenu();
         ShowDetailsPage = true;
         ShowMainPage = false;
@@ -470,18 +477,13 @@
         }
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
         if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
+            toastService.ShowSuccess(message);
         else
-        {
-            await dialogService.AlertAsync(message, "Alert!");
-            return false;
-        }
+            toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     public void Dispose() => allState.Action -= HandleGlobalStateChanged;

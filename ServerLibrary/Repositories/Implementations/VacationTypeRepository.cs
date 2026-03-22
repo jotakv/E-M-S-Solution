@@ -22,8 +22,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "VacationType", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "VacationTypeCreate", "Create", "VacationType", item.Name, "Failure:DuplicateName");
                 return new GeneralResponse(false, "Vacation Type already added");
             }
 
@@ -31,8 +31,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Created", "VacationType", item.Id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "VacationTypeCreate", "Create", "VacationType", item.Id, item.Name, "Success");
 
             return Success();
         }
@@ -43,8 +43,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "VacationType", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "VacationTypeUpdate", "Update", "VacationType", item.Id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -53,9 +53,9 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "VacationType", item.Id,
-                new { Field = "Name", OldValue = oldName, NewValue = item.Name });
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "VacationTypeUpdate", "Update", "VacationType", item.Id,
+                new { Field = "Name", OldValue = oldName, NewValue = item.Name }, "Success");
 
             return Success();
         }
@@ -66,8 +66,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "VacationType", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "VacationTypeDelete", "Delete", "VacationType", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -75,8 +75,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "VacationType", id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "VacationTypeDelete", "Delete", "VacationType", id, item.Name, "Success");
 
             return Success();
         }

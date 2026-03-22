@@ -84,19 +84,14 @@
         var result = await accountService.CreateAsync(User);
         if (result.Flag)
         {
-            await DisplayDialog(result.Message, "Success");
+            toastService.ShowSuccess(result.Message);
             User = new();
         }
         else
         {
-            await DisplayDialog(result.Message, "Alert!");
+            toastService.ShowError(result.Message);
         }
         ShowLoadingButton = false;
-    }
-
-    private async Task DisplayDialog(string content, string title)
-    {
-        await dialogService.AlertAsync(content, title);
     }
 
     private async Task CheckUserAuthentication()

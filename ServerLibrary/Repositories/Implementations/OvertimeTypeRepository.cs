@@ -24,8 +24,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (!await CheckName(item.Name!))
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} rejected — duplicate Name: {Name}",
-                    "Create", "OvertimeType", item.Name);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
+                    "OvertimeTypeCreate", "Create", "OvertimeType", item.Name, "Failure:DuplicateName");
                 return new GeneralResponse(false, "Overtime Type already added");
             }
 
@@ -33,8 +33,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Created", "OvertimeType", item.Id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "OvertimeTypeCreate", "Create", "OvertimeType", item.Id, item.Name, "Success");
 
             return Success();
         }
@@ -45,8 +45,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (obj is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Update", "OvertimeType", item.Id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "OvertimeTypeUpdate", "Update", "OvertimeType", item.Id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -55,9 +55,9 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Changes: {@Changes}",
-                "Updated", "OvertimeType", item.Id,
-                new { Field = "Name", OldValue = oldName, NewValue = item.Name });
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
+                "OvertimeTypeUpdate", "Update", "OvertimeType", item.Id,
+                new { Field = "Name", OldValue = oldName, NewValue = item.Name }, "Success");
 
             return Success();
         }
@@ -68,8 +68,8 @@ namespace ServerLibrary.Repositories.Implementations
             if (item is null)
             {
                 logger.LogWarning(
-                    "Audit: {Action} on {Entity} {EntityId} failed — not found",
-                    "Delete", "OvertimeType", id);
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Result: {Result}",
+                    "OvertimeTypeDelete", "Delete", "OvertimeType", id, "Failure:NotFound");
                 return NotFound();
             }
 
@@ -77,8 +77,8 @@ namespace ServerLibrary.Repositories.Implementations
             await Commit();
 
             logger.LogInformation(
-                "Audit: {Action} on {Entity} {EntityId}. Name: {Name}",
-                "Deleted", "OvertimeType", id, item.Name);
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                "OvertimeTypeDelete", "Delete", "OvertimeType", id, item.Name, "Success");
 
             return Success();
         }

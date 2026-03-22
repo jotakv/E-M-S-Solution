@@ -40,17 +40,14 @@
 @inject NavigationManager NavManager
 @inject SfDialogService dialogService
 
-@*Add*@
-@inject NavigationManager Nav 
-
 @* /Authentication *@
 @inject IUserAccountService accountService
 
 @* /Navbar tabs communication state handling *@
 @inject AllState allState
 
-@* /Syncfusion dialog service *@
-@inject SfDialogService dialogService
+@using Blazored.Toast.Services
+@inject IToastService toastService
 
 @* /General Departments / Department / Branch *@
 @inject IGenericServiceInterface<GeneralDepartment> generalDepartmentService

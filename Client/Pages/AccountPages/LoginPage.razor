@@ -86,7 +86,7 @@
 
         if (!result.Flag)
         {
-            await DisplayDialog(result.Message, "Alert");
+            toastService.ShowError(result.Message);
             ShowLoadingButton = false;
             return;
         }
@@ -108,18 +108,11 @@
         Console.WriteLine(
             $"[Perf] Auth state update: {authSw.ElapsedMilliseconds}ms");
 
-        // show success dialog
-        await DisplayDialog("Login successfully", "Success");
+        toastService.ShowSuccess("Login successful!");
 
-        // Redirect AFTER user clicks OK
         NavManager.NavigateTo("/home/dashboard", replace: true);
 
         ShowLoadingButton = false;
-    }
-
-    private async Task DisplayDialog(string content, string title)
-    {
-        await dialogService.AlertAsync(content, title);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -44,7 +44,7 @@
                                             @{
                                                 var item = context as Vacation;
                                             }
-                                            <div>@item!.VacationType!.Name</div>
+                                            <div>@(item?.VacationType?.Name ?? "—")</div>
                                         </Template>
                                     </GridColumn>
 
@@ -158,7 +158,7 @@
 
         if (!confirm) return;
 
-        var response = await vacationService.DeleteById(item.EmployeeId, Constants.VacationBaseUrl);
+        var response = await vacationService.DeleteById(item.Id, Constants.VacationBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)
@@ -168,16 +168,13 @@
         }
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
         if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
-
-        await dialogService.AlertAsync(message, "Alert!");
-        return false;
+            toastService.ShowSuccess(message);
+        else
+            toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     // Excel / PDF Export
@@ -189,7 +186,6 @@
         if (args.Item.Text == "PDF Export")
             await DefaultGrid!.ExportToPdfAsync();
     }
-
 
     public void Dispose()
     {

@@ -154,7 +154,7 @@
     {
         if (flag)
         {
-            await dialogService.AlertAsync(message, "Success Operation");
+            toastService.ShowSuccess(message);
             return true;
         }
 

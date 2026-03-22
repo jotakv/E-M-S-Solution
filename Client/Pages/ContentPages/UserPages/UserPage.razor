@@ -125,18 +125,13 @@
             await GetUsers();
     }
 
-    private async Task<bool> DisplayMessage(bool flag, string message)
+    private Task<bool> DisplayMessage(bool flag, string message)
     {
         if (flag)
-        {
-            await dialogService.AlertAsync(message, "Success Operation");
-            return true;
-        }
+            toastService.ShowSuccess(message);
         else
-        {
-            await dialogService.AlertAsync(message, "Alert!");
-            return false;
-        }
+            toastService.ShowError(message);
+        return Task.FromResult(flag);
     }
 
     public void Dispose()
