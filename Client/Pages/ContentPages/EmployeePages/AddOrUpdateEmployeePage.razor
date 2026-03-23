@@ -10,7 +10,6 @@
 @if (allState.ShowEmployee && ShowAddOrUpdateEmployee)
 {
     <div class="container-fluid px-4">
-        <!-- Header Row -->
         <div class="row mt-4 align-items-center">
             <div class="col-auto">
                 <i class="bi bi-x-lg fs-3 fw-bold text-danger"
@@ -22,7 +21,6 @@
             </div>
         </div>
 
-        <!-- Step Progress Bar -->
         <div class="row mt-3 mb-4">
             <div class="col-12 d-flex justify-content-center align-items-center gap-2">
                 <div class="step-circle active">1</div>
@@ -31,7 +29,6 @@
             </div>
         </div>
 
-        <!-- LAYER 1: Personal Info -->
         @if (FirstLayer)
         {
             <EditForm Model="EmployeeGroup1" OnValidSubmit="Form1">
@@ -103,14 +100,12 @@
             </EditForm>
         }
 
-        <!-- LAYER 2: Job + Location Info -->
         @if (SecondLayer)
         {
             <EditForm Model="EmployeeGroup2" OnValidSubmit="Form2">
                 <DataAnnotationsValidator />
                 <div class="row justify-content-center">
 
-                    <!-- Left Column: Job Information -->
                     <div class="col-lg-4">
                         <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Job Information</div>
 
@@ -139,7 +134,8 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select Department</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList @key="@($"dept_{_departmentListKey}")"
+                                            TValue="string"
                                             TItem="Department"
                                             Value="@Department"
                                             Placeholder="Select Department"
@@ -155,7 +151,8 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select Branch</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList @key="@($"branch_{_branchListKey}")"
+                                            TValue="string"
                                             TItem="Branch"
                                             Value="@Branch"
                                             Placeholder="Select Branch"
@@ -178,7 +175,6 @@
                         </div>
                     </div>
 
-                    <!-- Right Column: Location Information -->
                     <div class="col-lg-4">
                         <div class="fw-bold mb-3" style="font-family:Tahoma; font-size:1.1rem;">Location Information</div>
 
@@ -201,7 +197,8 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select City</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList @key="@($"city_{_cityListKey}")"
+                                            TValue="string"
                                             TItem="City"
                                             Value="@City"
                                             Placeholder="Select City"
@@ -218,7 +215,8 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select Town</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList @key="@($"town_{_townListKey}")"
+                                            TValue="string"
                                             TItem="Town"
                                             Value="@Town"
                                             Placeholder="Select Town"
@@ -236,9 +234,7 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Other</label>
-                            <textarea @bind="EmployeeGroup2.Other"
-                                      placeholder="Optional"
-                                      class="form-control"></textarea>
+                            <textarea @bind="EmployeeGroup2.Other" placeholder="Optional" class="form-control"></textarea>
                         </div>
 
                         <div class="form-group mt-4 d-flex justify-content-end">
@@ -276,13 +272,8 @@
         flex-shrink: 0;
     }
 
-    .step-circle.active {
-        background-color: #1d1858;
-    }
-
-    .step-circle.inactive {
-        background-color: #aaaaaa;
-    }
+    .step-circle.active { background-color: #1d1858; }
+    .step-circle.inactive { background-color: #aaaaaa; }
 
     .step-line {
         height: 6px;
@@ -290,13 +281,8 @@
         border-radius: 10px;
     }
 
-    .step-line.active {
-        background-color: #228ada;
-    }
-
-    .step-line.inactive {
-        background-color: #aaaaaa;
-    }
+    .step-line.active { background-color: #228ada; }
+    .step-line.inactive { background-color: #aaaaaa; }
 </style>
 
 @code {
@@ -308,41 +294,83 @@
     [Parameter] public List<Country> Countries { get; set; } = new();
     [Parameter] public List<City> Cities { get; set; } = new();
     [Parameter] public List<Town> Towns { get; set; } = new();
-
     [Parameter] public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
     [Parameter] public List<Department> Departments { get; set; } = new();
     [Parameter] public List<Branch> Branches { get; set; } = new();
 
     public bool FirstLayer { get; set; } = true;
     public bool SecondLayer { get; set; } = false;
-
     public string Title { get; set; } = "Add";
-    public string GeneralDepartment { get; set; } = "";
-    public string Department { get; set; } = "";
-    public string Branch { get; set; } = "";
-    public string Country { get; set; } = "";
-    public string City { get; set; } = "";
-    public string Town { get; set; } = "";
+
+    public string? GeneralDepartment { get; set; } = null;
+    public string? Department { get; set; } = null;
+    public string? Branch { get; set; } = null;
+    public string? Country { get; set; } = null;
+    public string? City { get; set; } = null;
+    public string? Town { get; set; } = null;
 
     public bool IsSaving { get; set; } = false;
 
+    // Claves para forzar recreación de SfDropDownList cuando cambia la lista fuente.
+    // Se incrementan en OnParametersSet cuando llega una nueva referencia de lista.
+    private int _departmentListKey = 0;
+    private int _branchListKey     = 0;
+    private int _cityListKey       = 0;
+    private int _townListKey       = 0;
+
+    private List<Department> _previousDepartments = new();
+    private List<Branch>     _previousBranches    = new();
+    private List<City>       _previousCities      = new();
+    private List<Town>       _previousTowns       = new();
+
     [Parameter] public EventCallback NotifyParentFormCloseClicked { get; set; }
     [Parameter] public EventCallback<Employee> HandleSaveEmployeeClickedEvent { get; set; }
-
     [Parameter] public EventCallback<int> HandleCountrySelectedEvent { get; set; }
     [Parameter] public EventCallback<int> HandleCitySelectedEvent { get; set; }
     [Parameter] public EventCallback<int> HandleGeneralDepartmentSelectedEvent { get; set; }
     [Parameter] public EventCallback<int> HandleDepartmentSelectedEvent { get; set; }
 
+    protected override void OnInitialized()
+    {
+        allState.Action += StateHasChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(Departments, _previousDepartments))
+        {
+            _departmentListKey++;
+            _previousDepartments = Departments;
+        }
+
+        if (!ReferenceEquals(Branches, _previousBranches))
+        {
+            _branchListKey++;
+            _previousBranches = Branches;
+        }
+
+        if (!ReferenceEquals(Cities, _previousCities))
+        {
+            _cityListKey++;
+            _previousCities = Cities;
+        }
+
+        if (!ReferenceEquals(Towns, _previousTowns))
+        {
+            _townListKey++;
+            _previousTowns = Towns;
+        }
+    }
+
     private void ShowLayer2()
     {
-        FirstLayer = false;
+        FirstLayer  = false;
         SecondLayer = true;
     }
 
     private void PrevClicked()
     {
-        FirstLayer = true;
+        FirstLayer  = true;
         SecondLayer = false;
     }
 
@@ -360,19 +388,17 @@
 
         if (file.ContentType != "image/png" && file.ContentType != "image/x-png")
         {
-            ImageUploadMessage = "PNG file needed.";
+            ImageUploadMessage   = "PNG file needed.";
             EmployeeGroup1.Photo = string.Empty;
-            Console.WriteLine($"Upload failed: invalid file type {file.ContentType}");
             return;
         }
 
         var resized = await file.RequestImageFileAsync("image/png", 300, 300);
-        var buffer = new byte[resized.Size];
+        var buffer  = new byte[resized.Size];
         await resized.OpenReadStream().ReadAsync(buffer);
 
         EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
-        ImageUploadMessage = "";
-        Console.WriteLine("PNG uploaded successfully");
+        ImageUploadMessage   = "";
     }
 
     private bool ValidateEmployeeGroup1() =>
@@ -385,26 +411,19 @@
 
     private bool ValidateEmployeeGroup2() =>
         !string.IsNullOrEmpty(EmployeeGroup2.JobName) &&
-        EmployeeGroup2.TownId != 0 &&
+        EmployeeGroup2.TownId   != 0 &&
         EmployeeGroup2.BranchId != 0;
 
     private void Form1()
     {
-        Console.WriteLine($"Name: {EmployeeGroup1.Name}");
-        Console.WriteLine($"Address: {EmployeeGroup1.Address}");
-        Console.WriteLine($"Telephone: {EmployeeGroup1.TelephoneNumber}");
-        Console.WriteLine($"CivilId: {EmployeeGroup1.CivilId}");
-        Console.WriteLine($"FileNumber: {EmployeeGroup1.FileNumber}");
-        Console.WriteLine($"Photo length: {EmployeeGroup1.Photo?.Length}");
-
         if (ValidateEmployeeGroup1())
         {
-            Employee.Name = EmployeeGroup1.Name;
+            Employee.Name            = EmployeeGroup1.Name;
             Employee.TelephoneNumber = EmployeeGroup1.TelephoneNumber;
-            Employee.Address = EmployeeGroup1.Address;
-            Employee.CivilId = EmployeeGroup1.CivilId;
-            Employee.FileNumber = EmployeeGroup1.FileNumber;
-            Employee.Photo = EmployeeGroup1.Photo;
+            Employee.Address         = EmployeeGroup1.Address;
+            Employee.CivilId         = EmployeeGroup1.CivilId;
+            Employee.FileNumber      = EmployeeGroup1.FileNumber;
+            Employee.Photo           = EmployeeGroup1.Photo;
             ShowLayer2();
         }
     }
@@ -416,10 +435,10 @@
             IsSaving = true;
             StateHasChanged();
 
-            Employee.JobName = EmployeeGroup2.JobName;
-            Employee.Other = EmployeeGroup2.Other;
+            Employee.JobName  = EmployeeGroup2.JobName;
+            Employee.Other    = EmployeeGroup2.Other;
             Employee.BranchId = EmployeeGroup2.BranchId;
-            Employee.TownId = EmployeeGroup2.TownId;
+            Employee.TownId   = EmployeeGroup2.TownId;
 
             await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
 
@@ -434,61 +453,71 @@
 
     public void ClearContent()
     {
-        Employee = new();
+        Employee       = new();
         EmployeeGroup1 = new();
         EmployeeGroup2 = new();
-        StateHasChanged();
-    }
 
-    protected override void OnInitialized()
-    {
-        allState.Action += StateHasChanged;
-    }
+        GeneralDepartment = null;
+        Department        = null;
+        Branch            = null;
+        Country           = null;
+        City              = null;
+        Town              = null;
 
-    public async Task OnCountryValueChange(ChangeEventArgs<string, Country> args)
-    {
-        Country = args.Value;
-        City = "";
-        Town = "";
-        EmployeeGroup2.TownId = 0;
-        await HandleCountrySelectedEvent.InvokeAsync(int.Parse(args.Value));
-    }
-
-    public async Task OnCityValueChange(ChangeEventArgs<string, City> args)
-    {
-        City = args.Value;
-        Town = "";
-        EmployeeGroup2.TownId = 0;
-        await HandleCitySelectedEvent.InvokeAsync(int.Parse(args.Value));
-    }
-
-    public void OnTownValueChange(ChangeEventArgs<string, Town> args)
-    {
-        Town = args.Value;
-        EmployeeGroup2.TownId = int.Parse(args.Value);
     }
 
     public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<string, GeneralDepartment> args)
     {
-        GeneralDepartment = args.Value;
-        Department = "";
-        Branch = "";
+        GeneralDepartment       = args.Value;
+        Department              = null;
+        Branch                  = null;
         EmployeeGroup2.BranchId = 0;
-        await HandleGeneralDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
+
+        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        await HandleGeneralDepartmentSelectedEvent.InvokeAsync(id);
     }
 
     public async Task OnDepartmentValueChange(ChangeEventArgs<string, Department> args)
     {
-        Department = args.Value;
-        Branch = "";
+        Department              = args.Value;
+        Branch                  = null;
         EmployeeGroup2.BranchId = 0;
-        await HandleDepartmentSelectedEvent.InvokeAsync(int.Parse(args.Value));
+
+        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        await HandleDepartmentSelectedEvent.InvokeAsync(id);
     }
 
     public void OnBranchValueChange(ChangeEventArgs<string, Branch> args)
     {
-        Branch = args.Value;
-        EmployeeGroup2.BranchId = int.Parse(args.Value);
+        Branch                  = args.Value;
+        EmployeeGroup2.BranchId = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+    }
+
+    public async Task OnCountryValueChange(ChangeEventArgs<string, Country> args)
+    {
+        Country                 = args.Value;
+        City                    = null;
+        Town                    = null;
+        EmployeeGroup2.TownId   = 0;
+
+        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        await HandleCountrySelectedEvent.InvokeAsync(id);
+    }
+
+    public async Task OnCityValueChange(ChangeEventArgs<string, City> args)
+    {
+        City                    = args.Value;
+        Town                    = null;
+        EmployeeGroup2.TownId   = 0;
+
+        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        await HandleCitySelectedEvent.InvokeAsync(id);
+    }
+
+    public void OnTownValueChange(ChangeEventArgs<string, Town> args)
+    {
+        Town                    = args.Value;
+        EmployeeGroup2.TownId   = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
     }
 
     public void Dispose()
