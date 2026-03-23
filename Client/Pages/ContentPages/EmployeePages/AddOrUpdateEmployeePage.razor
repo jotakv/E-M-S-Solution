@@ -117,7 +117,7 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select General Department</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList TValue="int?"
                                             TItem="GeneralDepartment"
                                             Value="@GeneralDepartment"
                                             Placeholder="Select General Department"
@@ -125,7 +125,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="GeneralDepartment"
                                                     ValueChange="OnGeneralDepartmentValueChange"
                                                     Opened="@(args => args.Popup.OffsetY = 1)" />
@@ -135,7 +135,7 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Select Department</label>
                             <SfDropDownList @key="@($"dept_{_departmentListKey}")"
-                                            TValue="string"
+                                            TValue="int?"
                                             TItem="Department"
                                             Value="@Department"
                                             Placeholder="Select Department"
@@ -143,7 +143,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="Department"
                                                     ValueChange="OnDepartmentValueChange" />
                             </SfDropDownList>
@@ -152,7 +152,7 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Select Branch</label>
                             <SfDropDownList @key="@($"branch_{_branchListKey}")"
-                                            TValue="string"
+                                            TValue="int?"
                                             TItem="Branch"
                                             Value="@Branch"
                                             Placeholder="Select Branch"
@@ -160,7 +160,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="Branch"
                                                     ValueChange="OnBranchValueChange"
                                                     Opened="@(args => args.Popup.OffsetY = 1)" />
@@ -180,7 +180,7 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Select Country</label>
-                            <SfDropDownList TValue="string"
+                            <SfDropDownList TValue="int?"
                                             TItem="Country"
                                             Value="@Country"
                                             Placeholder="Select Country"
@@ -188,7 +188,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="Country"
                                                     ValueChange="OnCountryValueChange"
                                                     Opened="@(args => args.Popup.OffsetY = 1)" />
@@ -198,7 +198,7 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Select City</label>
                             <SfDropDownList @key="@($"city_{_cityListKey}")"
-                                            TValue="string"
+                                            TValue="int?"
                                             TItem="City"
                                             Value="@City"
                                             Placeholder="Select City"
@@ -206,7 +206,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="City"
                                                     ValueChange="OnCityValueChange"
                                                     Opened="@(args => args.Popup.OffsetY = 1)" />
@@ -216,7 +216,7 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Select Town</label>
                             <SfDropDownList @key="@($"town_{_townListKey}")"
-                                            TValue="string"
+                                            TValue="int?"
                                             TItem="Town"
                                             Value="@Town"
                                             Placeholder="Select Town"
@@ -224,7 +224,7 @@
                                             Width="100%"
                                             PopupHeight="200px">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
-                                <DropDownListEvents TValue="string"
+                                <DropDownListEvents TValue="int?"
                                                     TItem="Town"
                                                     ValueChange="OnTownValueChange"
                                                     Opened="@(args => args.Popup.OffsetY = 1)" />
@@ -302,17 +302,15 @@
     public bool SecondLayer { get; set; } = false;
     public string Title { get; set; } = "Add";
 
-    public string? GeneralDepartment { get; set; } = null;
-    public string? Department { get; set; } = null;
-    public string? Branch { get; set; } = null;
-    public string? Country { get; set; } = null;
-    public string? City { get; set; } = null;
-    public string? Town { get; set; } = null;
+    public int? GeneralDepartment { get; set; } = null;
+    public int? Department { get; set; } = null;
+    public int? Branch { get; set; } = null;
+    public int? Country { get; set; } = null;
+    public int? City { get; set; } = null;
+    public int? Town { get; set; } = null;
 
     public bool IsSaving { get; set; } = false;
 
-    // Claves para forzar recreación de SfDropDownList cuando cambia la lista fuente.
-    // Se incrementan en OnParametersSet cuando llega una nueva referencia de lista.
     private int _departmentListKey = 0;
     private int _branchListKey     = 0;
     private int _cityListKey       = 0;
@@ -466,58 +464,70 @@
 
     }
 
-    public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<string, GeneralDepartment> args)
+    public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<int?, GeneralDepartment> args)
     {
-        GeneralDepartment       = args.Value;
-        Department              = null;
-        Branch                  = null;
+        if (!args.IsInteracted) return;
+
+        GeneralDepartment = args.Value;
+        Department = null;
+        Branch = null;
         EmployeeGroup2.BranchId = 0;
 
-        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        int id = args.Value ?? 0;
         await HandleGeneralDepartmentSelectedEvent.InvokeAsync(id);
     }
 
-    public async Task OnDepartmentValueChange(ChangeEventArgs<string, Department> args)
+    public async Task OnDepartmentValueChange(ChangeEventArgs<int?, Department> args)
     {
-        Department              = args.Value;
-        Branch                  = null;
+        if (!args.IsInteracted) return;
+
+        Department = args.Value;
+        Branch = null;
         EmployeeGroup2.BranchId = 0;
 
-        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        int id = args.Value ?? 0;
         await HandleDepartmentSelectedEvent.InvokeAsync(id);
     }
 
-    public void OnBranchValueChange(ChangeEventArgs<string, Branch> args)
+    public void OnBranchValueChange(ChangeEventArgs<int?, Branch> args)
     {
-        Branch                  = args.Value;
-        EmployeeGroup2.BranchId = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        if (!args.IsInteracted) return;
+
+        Branch = args.Value;
+        EmployeeGroup2.BranchId = args.Value ?? 0;
     }
 
-    public async Task OnCountryValueChange(ChangeEventArgs<string, Country> args)
+    public async Task OnCountryValueChange(ChangeEventArgs<int?, Country> args)
     {
-        Country                 = args.Value;
-        City                    = null;
-        Town                    = null;
-        EmployeeGroup2.TownId   = 0;
+        if (!args.IsInteracted) return;
 
-        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        Country = args.Value;
+        City = null;
+        Town = null;
+        EmployeeGroup2.TownId = 0;
+
+        int id = args.Value ?? 0;
         await HandleCountrySelectedEvent.InvokeAsync(id);
     }
 
-    public async Task OnCityValueChange(ChangeEventArgs<string, City> args)
+    public async Task OnCityValueChange(ChangeEventArgs<int?, City> args)
     {
-        City                    = args.Value;
-        Town                    = null;
-        EmployeeGroup2.TownId   = 0;
+        if (!args.IsInteracted) return;
 
-        int id = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        City = args.Value;
+        Town = null;
+        EmployeeGroup2.TownId = 0;
+
+        int id = args.Value ?? 0;
         await HandleCitySelectedEvent.InvokeAsync(id);
     }
 
-    public void OnTownValueChange(ChangeEventArgs<string, Town> args)
+    public void OnTownValueChange(ChangeEventArgs<int?, Town> args)
     {
-        Town                    = args.Value;
-        EmployeeGroup2.TownId   = string.IsNullOrEmpty(args.Value) ? 0 : int.Parse(args.Value);
+        if (!args.IsInteracted) return;
+
+        Town = args.Value;
+        EmployeeGroup2.TownId = args.Value ?? 0;
     }
 
     public void Dispose()

@@ -348,12 +348,12 @@
         SelectedDepartments = selectedDepartments;
         SelectedBranches = selectedBranches;
 
-        addOrUpdateEmployee!.GeneralDepartment = employee.Branch?.Department?.GeneralDepartment?.Id.ToString();
-        addOrUpdateEmployee!.Department = employee.Branch?.Department?.Id.ToString();
-        addOrUpdateEmployee!.Branch = employee.Branch?.Id.ToString();
-        addOrUpdateEmployee!.Country = employee.Town?.City?.Country?.Id.ToString();
-        addOrUpdateEmployee!.City = employee.Town?.City?.Id.ToString();
-        addOrUpdateEmployee!.Town = employee.Town?.Id.ToString();
+        addOrUpdateEmployee!.GeneralDepartment = employee.Branch?.Department?.GeneralDepartment?.Id;
+        addOrUpdateEmployee!.Department = employee.Branch?.Department?.Id;
+        addOrUpdateEmployee!.Branch = employee.Branch?.Id;
+        addOrUpdateEmployee!.Country = employee.Town?.City?.Country?.Id;
+        addOrUpdateEmployee!.City = employee.Town?.City?.Id;
+        addOrUpdateEmployee!.Town = employee.Town?.Id;
 
         SelectedEmployee = new();
         ShowAddOrUpdatePage = true;
