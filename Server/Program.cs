@@ -119,6 +119,8 @@ try
     builder.Services.AddScoped<IGenericRepositoryInterface<Doctor>, DoctorRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<Employee>, EmployeeRepository>();
 
+    builder.Services.AddMemoryCache();
+
     // ── RabbitMQ / Event Bus ──────────────────────────────────────────────────
     // Bind RabbitMQ settings from appsettings.json → "RabbitMQ" section.
     // RabbitMqEventBus is a singleton (one shared connection per process).

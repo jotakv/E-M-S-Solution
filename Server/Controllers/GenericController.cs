@@ -15,7 +15,7 @@ namespace Server.Controllers
         Controller where T : class
     {
         [HttpGet("all")]
-        public async Task<IActionResult> GetAll() => Ok(await genericRepositoryInterface.GetAll());
+        public virtual async Task<IActionResult> GetAll() => Ok(await genericRepositoryInterface.GetAll());
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> Delete(int id)
