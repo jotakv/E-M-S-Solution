@@ -71,3 +71,6 @@
 
 @* //Employee *@
 @inject IGenericServiceInterface<Employee> employeeService
+
+@* Authenticated HTTP client factory — used for audit calls in pages *@
+@inject GetHttpClient HttpFactory

@@ -1,4 +1,4 @@
-﻿@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
 @inject IToastService toastService
@@ -8,7 +8,8 @@
         <Header>@Title Employee's Vacation</Header>
 
         <Content>
-            <EditForm Model="ItemModel">
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -23,8 +24,9 @@
                         </div>
 
                         <div class="form-group mt-2">
-                            <label class="form-label">Number of days</label>
+                            <label class="form-label">Number of days <span class="text-danger">*</span></label>
                             <InputNumber @bind-Value="ItemModel.NumberOfDays" class="form-control" />
+                            <ValidationMessage For="() => ItemModel.NumberOfDays" class="text-danger small mt-1" />
                         </div>
 
                         <div class="form-group mt-2">
@@ -33,7 +35,7 @@
                         </div>
 
                         <div class="form-group mt-3 mb-3">
-                            <label class="form-label">Select Type</label>
+                            <label class="form-label">Select Type <span class="text-danger">*</span></label>
                             <SfDropDownList TValue="int"
                                             TItem="VacationType"
                                             Placeholder="Select Type"
@@ -65,16 +67,33 @@
 </SfDialog>
 
 @code {
-    [Parameter] public Vacation ItemModel { get; set; } = new Vacation { StartDate = DateTime.Now };
     [Parameter] public List<VacationType> VacationTypes { get; set; } = new();
     [Parameter] public EventCallback<Vacation> HandleSaveOperationEvent { get; set; }
 
+    public Vacation ItemModel { get; set; } = new Vacation { StartDate = DateTime.Now };
     public string Title { get; set; } = "Add";
     private bool IsVisible { get; set; } = false;
     public bool IsSaving { get; set; } = false;
 
+    private EditContext editContext = default!;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(ItemModel);
+    }
+
     private async Task Save()
     {
+        var isValid = editContext.Validate();
+        if (!isValid)
+            return;
+
+        if (ItemModel.NumberOfDays <= 0)
+        {
+            toastService.ShowError("Number of days must be greater than zero.");
+            return;
+        }
+
         if (ItemModel.VacationTypeId <= 0)
         {
             toastService.ShowError("Please select a Vacation Type before saving.");
@@ -87,19 +106,25 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
-
-        // ⭐ FIX: Close the dialog after saving
         CloseDialog();
     }
 
     public void OpenDialog(int employeeId = 0)
     {
+        ItemModel = new Vacation { StartDate = DateTime.Now };
+        editContext = new EditContext(ItemModel);
         IsVisible = true;
-        
+
         if (employeeId > 0) ItemModel.EmployeeId = employeeId;
 
-        if (ItemModel.StartDate.Date == DateTime.MinValue.Date) ItemModel.StartDate = DateTime.Now;
+        StateHasChanged();
+    }
 
+    public void OpenDialogForEdit(Vacation vacation)
+    {
+        ItemModel = vacation;
+        editContext = new EditContext(ItemModel);
+        IsVisible = true;
         StateHasChanged();
     }
 

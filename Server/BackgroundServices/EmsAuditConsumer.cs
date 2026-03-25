@@ -1,31 +1,40 @@
+using BaseLibrary.DTOs;
+using BaseLibrary.Entities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using System.Text;
+using System.Text.Json;
 
 namespace Server.BackgroundServices;
 
 /// <summary>
-/// Background consumer that listens to the ems.audit queue and logs
-/// every received event as a structured Serilog entry.
+/// Background consumer that listens to the ems.audit queue, deserialises every
+/// AuditEvent message, and persists it to the AuditLogs table via EF Core.
 /// Starts only when RabbitMQ is reachable; exits gracefully if not.
+/// Uses IServiceScopeFactory so the scoped AppDbContext is resolved correctly.
 /// </summary>
 public sealed class EmsAuditConsumer : BackgroundService
 {
-    private readonly RabbitMqSettings _settings;
+    private readonly RabbitMqSettings          _settings;
     private readonly ILogger<EmsAuditConsumer> _logger;
+    private readonly IServiceScopeFactory      _scopeFactory;
     private IConnection? _connection;
     private IModel?      _channel;
 
     public EmsAuditConsumer(
         IOptions<RabbitMqSettings> settings,
-        ILogger<EmsAuditConsumer> logger)
+        ILogger<EmsAuditConsumer> logger,
+        IServiceScopeFactory scopeFactory)
     {
-        _settings = settings.Value;
-        _logger   = logger;
+        _settings     = settings.Value;
+        _logger       = logger;
+        _scopeFactory = scopeFactory;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -80,9 +89,9 @@ public sealed class EmsAuditConsumer : BackgroundService
             consumer.Received += OnMessageReceived;
 
             _channel.BasicConsume(
-                queue:       _settings.QueueName,
-                autoAck:     false,
-                consumer:    consumer);
+                queue:    _settings.QueueName,
+                autoAck:  false,
+                consumer: consumer);
 
             _logger.LogInformation(
                 "EmsAuditConsumer started — Queue: {Queue}, BindingKey: {Key}",
@@ -101,13 +110,36 @@ public sealed class EmsAuditConsumer : BackgroundService
     {
         var routingKey = ea.RoutingKey;
         var body       = Encoding.UTF8.GetString(ea.Body.ToArray());
-        var summary    = body.Length > 200 ? body[..200] + "…" : body;
 
         try
         {
+            var evt = JsonSerializer.Deserialize<AuditEvent>(body,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (evt is not null)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                db.AuditLogs.Add(new AuditLog
+                {
+                    Action        = evt.Action,
+                    Entity        = evt.Entity,
+                    UserId        = evt.UserId,
+                    Format        = evt.Format,
+                    RecordCount   = evt.RecordCount,
+                    EmployeeId    = evt.EmployeeId,
+                    FileName      = evt.FileName,
+                    FileSizeBytes = evt.FileSizeBytes,
+                    Success       = evt.Success,
+                    RoutingKey    = routingKey,
+                    Timestamp     = evt.Timestamp,
+                });
+                db.SaveChanges();
+            }
+
             _logger.LogInformation(
-                "RabbitMQ event consumed — RoutingKey: {RoutingKey}, BodySummary: {Body}",
-                routingKey, summary);
+                "RabbitMQ event consumed + saved — RoutingKey: {RoutingKey}", routingKey);
 
             _channel?.BasicAck(ea.DeliveryTag, multiple: false);
         }
