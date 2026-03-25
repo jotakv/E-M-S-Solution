@@ -1,5 +1,6 @@
 ﻿@implements IDisposable
 
+
 @if (allState.ShowSanction)
 {
     <div class="container-fluid mt-5">
@@ -147,8 +148,8 @@
     }
 
     private void EditClicked(Sanction item)
-{
-    ItemModel = new Sanction
+    {
+        ItemModel = new Sanction
     {
         Id = item.Id,
         EmployeeId = item.EmployeeId,
@@ -158,10 +159,10 @@
         PunishmentDate = item.PunishmentDate
     };
 
-    sanctionDialog!.SetItem(ItemModel);
-    sanctionDialog!.ChangeTitle("Edit");
-    sanctionDialog!.OpenDialog();
-}
+        sanctionDialog!.SetItem(ItemModel);
+        sanctionDialog!.ChangeTitle("Edit");
+        sanctionDialog!.OpenDialog();
+    }
 
 
     private async Task DeleteClicked(Sanction item)
@@ -191,14 +192,28 @@
         return Task.FromResult(flag);
     }
 
-    // Excel / PDF Export
+    // Excel / PDF Export / Print
     public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
-        if (args.Item.Text == "Excel Export")
-            await DefaultGrid!.ExportToExcelAsync();
+        var http = await HttpFactory.GetPrivateHttpClient();
 
-        if (args.Item.Text == "PDF Export")
+        if (args.Item.Text == "Excel Export")
+        {
+            await DefaultGrid!.ExportToExcelAsync();
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Sanction", "Excel", Sanctions.Count));
+        }
+        else if (args.Item.Text == "PDF Export")
+        {
             await DefaultGrid!.ExportToPdfAsync();
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Sanction", "PDF", Sanctions.Count));
+        }
+        else if (args.Item.Text == "Print")
+        {
+            await http.PostAsJsonAsync("api/audit/print",
+                new PrintAuditDto("Sanction", Sanctions.Count));
+        }
     }
 
     public void Dispose()

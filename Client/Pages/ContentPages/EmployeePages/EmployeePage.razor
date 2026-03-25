@@ -464,16 +464,27 @@
         ShowMainPage = true;
     }
 
-    // Excel export / PDF Export
+    // Excel export / PDF Export / Print
     public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
+        var http = await HttpFactory.GetPrivateHttpClient();
+
         if (args.Item.Text == "Excel Export")
         {
             await this.DefaultGrid!.ExportToExcelAsync();
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Employee", "Excel", Employees.Count));
         }
         else if (args.Item.Text == "PDF Export")
         {
             await this.DefaultGrid!.ExportToPdfAsync();
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Employee", "PDF", Employees.Count));
+        }
+        else if (args.Item.Text == "Print")
+        {
+            await http.PostAsJsonAsync("api/audit/print",
+                new PrintAuditDto("Employee", Employees.Count));
         }
     }
 

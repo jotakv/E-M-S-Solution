@@ -373,6 +373,15 @@
         EmployeeGroup1.Photo = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
         ImageUploadMessage = "";
         Console.WriteLine("PNG uploaded successfully");
+
+        // Audit after photo is confirmed — never allowed to block the upload
+        try
+        {
+            var client = await HttpFactory.GetPrivateHttpClient();
+            await client.PostAsJsonAsync("api/audit/image-upload",
+                new ImageUploadAuditDto(Employee.Id.ToString(), file.Name, file.Size, true));
+        }
+        catch { /* audit failure must never block photo upload */ }
     }
 
     private bool ValidateEmployeeGroup1() =>
