@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Implementations;
+using ServerLibrary.Services.Contracts; 
 using ServerLibrary.UnitTests.Helpers;
 
 namespace ServerLibrary.UnitTests.Repositories;
@@ -18,7 +19,9 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
         var newEmployee = CreateEmployee(2, "aLiCe");
 
         // Act
@@ -39,7 +42,9 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>();
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
         var newEmployee = CreateEmployee(2, "Bob");
 
         // Act
@@ -61,7 +66,9 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
         var employeeToUpdate = CreateEmployee(999, "Ghost");
 
         // Act
@@ -81,7 +88,9 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
         var updatedEmployee = CreateEmployee(1, "Alice Updated");
         updatedEmployee.CivilId = "CIV-UPDATED";
         updatedEmployee.FileNumber = "FILE-UPDATED";
@@ -121,7 +130,9 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
 
         // Act
         var result = await repository.DeleteById(999);

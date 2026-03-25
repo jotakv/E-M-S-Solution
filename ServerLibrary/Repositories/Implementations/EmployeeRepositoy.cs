@@ -1,16 +1,19 @@
 using BaseLibrary.Entities;
+using System.Text.Json;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
 using System.Diagnostics;
+using ServerLibrary.Services.Contracts;
 
 namespace ServerLibrary.Repositories.Implementations
 {
     public class EmployeeRepository(
         AppDbContext appDbContext,
-        ILogger<EmployeeRepository> logger) : IGenericRepositoryInterface<Employee>
+        ILogger<EmployeeRepository> logger,
+        IEventBus eventBus) : IGenericRepositoryInterface<Employee>
     {
         public async Task<GeneralResponse> DeleteById(int id)
         {
@@ -108,6 +111,16 @@ namespace ServerLibrary.Repositories.Implementations
                 appDbContext.Employees.Add(item);
                 await Commit();
 
+                try
+                {
+                    var payload = JsonSerializer.Serialize(item, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+                    eventBus.Publish("ems.employee.created", payload);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to serialize and publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
+                }
+
                 logger.LogInformation(
                     "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | JobName: {JobName} | BranchId: {BranchId} | TownId: {TownId} | Result: {Result}",
                     "EmployeeCreate", "Create", "Employee", item.Id, item.Name, item.JobName, item.BranchId, item.TownId, "Success");
@@ -182,6 +195,26 @@ namespace ServerLibrary.Repositories.Implementations
             // Previously both appDbContext.SaveChangesAsync() and Commit() were called,
             // causing two redundant round-trips to the database on every employee update.
             await Commit();
+
+            try
+            {
+                if (changes.Any())
+                {
+                    var updatePayloadObj = new
+                    {
+                        EmployeeId = employee.Id,
+                        Timestamp = DateTime.UtcNow,
+                        Changes = changes
+                    };
+
+                    var payload = JsonSerializer.Serialize(updatePayloadObj);
+                    eventBus.Publish("ems.employee.updated", payload);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to serialize and publish EmployeeUpdated event for EmployeeId: {EmployeeId}", employee.Id);
+            }
 
             logger.LogInformation(
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",
