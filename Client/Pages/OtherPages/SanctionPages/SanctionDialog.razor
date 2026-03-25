@@ -1,4 +1,4 @@
-﻿@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
 @using Blazored.Toast.Services
@@ -12,7 +12,8 @@
         <Header>@Title Employee's Sanction</Header>
 
         <Content>
-            <EditForm Model="ItemModel">
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -32,12 +33,14 @@
                         </div>
 
                         <div class="form-group mt-2">
-                            <label class="form-label">Punishment</label>
-                            <InputTextArea @bind-Value="ItemModel.Punishment" class="form-control" />
+                            <label class="form-label">Punishment <span class="text-danger">*</span></label>
+                            <InputTextArea @bind-Value="ItemModel.Punishment" class="form-control" rows="2"
+                                          placeholder="Describe the punishment..." />
+                            <ValidationMessage For="() => ItemModel.Punishment" class="text-danger small mt-1" />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
-                            <label class="form-label">Select Type</label>
+                            <label class="form-label">Select Type <span class="text-danger">*</span></label>
                             <SfDropDownList TValue="int"
                                             TItem="SanctionType"
                                             Placeholder="Select Type"
@@ -81,22 +84,35 @@
     public bool IsSaving { get; set; } = false;
 
     private int OriginalId;
+    private EditContext editContext = default!;
+
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(ItemModel);
+    }
 
     public void SetItem(Sanction item)
     {
         ItemModel = item;
         OriginalId = item.Id;
+        editContext = new EditContext(ItemModel);
     }
 
     public void ChangeTitle(string title) => Title = title;
 
     private async Task Save()
     {
+        // Trigger DataAnnotationsValidator — catches empty Punishment
+        var formValid = editContext.Validate();
+
         if (ItemModel.SanctionTypeId <= 0)
         {
-            toastService.ShowError("You need to provide type.");
+            toastService.ShowError("Please select a sanction type.");
             return;
         }
+
+        if (!formValid)
+            return;
 
         // Restore ID so update works
         ItemModel.Id = OriginalId;
@@ -124,6 +140,9 @@
 
         if (ItemModel.PunishmentDate.Date == DateTime.MinValue.Date)
             ItemModel.PunishmentDate = DateTime.Now;
+
+        // Reset validation state on open
+        editContext = new EditContext(ItemModel);
 
         StateHasChanged();
     }

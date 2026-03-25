@@ -1,14 +1,15 @@
-﻿@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@inject SfDialogService dialogService
+@inject IToastService toastService
 
 <SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Overtime</Header>
 
         <Content>
-            <EditForm Model="ItemModel">
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -18,22 +19,26 @@
                         </div>
 
                         <div class="form-group mt-2">
-                            <label class="form-label">Start Date</label>
+                            <label class="form-label">Start Date <span class="text-danger">*</span></label>
                             <InputDate @bind-Value="ItemModel.StartDate" class="form-control" />
                         </div>
 
                         <div class="form-group mt-2">
-                            <label class="form-label">End Date</label>
+                            <label class="form-label">End Date <span class="text-danger">*</span></label>
                             <InputDate @bind-Value="ItemModel.EndDate" class="form-control" />
+                            @if (_showDateError)
+                            {
+                                <div class="text-danger small mt-1">End date must be after start date.</div>
+                            }
                         </div>
 
                         <div class="form-group mt-2">
-                            <label class="form-label">Number of days</label>
+                            <label class="form-label">Number of Days</label>
                             <input value="@ItemModel.NumberOfDays" class="form-control" disabled />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
-                            <label class="form-label">Select Type</label>
+                            <label class="form-label">Select Type <span class="text-danger">*</span></label>
                             <SfDropDownList TValue="int"
                                             TItem="OvertimeType"
                                             DataSource="@OvertimeTypes"
@@ -41,6 +46,10 @@
                                             @bind-Value="ItemModel.OvertimeTypeld">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
                             </SfDropDownList>
+                            @if (_showTypeError)
+                            {
+                                <div class="text-danger small mt-1">Please select an overtime type.</div>
+                            }
                         </div>
 
                     </div>
@@ -72,28 +81,35 @@
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
     public bool IsSaving { get; set; } = false;
+    private bool _showTypeError = false;
+    private bool _showDateError = false;
 
-    // CLEAN ARCHITECTURE: Open only opens
+    private EditContext editContext = default!;
+
+    protected override void OnParametersSet()
+    {
+        editContext ??= new EditContext(ItemModel);
+    }
+
     public void OpenDialog(int employeeId = 0)
     {
+        ItemModel = new Overtime { StartDate = DateTime.Now, EndDate = DateTime.Now };
+        _showTypeError = false;
+        _showDateError = false;
+        editContext = new EditContext(ItemModel);
         IsVisible = true;
 
         if (employeeId > 0)
             ItemModel.EmployeeId = employeeId;
 
-        if (ItemModel.StartDate == DateTime.MinValue)
-            ItemModel.StartDate = DateTime.Now;
-
-        if (ItemModel.EndDate == DateTime.MinValue)
-            ItemModel.EndDate = DateTime.Now;
-
         StateHasChanged();
     }
 
-    // CLEAN ARCHITECTURE: Close only closes
     public void CloseDialog()
     {
         IsVisible = false;
+        _showTypeError = false;
+        _showDateError = false;
         StateHasChanged();
     }
 
@@ -101,9 +117,12 @@
 
     private async Task Save()
     {
-        if (ItemModel.OvertimeTypeld <= 0)
+        _showTypeError = ItemModel.OvertimeTypeld <= 0;
+        _showDateError = ItemModel.EndDate <= ItemModel.StartDate;
+
+        if (_showTypeError || _showDateError)
         {
-            await dialogService.AlertAsync("You need to provide type.", "Alert!");
+            StateHasChanged();
             return;
         }
 
@@ -113,8 +132,6 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
-
-        // CLEAN ARCHITECTURE: Close after successful save
         CloseDialog();
     }
 }

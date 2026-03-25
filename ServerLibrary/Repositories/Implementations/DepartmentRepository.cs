@@ -79,6 +79,20 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            // Guard: refuse deletion if branches are still assigned to this department.
+            // Deleting the department must never silently remove employees or orphan branches.
+            var branchCount = await appDbContext.Branches
+                .CountAsync(b => b.DepartmentId == id);
+            if (branchCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | BlockedBy: {BlockedBy} | Result: {Result}",
+                    "DepartmentDelete", "Delete", "Department", id, dep.Name, $"{branchCount} branch(es)", "Failure:HasDependents");
+                return new GeneralResponse(false,
+                    $"Cannot delete \"{dep.Name}\": {branchCount} branch(es) are still assigned to it. " +
+                    "Please reassign or delete those branches first.");
+            }
+
             appDbContext.Departments.Remove(dep);
             await Commit();
 

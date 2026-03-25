@@ -18,7 +18,7 @@ namespace BaseLibrary.DTOs
         [Required, Range(1, 99999, ErrorMessage = "You must select town")]
         public int TownId { get; set; }
 
-        [Required]
+        // Optional field — no Required attribute --- [Required]
         public string? Other { get; set; }
     }
 }

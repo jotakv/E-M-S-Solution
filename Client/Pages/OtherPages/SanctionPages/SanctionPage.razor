@@ -173,7 +173,7 @@
 
         if (!confirm) return;
 
-        var response = await sanctionService.DeleteById(item.EmployeeId, Constants.OvertimeBaseUrl);
+        var response = await sanctionService.DeleteById(item.EmployeeId, Constants.SanctionBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)

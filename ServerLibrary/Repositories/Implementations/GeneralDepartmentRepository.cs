@@ -71,6 +71,20 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            // Guard: refuse deletion if departments are still assigned to this general department.
+            // Cascading through Department → Branch → Employee would silently destroy employee records.
+            var deptCount = await appDbContext.Departments
+                .CountAsync(d => d.GeneralDepartmentId == id);
+            if (deptCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | BlockedBy: {BlockedBy} | Result: {Result}",
+                    "GeneralDepartmentDelete", "Delete", "GeneralDepartment", id, dep.Name, $"{deptCount} department(s)", "Failure:HasDependents");
+                return new GeneralResponse(false,
+                    $"Cannot delete \"{dep.Name}\": {deptCount} department(s) are still assigned to it. " +
+                    "Please reassign or delete those departments first.");
+            }
+
             appDbContext.GeneralDepartments.Remove(dep);
             await Commit();
 

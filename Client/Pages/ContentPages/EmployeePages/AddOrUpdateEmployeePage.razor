@@ -300,10 +300,14 @@
 </style>
 
 @code {
-    [Parameter] public Employee Employee { get; set; } = new();
+    // Employee, EmployeeGroup1, EmployeeGroup2 are internal mutable state — NOT Blazor parameters.
+    // They are accessed by EmployeePage via @ref. Marking them [Parameter] is an anti-pattern
+    // because Blazor would try to manage their lifecycle; keeping them as plain public fields
+    // ensures the parent's ClearContent() / direct property assignments are the only mutations.
+    public Employee Employee { get; set; } = new();
     [Parameter] public bool ShowAddOrUpdateEmployee { get; set; }
-    [Parameter] public EmployeeGrouping1 EmployeeGroup1 { get; set; } = new();
-    [Parameter] public EmployeeGrouping2 EmployeeGroup2 { get; set; } = new();
+    public EmployeeGrouping1 EmployeeGroup1 { get; set; } = new();
+    public EmployeeGrouping2 EmployeeGroup2 { get; set; } = new();
 
     [Parameter] public List<Country> Countries { get; set; } = new();
     [Parameter] public List<City> Cities { get; set; } = new();
@@ -325,6 +329,9 @@
     public string Town { get; set; } = "";
 
     public bool IsSaving { get; set; } = false;
+    private bool _formSubmitInFlight = false;   // re-entrancy guard — prevents double-POST on fast clicks
+    private bool _suppressCascade = false;       // edit pre-population guard — stops Syncfusion ValueChange
+                                                 // from clearing downstream selections while we set them
 
     [Parameter] public EventCallback NotifyParentFormCloseClicked { get; set; }
     [Parameter] public EventCallback<Employee> HandleSaveEmployeeClickedEvent { get; set; }
@@ -420,8 +427,14 @@
 
     private async Task Form2()
     {
+        // Re-entrancy guard: Blazor can re-invoke OnValidSubmit if StateHasChanged()
+        // is called mid-async before the UI has disabled the button. One in-flight save
+        // at a time is all we ever want.
+        if (_formSubmitInFlight) return;
+
         if (ValidateEmployeeGroup2())
         {
+            _formSubmitInFlight = true;
             IsSaving = true;
             StateHasChanged();
 
@@ -433,6 +446,7 @@
             await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);
 
             IsSaving = false;
+            _formSubmitInFlight = false;
         }
         else
         {
@@ -446,8 +460,21 @@
         Employee = new();
         EmployeeGroup1 = new();
         EmployeeGroup2 = new();
+        IsSaving = false;
+        _formSubmitInFlight = false;
+        _suppressCascade = false;
         StateHasChanged();
     }
+
+    /// <summary>
+    /// Call before setting Country/City/Town/Department/Branch strings during edit pre-population.
+    /// While suppressed, the Syncfusion ValueChange handlers skip their downstream-clear logic so
+    /// programmatic assignment does NOT wipe sibling values or reset TownId/BranchId to 0.
+    /// </summary>
+    public void BeginEditPrePopulation() => _suppressCascade = true;
+
+    /// <summary>Call after all cascade strings are set to restore normal user-interaction behaviour.</summary>
+    public void EndEditPrePopulation() => _suppressCascade = false;
 
     protected override void OnInitialized()
     {
@@ -456,6 +483,10 @@
 
     public async Task OnCountryValueChange(ChangeEventArgs<string, Country> args)
     {
+        // During edit pre-population _suppressCascade is true — skip clearing downstream
+        // selections so programmatic Country assignment doesn't wipe City/Town.
+        if (_suppressCascade) return;
+
         Country = args.Value;
         City = "";
         Town = "";
@@ -465,6 +496,8 @@
 
     public async Task OnCityValueChange(ChangeEventArgs<string, City> args)
     {
+        if (_suppressCascade) return;
+
         City = args.Value;
         Town = "";
         EmployeeGroup2.TownId = 0;
@@ -473,12 +506,16 @@
 
     public void OnTownValueChange(ChangeEventArgs<string, Town> args)
     {
+        if (_suppressCascade) return;
+
         Town = args.Value;
         EmployeeGroup2.TownId = int.Parse(args.Value);
     }
 
     public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<string, GeneralDepartment> args)
     {
+        if (_suppressCascade) return;
+
         GeneralDepartment = args.Value;
         Department = "";
         Branch = "";
@@ -488,6 +525,8 @@
 
     public async Task OnDepartmentValueChange(ChangeEventArgs<string, Department> args)
     {
+        if (_suppressCascade) return;
+
         Department = args.Value;
         Branch = "";
         EmployeeGroup2.BranchId = 0;

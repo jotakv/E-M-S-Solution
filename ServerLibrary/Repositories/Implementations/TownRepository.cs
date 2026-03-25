@@ -92,6 +92,17 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            // Safe cascade guard — never delete a town that still has employees
+            var employeeCount = await appDbContext.Employees.CountAsync(e => e.TownId == id);
+            if (employeeCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | EmployeeCount: {EmployeeCount} | Result: {Result}",
+                    "TownDelete", "Delete", "Town", id, dep.Name, employeeCount, "Failure:EmployeesAssigned");
+                return new GeneralResponse(false,
+                    $"Cannot delete '{dep.Name}': {employeeCount} employee(s) are assigned to it. Reassign them first.");
+            }
+
             appDbContext.Towns.Remove(dep);
             await Commit();
 

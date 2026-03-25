@@ -91,18 +91,22 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> Insert(Employee item)
         {
+            // Guard: name must be provided before hitting the DB
+            if (string.IsNullOrWhiteSpace(item.Name))
+                return new GeneralResponse(false, "Employee name is required.");
+
             logger.LogInformation(
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | JobName: {JobName} | BranchId: {BranchId} | Result: {Result}",
                 "EmployeeCreate", "Create", "Employee", item.Name, item.JobName, item.BranchId, "Attempt");
 
             try
             {
-                if (!await CheckName(item.Name!))
+                if (!await CheckName(item.Name))
                 {
                     logger.LogWarning(
                         "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
                         "EmployeeCreate", "Create", "Employee", item.Name, "Failure:DuplicateName");
-                    return new GeneralResponse(false, "Employee already added");
+                    return new GeneralResponse(false, $"An employee named \"{item.Name}\" already exists. Please use a different name.");
                 }
 
                 appDbContext.Employees.Add(item);

@@ -292,6 +292,12 @@
         addOrUpdateEmployee!.EmployeeGroup2.BranchId = SelectedEmployee.BranchId;
         addOrUpdateEmployee!.EmployeeGroup2.TownId = SelectedEmployee.TownId;
 
+        // Suppress cascade ValueChange events while pre-populating dropdown strings.
+        // Without this, Syncfusion fires OnCountryValueChange which clears City/Town,
+        // and OnGeneralDepartmentValueChange which clears Department/Branch — causing
+        // duplicate visual entries and resetting TownId/BranchId back to 0.
+        addOrUpdateEmployee!.BeginEditPrePopulation();
+
         if (SelectedEmployee.Branch?.Department?.GeneralDepartment != null)
             addOrUpdateEmployee!.GeneralDepartment = SelectedEmployee.Branch.Department.GeneralDepartment.Id.ToString();
 
@@ -309,6 +315,8 @@
 
         if (SelectedEmployee.Town != null)
             addOrUpdateEmployee!.Town = SelectedEmployee.Town.Id.ToString();
+
+        addOrUpdateEmployee!.EndEditPrePopulation();
 
         SelectedEmployee = new();
         contextMenu!.CloseContextMenu();

@@ -59,6 +59,20 @@ namespace ServerLibrary.Data
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Branch → Employees: RESTRICT so deleting a Branch never silently removes employees
+            modelBuilder.Entity<Branch>()
+                .HasMany(b => b.Employees)
+                .WithOne(e => e.Branch)
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Town → Employees: RESTRICT so deleting a Town never silently removes employees
+            modelBuilder.Entity<Town>()
+                .HasMany(t => t.Employees)
+                .WithOne(e => e.Town)
+                .HasForeignKey(e => e.TownId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Seed roles
             modelBuilder.Entity<SystemRole>().HasData(
                 new SystemRole { Id = 1, Name = "Admin" },
