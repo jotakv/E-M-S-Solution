@@ -507,11 +507,13 @@
         var http = await HttpFactory.GetPrivateHttpClient();
 
         if (args.Item.Text == "Excel Export")
+        {
             await this.DefaultGrid!.ExportToExcelAsync();
             await http.PostAsJsonAsync("api/audit/export",
                 new ExportAuditDto("Employee", "Excel", Employees.Count));
         }
         else if (args.Item.Text == "PDF Export")
+        {
             await this.DefaultGrid!.ExportToPdfAsync();
             await http.PostAsJsonAsync("api/audit/export",
                 new ExportAuditDto("Employee", "PDF", Employees.Count));
