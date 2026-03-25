@@ -25,8 +25,7 @@
                                 var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
                             }
                             <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
-                                <GridEvents OnToolbarClick="ToolbarClickHandler"
-                                            TValue="Employee"></GridEvents>
+                                <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="Employee"></GridEvents>
                                 <GridColumns>
                                     <GridColumn HeaderText="Employee Image">
                                         <Template>
@@ -56,8 +55,7 @@
                                 </GridColumns>
                             </SfGrid>
                         </div>
-                        <div class="card-footer">
-                        </div>
+                        <div class="card-footer"></div>
                     </div>
                 </div>
             </div>
@@ -90,19 +88,10 @@
              HandleAddVacationClicked="AddVacationClicked" />
 
 <DoctorDialog @ref="doctorDialog" Doctor="Doctor" HandleSaveOperationEvent="SaveHealthEvent" />
-
-<OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes"
-                HandleSaveOperationEvent="SaveOvertimeEvent" />
-
-<SanctionDialog @ref="sanctionDialog" ItemModel="Sanction" SanctionTypes="SanctionTypes"
-                HandleSaveOperationEvent="SaveSanctionEvent" />
-
-<VacationDialog @ref="vacationDialog" ItemModel="Vacation" VacationTypes="VacationTypes"
-                HandleSaveOperationEvent="SaveVacationEvent" />
-
-<EmployeeDetailPage EmployeeDetails="Employee"
-                    ShowDetailsPage="ShowDetailsPage"
-                    HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
+<OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent" />
+<SanctionDialog @ref="sanctionDialog" ItemModel="Sanction" SanctionTypes="SanctionTypes" HandleSaveOperationEvent="SaveSanctionEvent" />
+<VacationDialog @ref="vacationDialog" ItemModel="Vacation" VacationTypes="VacationTypes" HandleSaveOperationEvent="SaveVacationEvent" />
+<EmployeeDetailPage EmployeeDetails="Employee" ShowDetailsPage="ShowDetailsPage" HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 
 @code {
     [Parameter] public List<Employee>? InitialEmployees { get; set; }
@@ -118,7 +107,6 @@
     public List<Country> DefaultCountries { get; set; } = [];
     public List<City> DefaultCities { get; set; } = [];
     public List<Town> DefaultTowns { get; set; } = [];
-
     public List<GeneralDepartment> DefaultGeneralDepartments { get; set; } = [];
     public List<Department> DefaultDepartments { get; set; } = [];
     public List<Branch> DefaultBranches { get; set; } = [];
@@ -168,38 +156,69 @@
         StateHasChanged();
     }
 
-    private async Task LoadDefaults()
-    {
+    private async Task LoadCountriesAsync() =>
         DefaultCountries = await countryService.GetAll(Constants.CountryBaseUrl);
+
+    private async Task LoadCitiesAsync() =>
         DefaultCities = await cityService.GetAll(Constants.CityBaseUrl);
+
+    private async Task LoadTownsAsync() =>
         DefaultTowns = await townService.GetAll(Constants.TownBaseUrl);
 
+    private async Task LoadGeneralDepartmentsAsync() =>
         DefaultGeneralDepartments = await generalDepartmentService.GetAll(Constants.GeneralDepartmentBaseUrl);
+
+    private async Task LoadDepartmentsAsync() =>
         DefaultDepartments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+
+    private async Task LoadBranchesAsync() =>
         DefaultBranches = await branchService.GetAll(Constants.BranchBaseUrl);
 
+    private async Task LoadTypesAsync()
+    {
         VacationTypes = await vacationTypeService.GetAll(Constants.VacationTypeBaseUrl);
         SanctionTypes = await sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
         OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
     }
 
+    private async Task LoadDefaults() => await Task.WhenAll(
+        LoadCountriesAsync(),
+        LoadCitiesAsync(),
+        LoadTownsAsync(),
+        LoadGeneralDepartmentsAsync(),
+        LoadDepartmentsAsync(),
+        LoadBranchesAsync(),
+        LoadTypesAsync());
+
     private void HandleCountrySelectedEvent(int countryId)
     {
         SelectedTowns = new();
-        SelectedCities = DefaultCities.Where(c => c.CountryId == countryId).ToList();
+        SelectedCities = countryId == 0
+            ? new()
+            : DefaultCities.Where(c => c.CountryId == countryId).ToList();
     }
 
-    private void HandleCitySelectedEvent(int cityId) =>
-        SelectedTowns = DefaultTowns.Where(t => t.CityId == cityId).ToList();
+    private void HandleCitySelectedEvent(int cityId)
+    {
+        SelectedTowns = cityId == 0
+            ? new()
+            : DefaultTowns.Where(t => t.CityId == cityId).ToList();
+    }
 
-    void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId)
+    private void HandleGeneralDepartmentSelectedEvent(int generalDepartmentId)
     {
         SelectedBranches = new();
-        SelectedDepartments = DefaultDepartments.Where(gd => gd.GeneralDepartmentId == generalDepartmentId).ToList();
+        SelectedDepartments = generalDepartmentId == 0
+            ? new()
+            : DefaultDepartments.Where(gd => gd.GeneralDepartmentId == generalDepartmentId).ToList();
     }
 
-    void HandleDepartmentSelectedEvent(int departmentId) =>
-        SelectedBranches = DefaultBranches.Where(d => d.DepartmentId == departmentId).ToList();
+    private void HandleDepartmentSelectedEvent(int departmentId)
+    {
+        SelectedBranches = departmentId == 0
+            ? new()
+            : DefaultBranches.Where(d => d.DepartmentId == departmentId).ToList();
+    }
 
     private async Task NotifyParentFormCloseClicked()
     {
@@ -209,7 +228,8 @@
         SelectedEmployee = new();
     }
 
-    private async Task LoadEmployees() => Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+    private async Task LoadEmployees() =>
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
 
     async Task HandleSaveEmployeeClickedEvent(Employee employee)
     {
@@ -260,58 +280,82 @@
 
     private async Task EditClicked()
     {
-        await LoadDefaults();
+        contextMenu!.CloseContextMenu();
 
-        if (SelectedEmployee.Town?.City != null)
-        {
-            SelectedCities = DefaultCities.Where(c => c.CountryId == SelectedEmployee.Town.City.CountryId).ToList();
-            SelectedTowns = DefaultTowns.Where(t => t.CityId == SelectedEmployee.Town.CityId).ToList();
-        }
+        var employee = SelectedEmployee;
 
-        if (SelectedEmployee.Branch?.Department != null)
-        {
-            SelectedDepartments = DefaultDepartments.Where(gd => gd.GeneralDepartmentId == SelectedEmployee.Branch.Department.GeneralDepartmentId).ToList();
-            SelectedBranches = DefaultBranches.Where(d => d.DepartmentId == SelectedEmployee.Branch.DepartmentId).ToList();
-        }
+        SelectedCities = new();
+        SelectedTowns = new();
+        SelectedDepartments = new();
+        SelectedBranches = new();
 
+        await Task.WhenAll(
+            LoadCountriesAsync(),
+            LoadCitiesAsync(),
+            LoadTownsAsync(),
+            LoadGeneralDepartmentsAsync(),
+            LoadDepartmentsAsync(),
+            LoadBranchesAsync(),
+            LoadTypesAsync());
+
+        var selectedDepartments = employee.Branch?.Department != null
+    ? DefaultDepartments
+        .Where(d => d.GeneralDepartmentId == employee.Branch.Department.GeneralDepartmentId)
+        .DistinctBy(d => d.Id)
+        .ToList()
+    : new List<Department>();
+
+        var selectedBranches = employee.Branch != null
+            ? DefaultBranches
+                .Where(b => b.DepartmentId == employee.Branch.DepartmentId)
+                .DistinctBy(b => b.Id)
+                .ToList()
+            : new List<Branch>();
+
+        var selectedCities = employee.Town?.City != null
+            ? DefaultCities
+                .Where(c => c.CountryId == employee.Town.City.CountryId)
+                .DistinctBy(c => c.Id)
+                .ToList()
+            : new List<City>();
+
+        var selectedTowns = employee.Town != null
+            ? DefaultTowns
+                .Where(t => t.CityId == employee.Town.CityId)
+                .DistinctBy(t => t.Id)
+                .ToList()
+            : new List<Town>();
+            
         addOrUpdateEmployee!.ClearContent();
         addOrUpdateEmployee!.FirstLayer = true;
         addOrUpdateEmployee!.SecondLayer = false;
         addOrUpdateEmployee!.Title = "Update";
 
-        addOrUpdateEmployee!.Employee.Id = SelectedEmployee.Id;
-        addOrUpdateEmployee!.EmployeeGroup1.Name = SelectedEmployee.Name;
-        addOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = SelectedEmployee.TelephoneNumber ?? string.Empty;
-        addOrUpdateEmployee!.EmployeeGroup1.FileNumber = SelectedEmployee.FileNumber ?? string.Empty;
-        addOrUpdateEmployee!.EmployeeGroup1.Address = SelectedEmployee.Address ?? string.Empty;
-        addOrUpdateEmployee!.EmployeeGroup1.Photo = SelectedEmployee.Photo ?? string.Empty;
-        addOrUpdateEmployee!.EmployeeGroup1.CivilId = SelectedEmployee.CivilId ?? string.Empty;
+        addOrUpdateEmployee!.Employee.Id = employee.Id;
+        addOrUpdateEmployee!.EmployeeGroup1.Name = employee.Name;
+        addOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = employee.TelephoneNumber ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.FileNumber = employee.FileNumber ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.Address = employee.Address ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.Photo = employee.Photo ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup1.CivilId = employee.CivilId ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup2.JobName = employee.JobName ?? string.Empty;
+        addOrUpdateEmployee!.EmployeeGroup2.Other = employee.Other;
+        addOrUpdateEmployee!.EmployeeGroup2.BranchId = employee.BranchId;
+        addOrUpdateEmployee!.EmployeeGroup2.TownId = employee.TownId;
 
-        addOrUpdateEmployee!.EmployeeGroup2.JobName = SelectedEmployee.JobName ?? string.Empty;
-        addOrUpdateEmployee!.EmployeeGroup2.Other = SelectedEmployee.Other;
-        addOrUpdateEmployee!.EmployeeGroup2.BranchId = SelectedEmployee.BranchId;
-        addOrUpdateEmployee!.EmployeeGroup2.TownId = SelectedEmployee.TownId;
+        SelectedCities = selectedCities;
+        SelectedTowns = selectedTowns;
+        SelectedDepartments = selectedDepartments;
+        SelectedBranches = selectedBranches;
 
-        if (SelectedEmployee.Branch?.Department?.GeneralDepartment != null)
-            addOrUpdateEmployee!.GeneralDepartment = SelectedEmployee.Branch.Department.GeneralDepartment.Id.ToString();
-
-        if (SelectedEmployee.Branch?.Department != null)
-            addOrUpdateEmployee!.Department = SelectedEmployee.Branch.Department.Id.ToString();
-
-        if (SelectedEmployee.Branch != null)
-            addOrUpdateEmployee!.Branch = SelectedEmployee.Branch.Id.ToString();
-
-        if (SelectedEmployee.Town?.City?.Country != null)
-            addOrUpdateEmployee!.Country = SelectedEmployee.Town.City.Country.Id.ToString();
-
-        if (SelectedEmployee.Town?.City != null)
-            addOrUpdateEmployee!.City = SelectedEmployee.Town.City.Id.ToString();
-
-        if (SelectedEmployee.Town != null)
-            addOrUpdateEmployee!.Town = SelectedEmployee.Town.Id.ToString();
+        addOrUpdateEmployee!.GeneralDepartment = employee.Branch?.Department?.GeneralDepartment?.Id;
+        addOrUpdateEmployee!.Department = employee.Branch?.Department?.Id;
+        addOrUpdateEmployee!.Branch = employee.Branch?.Id;
+        addOrUpdateEmployee!.Country = employee.Town?.City?.Country?.Id;
+        addOrUpdateEmployee!.City = employee.Town?.City?.Id;
+        addOrUpdateEmployee!.Town = employee.Town?.Id;
 
         SelectedEmployee = new();
-        contextMenu!.CloseContextMenu();
         ShowAddOrUpdatePage = true;
         ShowMainPage = false;
     }
@@ -319,8 +363,8 @@
     private async Task DeleteClicked()
     {
         contextMenu!.CloseContextMenu();
-        bool confirm = await dialogService
-        .ConfirmAsync($"Are you sure you wanna delete {SelectedEmployee.Name}?", "Confirm Delete");
+        bool confirm = await dialogService.ConfirmAsync(
+            $"Are you sure you wanna delete {SelectedEmployee.Name}?", "Confirm Delete");
         if (!confirm) return;
 
         var response = await employeeService.DeleteById(SelectedEmployee.Id, Constants.EmployeeBaseUrl);
@@ -357,7 +401,6 @@
         item.EmployeeId = SelectedEmployee.Id;
         var (flag, message) = await doctorService.Insert(item, Constants.DoctorBaseUrl);
         var response = await DisplayMessage(flag, message);
-
         if (response)
         {
             SelectedEmployee = new();
@@ -373,9 +416,7 @@
     private async Task AddOvertimeClicked()
     {
         contextMenu!.CloseContextMenu();
-
         OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
-
         overtimeDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -400,9 +441,7 @@
     private async Task AddSanctionClicked()
     {
         contextMenu!.CloseContextMenu();
-
         SanctionTypes = await sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
-
         sanctionDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -427,9 +466,7 @@
     private async Task AddVacationClicked()
     {
         contextMenu!.CloseContextMenu();
-
         VacationTypes = await vacationTypeService.GetAll(Constants.VacationTypeBaseUrl);
-
         vacationDialog!.OpenDialog(SelectedEmployee.Id);
     }
 
@@ -470,13 +507,11 @@
         var http = await HttpFactory.GetPrivateHttpClient();
 
         if (args.Item.Text == "Excel Export")
-        {
             await this.DefaultGrid!.ExportToExcelAsync();
             await http.PostAsJsonAsync("api/audit/export",
                 new ExportAuditDto("Employee", "Excel", Employees.Count));
         }
         else if (args.Item.Text == "PDF Export")
-        {
             await this.DefaultGrid!.ExportToPdfAsync();
             await http.PostAsJsonAsync("api/audit/export",
                 new ExportAuditDto("Employee", "PDF", Employees.Count));
@@ -490,10 +525,8 @@
 
     private Task<bool> DisplayMessage(bool flag, string message)
     {
-        if (flag)
-            toastService.ShowSuccess(message);
-        else
-            toastService.ShowError(message);
+        if (flag) toastService.ShowSuccess(message);
+        else toastService.ShowError(message);
         return Task.FromResult(flag);
     }
 

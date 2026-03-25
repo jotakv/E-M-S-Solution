@@ -91,6 +91,64 @@ namespace ServerLibrary.Data
 
         #endregion
 
+        #region Generic Seed Helpers
+
+        // Usado por entidades cuyo nombre es globalmente único (Country, GeneralDepartment, OvertimeType, etc.)
+        private static async Task<Dictionary<string, T>> AddIfNotExistsAsync<T>(
+            DbSet<T> dbSet,
+            IEnumerable<T> items,
+            Func<T, string> keySelector,
+            ILogger? logger,
+            CancellationToken ct) where T : class
+        {
+            var existing = await dbSet.ToListAsync(ct);
+            var dict = existing.ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in items)
+            {
+                var key = keySelector(item);
+
+                if (!dict.ContainsKey(key))
+                {
+                    await dbSet.AddAsync(item, ct);
+                    dict[key] = item;
+                }
+            }
+
+            return dict;
+        }
+
+        // Usado por entidades cuya unicidad depende de un padre (City, Town, Department, Branch)
+        // La clave compuesta tiene formato "ParentName|EntityName"
+        private static async Task<Dictionary<string, T>> AddIfNotExistsWithCompositeKeyAsync<T>(
+            DbSet<T> dbSet,
+            IEnumerable<(string CompositeKey, T Entity)> items,
+            ILogger? logger,
+            CancellationToken ct) where T : class
+        {
+            var existing = await dbSet.ToListAsync(ct);
+
+            // El diccionario de existentes se construye fuera de este helper
+            // porque cada entidad necesita su propia lógica de composite key
+            var dict = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (compositeKey, entity) in items)
+            {
+                if (!dict.ContainsKey(compositeKey))
+                {
+                    await dbSet.AddAsync(entity, ct);
+                    dict[compositeKey] = entity;
+                }
+            }
+
+            return dict;
+        }
+
+        private static string CompositeKey(params string[] parts)
+            => string.Join("|", parts);
+
+        #endregion
+
         #region Roles & Users
 
         private static async Task<Dictionary<string, SystemRole>> EnsureRolesAsync(
@@ -109,7 +167,6 @@ namespace ServerLibrary.Data
                     var role = new SystemRole { Name = roleName };
                     context.SystemRoles.Add(role);
                     dict[roleName] = role;
-
                     logger?.LogInformation("Added role {Role}", roleName);
                 }
             }
@@ -139,7 +196,6 @@ namespace ServerLibrary.Data
 
                     context.ApplicationUsers.Add(user);
                     existing[dto.Email] = user;
-
                     logger?.LogInformation("Added user {Email}", dto.Email);
                 }
             }
@@ -174,14 +230,8 @@ namespace ServerLibrary.Data
 
                 if (!alreadyInDb && !alreadyInMemory)
                 {
-                    context.UserRoles.Add(new UserRole
-                    {
-                        User = user,  
-                        Role = role  
-                    });
-
+                    context.UserRoles.Add(new UserRole { User = user, Role = role });
                     addedInMemory.Add((user.Id, role.Id));
-
                     logger?.LogInformation("Assigned role {Role} to user {Email}", dto.Role, dto.Email);
                 }
             }
@@ -189,35 +239,102 @@ namespace ServerLibrary.Data
 
         #endregion
 
-        #region Generic Seed Helpers
+        #region Organization
 
-        private static async Task<Dictionary<string, T>> AddIfNotExistsAsync<T>(
-            DbSet<T> dbSet,
-            IEnumerable<T> items,
-            Func<T, string> keySelector,
+        private static async Task<Dictionary<string, GeneralDepartment>> SeedGeneralDepartmentsAsync(
+            AppDbContext context,
+            SeedData seedData,
             ILogger? logger,
-            CancellationToken ct) where T : class
+            CancellationToken ct)
         {
-            var existing = await dbSet.ToListAsync(ct);
-            var dict = existing.ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+            return await AddIfNotExistsAsync(
+                context.GeneralDepartments,
+                seedData.GeneralDepartments.Select(x => new GeneralDepartment { Name = x.Name }),
+                x => x.Name,
+                logger,
+                ct);
+        }
 
-            foreach (var item in items)
+        // Clave compuesta: "GeneralDepartmentName|DepartmentName"
+        private static async Task<Dictionary<string, Department>> SeedDepartmentsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, GeneralDepartment> generalDepartments,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existingInDb = await context.Departments
+                .Include(d => d.GeneralDepartment)
+                .ToListAsync(ct);
+
+            var dict = existingInDb.ToDictionary(
+                d => CompositeKey(d.GeneralDepartment.Name, d.Name),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var dto in seedData.Departments)
             {
-                var key = keySelector(item);
+                if (!generalDepartments.TryGetValue(dto.GeneralDepartment, out var parent))
+                    throw new Exception(
+                        $"Department '{dto.Name}' references GeneralDepartment '{dto.GeneralDepartment}' " +
+                        $"which was not found. Available: [{string.Join(", ", generalDepartments.Keys)}]");
+
+                var key = CompositeKey(dto.GeneralDepartment, dto.Name);
 
                 if (!dict.ContainsKey(key))
                 {
-                    await dbSet.AddAsync(item, ct);
-                    dict[key] = item;
+                    var department = new Department { Name = dto.Name, GeneralDepartment = parent };
+                    context.Departments.Add(department);
+                    dict[key] = department;
+                    logger?.LogInformation("Added department {Department} under {GeneralDepartment}", dto.Name, dto.GeneralDepartment);
                 }
             }
 
             return dict;
         }
 
-        #endregion
+        // Clave compuesta: "GeneralDepartmentName|DepartmentName|BranchName"
+        private static async Task<Dictionary<string, Branch>> SeedBranchesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Department> departments,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existingInDb = await context.Branches
+                .Include(b => b.Department)
+                    .ThenInclude(d => d.GeneralDepartment)
+                .ToListAsync(ct);
 
-        #region Organization
+            var dict = existingInDb.ToDictionary(
+                b => CompositeKey(b.Department.GeneralDepartment.Name, b.Department.Name, b.Name),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var dto in seedData.Branches)
+            {
+                // El diccionario de departments usa clave compuesta "GeneralDepartment|Department"
+                // por lo que buscamos por nombre simple dentro de los valores
+                var deptEntry = departments.FirstOrDefault(kvp =>
+                    kvp.Key.EndsWith($"|{dto.Department}", StringComparison.OrdinalIgnoreCase));
+
+                if (deptEntry.Value is null)
+                    throw new Exception(
+                        $"Branch '{dto.Name}' references Department '{dto.Department}' " +
+                        $"which was not found. Available: [{string.Join(", ", departments.Keys)}]");
+
+                var generalDeptName = deptEntry.Key.Split('|')[0];
+                var key = CompositeKey(generalDeptName, dto.Department, dto.Name);
+
+                if (!dict.ContainsKey(key))
+                {
+                    var branch = new Branch { Name = dto.Name, Department = deptEntry.Value };
+                    context.Branches.Add(branch);
+                    dict[key] = branch;
+                    logger?.LogInformation("Added branch {Branch} under {Department}", dto.Name, dto.Department);
+                }
+            }
+
+            return dict;
+        }
 
         private static async Task<Dictionary<string, Employee>> SeedEmployeesAsync(
             AppDbContext context,
@@ -235,11 +352,23 @@ namespace ServerLibrary.Data
                 if (existing.ContainsKey(dto.Name))
                     continue;
 
-                if (!branches.TryGetValue(dto.Branch, out var branch))
-                    throw new Exception($"Branch not found: {dto.Branch}");
+                // Branches usa clave compuesta — buscamos por el sufijo que contiene el nombre del branch
+                var branch = branches.Values.FirstOrDefault(b =>
+                    string.Equals(b.Name, dto.Branch, StringComparison.OrdinalIgnoreCase));
 
-                if (!towns.TryGetValue(dto.Town, out var town))
-                    throw new Exception($"Town not found: {dto.Town}");
+                if (branch is null)
+                    throw new Exception(
+                        $"Employee '{dto.Name}' references Branch '{dto.Branch}' " +
+                        $"which was not found.");
+
+                // Towns usa clave compuesta — buscamos por el sufijo que contiene el nombre del town
+                var town = towns.Values.FirstOrDefault(t =>
+                    string.Equals(t.Name, dto.Town, StringComparison.OrdinalIgnoreCase));
+
+                if (town is null)
+                    throw new Exception(
+                        $"Employee '{dto.Name}' references Town '{dto.Town}' " +
+                        $"which was not found.");
 
                 var employee = new Employee
                 {
@@ -249,19 +378,162 @@ namespace ServerLibrary.Data
                     JobName = dto.JobName,
                     Address = dto.Address,
                     TelephoneNumber = dto.TelephoneNumber,
-                    Branch = branch, 
-                    Town = town,   
+                    Branch = branch,
+                    Town = town,
                     Other = dto.Other,
                     Photo = BuildAvatar(dto.Name, dto.BackgroundColor, dto.ForegroundColor)
                 };
 
                 context.Employees.Add(employee);
                 existing[dto.Name] = employee;
-
                 logger?.LogInformation("Added employee {Name}", dto.Name);
             }
 
             return existing;
+        }
+
+        #endregion
+
+        #region Location
+
+        private static async Task<Dictionary<string, Country>> SeedCountriesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            return await AddIfNotExistsAsync(
+                context.Countries,
+                seedData.Countries.Select(x => new Country
+                {
+                    Name = x.Name,
+                    Code2 = x.Code2,
+                    Source = "Mock",
+                    FlagUrl = $"https://flagcdn.com/w80/{x.Code2.ToLower()}.png",
+                    LastSyncedAtUtc = DateTime.UtcNow
+                }),
+                x => x.Name,
+                logger,
+                ct);
+        }
+
+        // Clave compuesta: "CountryName|CityName"
+        private static async Task<Dictionary<string, City>> SeedCitiesAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Country> countries,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existingInDb = await context.Cities
+                .Include(c => c.Country)
+                .ToListAsync(ct);
+
+            var dict = existingInDb.ToDictionary(
+                c => CompositeKey(c.Country.Name, c.Name),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var dto in seedData.Cities)
+            {
+                if (!countries.TryGetValue(dto.Country, out var country))
+                    throw new Exception(
+                        $"City '{dto.Name}' references Country '{dto.Country}' " +
+                        $"which was not found. Available: [{string.Join(", ", countries.Keys)}]");
+
+                var key = CompositeKey(dto.Country, dto.Name);
+
+                if (!dict.ContainsKey(key))
+                {
+                    var city = new City { Name = dto.Name, Country = country };
+                    context.Cities.Add(city);
+                    dict[key] = city;
+                    logger?.LogInformation("Added city {City} in {Country}", dto.Name, dto.Country);
+                }
+            }
+
+            return dict;
+        }
+
+        // Clave compuesta: "CountryName|CityName|TownName"
+        private static async Task<Dictionary<string, Town>> SeedTownsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, City> cities,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existingInDb = await context.Towns
+                .Include(t => t.City)
+                    .ThenInclude(c => c.Country)
+                .ToListAsync(ct);
+
+            var dict = existingInDb.ToDictionary(
+                t => CompositeKey(t.City.Country.Name, t.City.Name, t.Name),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var dto in seedData.Towns)
+            {
+                // Lookup exacto con clave compuesta "CountryName|CityName"
+                // TownDto incluye Country para resolver ciudades homónimas en distintos países
+                var cityKey = CompositeKey(dto.Country, dto.City);
+
+                if (!cities.TryGetValue(cityKey, out var city))
+                    throw new Exception(
+                        $"Town '{dto.Name}' references City '{dto.City}' in Country '{dto.Country}' " +
+                        $"which was not found. Available cities: [{string.Join(", ", cities.Keys)}]");
+
+                var key = CompositeKey(dto.Country, dto.City, dto.Name);
+
+                if (!dict.ContainsKey(key))
+                {
+                    var town = new Town { Name = dto.Name, City = city };
+                    context.Towns.Add(town);
+                    dict[key] = town;
+                    logger?.LogInformation("Added town {Town} in {City}, {Country}", dto.Name, dto.City, dto.Country);
+                }
+            }
+
+            return dict;
+        }
+
+        #endregion
+
+        #region Records
+
+        private static async Task SeedDoctorsAsync(
+            AppDbContext context,
+            SeedData seedData,
+            Dictionary<string, Employee> employees,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            var existing = await context.Doctors
+                .Select(x => new { x.EmployeeId, x.Date })
+                .ToListAsync(ct);
+
+            var addedInMemory = new HashSet<(string EmployeeName, DateTime Date)>();
+
+            foreach (var dto in seedData.Doctors)
+            {
+                if (!employees.TryGetValue(dto.Employee, out var employee))
+                    throw new Exception($"Employee not found: {dto.Employee}");
+
+                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.Date == dto.Date);
+                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.Date));
+
+                if (alreadyInDb || alreadyInMemory) continue;
+
+                context.Doctors.Add(new Doctor
+                {
+                    Employee = employee,
+                    Date = dto.Date,
+                    MedicalDiagnose = dto.MedicalDiagnose,
+                    MedicalRecommendation = dto.MedicalRecommendation
+                });
+
+                addedInMemory.Add((dto.Employee, dto.Date));
+                logger?.LogInformation("Added doctor record for {Employee}", dto.Employee);
+            }
         }
 
         private static async Task SeedOvertimesAsync(
@@ -293,50 +565,14 @@ namespace ServerLibrary.Data
 
                 context.Overtimes.Add(new Overtime
                 {
-                    Employee = employee, 
+                    Employee = employee,
                     StartDate = dto.Date,
                     EndDate = dto.Date.AddDays(1),
-                    OvertimeType = type      
+                    OvertimeType = type
                 });
 
                 addedInMemory.Add((dto.Employee, dto.Date));
                 logger?.LogInformation("Added overtime for {Employee}", dto.Employee);
-            }
-        }
-
-        private static async Task SeedDoctorsAsync(
-            AppDbContext context,
-            SeedData seedData,
-            Dictionary<string, Employee> employees,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            var existing = await context.Doctors
-                .Select(x => new { x.EmployeeId, x.Date })
-                .ToListAsync(ct);
-
-            var addedInMemory = new HashSet<(string EmployeeName, DateTime Date)>();
-
-            foreach (var dto in seedData.Doctors)
-            {
-                if (!employees.TryGetValue(dto.Employee, out var employee))
-                    throw new Exception($"Employee not found: {dto.Employee}");
-
-                var alreadyInDb = existing.Any(x => x.EmployeeId == employee.Id && x.Date == dto.Date);
-                var alreadyInMemory = addedInMemory.Contains((dto.Employee, dto.Date));
-
-                if (alreadyInDb || alreadyInMemory) continue;
-
-                context.Doctors.Add(new Doctor
-                {
-                    Employee = employee, 
-                    Date = dto.Date,
-                    MedicalDiagnose = dto.MedicalDiagnose,
-                    MedicalRecommendation = dto.MedicalRecommendation
-                });
-
-                addedInMemory.Add((dto.Employee, dto.Date));
-                logger?.LogInformation("Added doctor record for {Employee}", dto.Employee);
             }
         }
 
@@ -370,7 +606,7 @@ namespace ServerLibrary.Data
                 context.Sanctions.Add(new Sanction
                 {
                     Employee = employee,
-                    SanctionType = type,     
+                    SanctionType = type,
                     Date = dto.Date,
                     PunishmentDate = dto.PunishmentDate,
                     Punishment = dto.Punishment
@@ -410,8 +646,8 @@ namespace ServerLibrary.Data
 
                 context.Vacations.Add(new Vacation
                 {
-                    Employee = employee, 
-                    VacationType = type,     
+                    Employee = employee,
+                    VacationType = type,
                     StartDate = dto.StartDate,
                     NumberOfDays = dto.NumberOfDays
                 });
@@ -419,133 +655,6 @@ namespace ServerLibrary.Data
                 addedInMemory.Add((dto.Employee, dto.StartDate));
                 logger?.LogInformation("Added vacation for {Employee}", dto.Employee);
             }
-        }
-
-        private static async Task<Dictionary<string, GeneralDepartment>> SeedGeneralDepartmentsAsync(
-            AppDbContext context,
-            SeedData seedData,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            return await AddIfNotExistsAsync(
-                context.GeneralDepartments,
-                seedData.GeneralDepartments.Select(x => new GeneralDepartment { Name = x.Name }),
-                x => x.Name,
-                logger,
-                ct);
-        }
-
-        private static async Task<Dictionary<string, Department>> SeedDepartmentsAsync(
-            AppDbContext context,
-            SeedData seedData,
-            Dictionary<string, GeneralDepartment> parents,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            var items = seedData.Departments.Select(x =>
-            {
-                if (!parents.TryGetValue(x.GeneralDepartment, out var parent))
-                    throw new Exception($"GeneralDepartment not found: {x.GeneralDepartment}");
-
-                return new Department
-                {
-                    Name = x.Name,
-                    GeneralDepartment = parent 
-                };
-            });
-
-            return await AddIfNotExistsAsync(context.Departments, items, x => x.Name, logger, ct);
-        }
-
-        private static async Task<Dictionary<string, Branch>> SeedBranchesAsync(
-            AppDbContext context,
-            SeedData seedData,
-            Dictionary<string, Department> parents,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            var items = seedData.Branches.Select(x =>
-            {
-                if (!parents.TryGetValue(x.Department, out var parent))
-                    throw new Exception($"Department not found: {x.Department}");
-
-                return new Branch
-                {
-                    Name = x.Name,
-                    Department = parent 
-                };
-            });
-
-            return await AddIfNotExistsAsync(context.Branches, items, x => x.Name, logger, ct);
-        }
-
-        #endregion
-
-        #region Location
-
-        private static async Task<Dictionary<string, Country>> SeedCountriesAsync(
-            AppDbContext context,
-            SeedData seedData,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            return await AddIfNotExistsAsync(
-                context.Countries,
-                seedData.Countries.Select(x => new Country
-                {
-                    Name = x.Name,
-                    Code2 = x.Code2,
-                    Source = "Mock",
-                    FlagUrl = $"https://flagcdn.com/w80/{x.Code2.ToLower()}.png",
-                    LastSyncedAtUtc = DateTime.UtcNow
-                }),
-                x => x.Name,
-                logger,
-                ct);
-        }
-
-        private static async Task<Dictionary<string, City>> SeedCitiesAsync(
-            AppDbContext context,
-            SeedData seedData,
-            Dictionary<string, Country> parents,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            var items = seedData.Cities.Select(x =>
-            {
-                if (!parents.TryGetValue(x.Country, out var parent))
-                    throw new Exception($"Country not found: {x.Country}");
-
-                return new City
-                {
-                    Name = x.Name,
-                    Country = parent 
-                };
-            });
-
-            return await AddIfNotExistsAsync(context.Cities, items, x => x.Name, logger, ct);
-        }
-
-        private static async Task<Dictionary<string, Town>> SeedTownsAsync(
-            AppDbContext context,
-            SeedData seedData,
-            Dictionary<string, City> parents,
-            ILogger? logger,
-            CancellationToken ct)
-        {
-            var items = seedData.Towns.Select(x =>
-            {
-                if (!parents.TryGetValue(x.City, out var parent))
-                    throw new Exception($"City not found: {x.City}");
-
-                return new Town
-                {
-                    Name = x.Name,
-                    City = parent 
-                };
-            });
-
-            return await AddIfNotExistsAsync(context.Towns, items, x => x.Name, logger, ct);
         }
 
         #endregion
@@ -569,6 +678,10 @@ namespace ServerLibrary.Data
             => AddIfNotExistsAsync(context.VacationTypes,
                 seedData.VacationTypes.Select(x => new VacationType { Name = x.Name }),
                 x => x.Name, logger, ct);
+
+        #endregion
+
+        #region Avatar
 
         private static string BuildAvatar(string fullName, string backgroundColor, string foregroundColor)
         {

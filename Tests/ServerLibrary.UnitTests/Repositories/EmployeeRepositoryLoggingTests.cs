@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Implementations;
+using ServerLibrary.Services.Contracts; 
 using ServerLibrary.UnitTests.Helpers;
 using System;
 using System.Collections.Generic;
@@ -22,9 +23,11 @@ public class EmployeeRepositoryLoggingTests
     {
         // Arrange
         var newEmployee = new Employee { Id = 1, Name = "John Doe", JobName = "Dev", BranchId = 1 };
-        var dbContextMock = CreateDbContextMock(new List<Employee>()); 
+        var dbContextMock = CreateDbContextMock(new List<Employee>());
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
 
         // Act
         var result = await repository.Insert(newEmployee);
@@ -45,11 +48,13 @@ public class EmployeeRepositoryLoggingTests
     {
         // Arrange
         var existingEmployee = new Employee { Id = 1, Name = "Jane Doe" };
-        var newEmployee = new Employee { Id = 2, Name = "Jane Doe" }; 
+        var newEmployee = new Employee { Id = 2, Name = "Jane Doe" };
 
         var dbContextMock = CreateDbContextMock(new List<Employee> { existingEmployee });
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
 
         // Act
         var result = await repository.Insert(newEmployee);
@@ -57,7 +62,7 @@ public class EmployeeRepositoryLoggingTests
         // Assert 
         Assert.False(result.Flag);
         Assert.Equal("Employee already added", result.Message);
-        dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never); 
+        dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
         // Assert 
         VerifyLog(loggerMock, LogLevel.Warning, "Failure:DuplicateName", Times.Once());
@@ -74,7 +79,9 @@ public class EmployeeRepositoryLoggingTests
                      .ThrowsAsync(new DbUpdateException("Database connection lost"));
 
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object);
+        var eventBusMock = new Mock<IEventBus>(); 
+
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
 
         // Act
         var result = await repository.Insert(newEmployee);
