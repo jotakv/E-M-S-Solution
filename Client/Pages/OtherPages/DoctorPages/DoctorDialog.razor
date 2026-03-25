@@ -1,28 +1,37 @@
-﻿@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Popups
 @using Microsoft.AspNetCore.Components.Forms
+@inject IToastService toastService
 
-<SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+<SfDialog Width="340px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
-        <Header> Add Employee Health Issue </Header>
+        <Header>Add Employee Health Issue</Header>
         <Content>
-            <EditForm Model="Doctor">
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Employee ID</label>
                             <input @bind="Doctor.EmployeeId" class="form-control" disabled />
                         </div>
+
                         <div class="form-group mt-2">
                             <label class="form-label">Date</label>
                             <InputDate @bind-Value="Doctor.Date" class="form-control" />
                         </div>
+
                         <div class="form-group mt-2">
-                            <label class="form-label">Medical Diagnose</label>
-                            <InputTextArea @bind-Value="Doctor.MedicalDiagnose" class="form-control" />
+                            <label class="form-label">Medical Diagnose <span class="text-danger">*</span></label>
+                            <InputTextArea @bind-Value="Doctor.MedicalDiagnose" class="form-control" rows="2"
+                                           placeholder="Enter medical diagnosis..." />
+                            <ValidationMessage For="() => Doctor.MedicalDiagnose" class="text-danger small mt-1" />
                         </div>
+
                         <div class="form-group mt-2">
-                            <label class="form-label">Recommendation</label>
-                            <InputTextArea @bind-Value="Doctor.MedicalRecommendation" class="form-control" />
+                            <label class="form-label">Recommendation <span class="text-danger">*</span></label>
+                            <InputTextArea @bind-Value="Doctor.MedicalRecommendation" class="form-control" rows="2"
+                                           placeholder="Enter medical recommendation..." />
+                            <ValidationMessage For="() => Doctor.MedicalRecommendation" class="text-danger small mt-1" />
                         </div>
                     </div>
                 </div>
@@ -54,25 +63,36 @@
     private bool IsVisible { get; set; } = false;
     public bool IsSaving { get; set; } = false;
 
+    private EditContext editContext = default!;
+
+    protected override void OnParametersSet()
+    {
+        editContext ??= new EditContext(Doctor);
+    }
+
     private async Task Save()
     {
+        // Trigger DataAnnotationsValidator — catches empty MedicalDiagnose / MedicalRecommendation
+        var isValid = editContext.Validate();
+        if (!isValid)
+            return;
+
         IsSaving = true;
         StateHasChanged();
 
         await HandleSaveOperationEvent.InvokeAsync(Doctor);
 
         IsSaving = false;
-
-        // ⭐ FIX: Close the dialog after saving
         CloseDialog();
     }
 
     public void OpenDialog(int employeeId = 0)
     {
+        Doctor = new Doctor { Date = DateTime.Now };
+        editContext = new EditContext(Doctor);
         IsVisible = true;
 
         if (employeeId > 0) Doctor.EmployeeId = employeeId;
-        if (Doctor.Date.Date == DateTime.MinValue.Date) Doctor.Date = DateTime.Now;
 
         StateHasChanged();
     }

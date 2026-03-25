@@ -97,7 +97,6 @@
 </style>
 
 <VacationDialog @ref="vacationDialog"
-                ItemModel="ItemModel"
                 VacationTypes="VacationTypes"
                 HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
@@ -105,7 +104,6 @@
     private SfGrid<Vacation>? DefaultGrid;
     VacationDialog? vacationDialog;
 
-    Vacation ItemModel = new();
     public List<Vacation> Vacations { get; set; } = new();
     public List<VacationType> VacationTypes { get; set; } = new();
 
@@ -129,8 +127,11 @@
     private async Task GetVacations() =>
         Vacations = await vacationService.GetAll(Constants.VacationBaseUrl);
 
-    void OpenDialog() =>
+    void OpenDialog()
+    {
+        vacationDialog?.ChangeTitle("Add");
         vacationDialog?.OpenDialog();
+    }
 
     // Add or Update
     private async Task HandleSaveOperationEvent(Vacation item)
@@ -139,16 +140,13 @@
         bool successCheck = await DisplayMessage(result.Flag, result.Message);
 
         if (successCheck)
-        {
-            ItemModel = new();
             await GetVacations();
-        }
     }
 
     private void EditClicked(Vacation item)
     {
-        ItemModel = item;
-        OpenDialog();
+        vacationDialog?.ChangeTitle("Edit");
+        vacationDialog?.OpenDialogForEdit(item);
     }
 
     private async Task DeleteClicked(Vacation item)

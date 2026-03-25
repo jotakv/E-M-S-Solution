@@ -8,6 +8,7 @@ namespace BaseLibrary.Entities
         public DateTime StartDate { get; set; }
         
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Number of days must be at least 1.")]
         public int NumberOfDays { get; set; }
         public DateTime EndDate => StartDate.AddDays(NumberOfDays);
 

@@ -1,14 +1,15 @@
-﻿@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@inject SfDialogService dialogService
+@inject IToastService toastService
 
 <SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
         <Header>@Title Employee's Overtime</Header>
 
         <Content>
-            <EditForm Model="ItemModel">
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
                 <div class="card border-success">
                     <div class="card-body">
 
@@ -33,7 +34,7 @@
                         </div>
 
                         <div class="form-group mt-3 mb-3">
-                            <label class="form-label">Select Type</label>
+                            <label class="form-label">Select Type <span class="text-danger">*</span></label>
                             <SfDropDownList TValue="int"
                                             TItem="OvertimeType"
                                             DataSource="@OvertimeTypes"
@@ -65,17 +66,25 @@
 </SfDialog>
 
 @code {
-    [Parameter] public Overtime ItemModel { get; set; } = new();
     [Parameter] public List<OvertimeType> OvertimeTypes { get; set; } = new();
     [Parameter] public EventCallback<Overtime> HandleSaveOperationEvent { get; set; }
 
+    public Overtime ItemModel { get; set; } = new();
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
     public bool IsSaving { get; set; } = false;
 
-    // CLEAN ARCHITECTURE: Open only opens
+    private EditContext editContext = default!;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(ItemModel);
+    }
+
     public void OpenDialog(int employeeId = 0)
     {
+        ItemModel = new Overtime();
+        editContext = new EditContext(ItemModel);
         IsVisible = true;
 
         if (employeeId > 0)
@@ -90,7 +99,14 @@
         StateHasChanged();
     }
 
-    // CLEAN ARCHITECTURE: Close only closes
+    public void OpenDialogForEdit(Overtime overtime)
+    {
+        ItemModel = overtime;
+        editContext = new EditContext(ItemModel);
+        IsVisible = true;
+        StateHasChanged();
+    }
+
     public void CloseDialog()
     {
         IsVisible = false;
@@ -103,7 +119,13 @@
     {
         if (ItemModel.OvertimeTypeld <= 0)
         {
-            await dialogService.AlertAsync("You need to provide type.", "Alert!");
+            toastService.ShowError("Please select an Overtime Type before saving.");
+            return;
+        }
+
+        if (ItemModel.EndDate < ItemModel.StartDate)
+        {
+            toastService.ShowError("End Date cannot be earlier than Start Date.");
             return;
         }
 
@@ -113,8 +135,6 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
-
-        // CLEAN ARCHITECTURE: Close after successful save
         CloseDialog();
     }
 }

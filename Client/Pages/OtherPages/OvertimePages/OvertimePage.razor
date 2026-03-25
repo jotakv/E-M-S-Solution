@@ -82,14 +82,12 @@
 }
 
 <OvertimeDialog @ref="overtimeDialog"
-                ItemModel="ItemModel"
                 OvertimeTypes="OvertimeTypes"
                 HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
     private SfGrid<Overtime>? DefaultGrid;
     OvertimeDialog? overtimeDialog;
-    Overtime ItemModel = new();
     public List<Overtime> Overtimes { get; set; } = new();
     public List<OvertimeType> OvertimeTypes { get; set; } = new();
 
@@ -115,24 +113,24 @@
     private async Task GetOvertime() =>
         Overtimes = await overtimeService.GetAll(Constants.OvertimeBaseUrl);
 
-    void OpenDialog() => overtimeDialog?.OpenDialog();
+    void OpenDialog()
+    {
+        overtimeDialog?.ChangeTitle("Add");
+        overtimeDialog?.OpenDialog();
+    }
 
     private async Task HandleSaveOperationEvent(Overtime item)
     {
         var result = await overtimeService.Update(item, Constants.OvertimeBaseUrl);
         bool successCheck = await DisplayMessage(result.Flag, result.Message);
         if (successCheck)
-        {
-            ItemModel = new();
-            overtimeDialog?.CloseDialog();
             await GetOvertime();
-        }
     }
 
     private void EditClicked(Overtime item)
     {
-        ItemModel = item;
-        OpenDialog();
+        overtimeDialog?.ChangeTitle("Edit");
+        overtimeDialog?.OpenDialogForEdit(item);
     }
 
     private async Task DeleteClicked(Overtime item)
