@@ -79,6 +79,17 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            var employeeCount = await appDbContext.Employees.CountAsync(e => e.BranchId == id);
+            if (employeeCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | EmployeeCount: {EmployeeCount} | Result: {Result}",
+                    "BranchDelete", "Delete", "Branch", id, dep.Name, employeeCount, "Failure:HasEmployees");
+                return new GeneralResponse(false,
+                    $"Cannot delete \"{dep.Name}\": {employeeCount} employee(s) are still assigned to it. " +
+                    "Please reassign or remove those employees first.");
+            }
+
             appDbContext.Branches.Remove(dep);
             await Commit();
 

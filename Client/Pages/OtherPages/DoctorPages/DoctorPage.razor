@@ -77,13 +77,11 @@
 }
 
 <DoctorDialog @ref="doctorDialog"
-              Doctor="Doctor"
               HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
     private SfGrid<Doctor>? DefaultGrid;
     DoctorDialog? doctorDialog;
-    Doctor Doctor = new();
     public List<Doctor> Doctors { get; set; } = new();
 
     protected async override Task OnInitializedAsync()
@@ -101,11 +99,7 @@
 
     private async Task GetHealth() => Doctors = await doctorService.GetAll(Constants.DoctorBaseUrl);
 
-    void AddButtonClicked()
-    {
-        Doctor = new();
-        OpenDialog();
-    }
+    void AddButtonClicked() => doctorDialog?.OpenDialog();
 
     void OpenDialog() => doctorDialog?.OpenDialog();
 
@@ -114,16 +108,12 @@
         var result = await doctorService.Update(doctor, Constants.DoctorBaseUrl);
         bool successCheck = await DisplayMessage(result.Flag, result.Message);
         if (successCheck)
-        {
-            Doctor = new();
             await GetHealth();
-        }
     }
 
     private void EditClicked(Doctor item)
     {
-        Doctor = item;
-        OpenDialog();
+        doctorDialog?.OpenDialogForEdit(item);
     }
 
     private async Task DeleteClicked(Doctor item)

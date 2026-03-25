@@ -55,24 +55,24 @@
 </SfDialog>
 
 @code {
-    public string Title { get; set; } = "Add";
-
-    [Parameter] public Doctor Doctor { get; set; } = new();
     [Parameter] public EventCallback<Doctor> HandleSaveOperationEvent { get; set; }
 
+    // Doctor is internal state — NOT a [Parameter].
+    // Keeping it here means editContext always tracks the same instance it was
+    // created with; no Blazor parameter update can silently swap it out.
+    public Doctor Doctor { get; set; } = new();
     private bool IsVisible { get; set; } = false;
     public bool IsSaving { get; set; } = false;
 
     private EditContext editContext = default!;
 
-    protected override void OnParametersSet()
+    protected override void OnInitialized()
     {
-        editContext ??= new EditContext(Doctor);
+        editContext = new EditContext(Doctor);
     }
 
     private async Task Save()
     {
-        // Trigger DataAnnotationsValidator — catches empty MedicalDiagnose / MedicalRecommendation
         var isValid = editContext.Validate();
         if (!isValid)
             return;
@@ -86,6 +86,7 @@
         CloseDialog();
     }
 
+    /// <summary>Open for Add — creates a fresh model with today's date.</summary>
     public void OpenDialog(int employeeId = 0)
     {
         Doctor = new Doctor { Date = DateTime.Now };
@@ -97,11 +98,18 @@
         StateHasChanged();
     }
 
+    /// <summary>Open for Edit — loads an existing record; editContext tracks it.</summary>
+    public void OpenDialogForEdit(Doctor doctor)
+    {
+        Doctor = doctor;
+        editContext = new EditContext(Doctor);
+        IsVisible = true;
+        StateHasChanged();
+    }
+
     public void CloseDialog()
     {
         IsVisible = false;
         StateHasChanged();
     }
-
-    public void ChangeTitle(string title) => Title = title;
 }

@@ -71,6 +71,17 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            var deptCount = await appDbContext.Departments.CountAsync(d => d.GeneralDepartmentId == id);
+            if (deptCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | DepartmentCount: {DepartmentCount} | Result: {Result}",
+                    "GeneralDepartmentDelete", "Delete", "GeneralDepartment", id, dep.Name, deptCount, "Failure:HasDepartments");
+                return new GeneralResponse(false,
+                    $"Cannot delete \"{dep.Name}\": {deptCount} department(s) are still assigned to it. " +
+                    "Please reassign or delete those departments first.");
+            }
+
             appDbContext.GeneralDepartments.Remove(dep);
             await Commit();
 

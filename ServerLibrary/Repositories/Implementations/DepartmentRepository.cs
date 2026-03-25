@@ -79,6 +79,17 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            var branchCount = await appDbContext.Branches.CountAsync(b => b.DepartmentId == id);
+            if (branchCount > 0)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | BranchCount: {BranchCount} | Result: {Result}",
+                    "DepartmentDelete", "Delete", "Department", id, dep.Name, branchCount, "Failure:HasBranches");
+                return new GeneralResponse(false,
+                    $"Cannot delete \"{dep.Name}\": {branchCount} branch(es) are still assigned to it. " +
+                    "Please reassign or delete those branches first.");
+            }
+
             appDbContext.Departments.Remove(dep);
             await Commit();
 

@@ -87,10 +87,10 @@
              HandleAddSanctionClicked="AddSanctionClicked"
              HandleAddVacationClicked="AddVacationClicked" />
 
-<DoctorDialog @ref="doctorDialog" Doctor="Doctor" HandleSaveOperationEvent="SaveHealthEvent" />
-<OvertimeDialog @ref="overtimeDialog" ItemModel="Overtime" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent" />
+<DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
+<OvertimeDialog @ref="overtimeDialog" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent" />
 <SanctionDialog @ref="sanctionDialog" ItemModel="Sanction" SanctionTypes="SanctionTypes" HandleSaveOperationEvent="SaveSanctionEvent" />
-<VacationDialog @ref="vacationDialog" ItemModel="Vacation" VacationTypes="VacationTypes" HandleSaveOperationEvent="SaveVacationEvent" />
+<VacationDialog @ref="vacationDialog" VacationTypes="VacationTypes" HandleSaveOperationEvent="SaveVacationEvent" />
 <EmployeeDetailPage EmployeeDetails="Employee" ShowDetailsPage="ShowDetailsPage" HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 
 @code {
@@ -387,8 +387,7 @@
         SelectedEmployee = new();
     }
 
-    DoctorDialog? doctorDialog = new DoctorDialog();
-    public Doctor Doctor { get; set; } = new();
+    DoctorDialog? doctorDialog;
 
     private void AddHealthClicked()
     {
@@ -404,13 +403,11 @@
         if (response)
         {
             SelectedEmployee = new();
-            doctorDialog!.CloseDialog();
             allState.UpdateDashboardAction?.Invoke();
         }
     }
 
     OvertimeDialog? overtimeDialog;
-    Overtime Overtime = new();
     List<OvertimeType> OvertimeTypes = [];
 
     private async Task AddOvertimeClicked()
@@ -428,8 +425,6 @@
         if (response)
         {
             SelectedEmployee = new();
-            Overtime = new();
-            overtimeDialog!.CloseDialog();
             allState.UpdateDashboardAction?.Invoke();
         }
     }
@@ -460,7 +455,6 @@
     }
 
     VacationDialog? vacationDialog;
-    Vacation Vacation = new();
     List<VacationType> VacationTypes = [];
 
     private async Task AddVacationClicked()
@@ -478,8 +472,6 @@
         if (response)
         {
             SelectedEmployee = new();
-            Vacation = new();
-            vacationDialog!.CloseDialog();
             allState.UpdateDashboardAction?.Invoke();
         }
     }
