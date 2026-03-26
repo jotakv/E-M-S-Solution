@@ -18,10 +18,10 @@ namespace Server.Controllers
         public virtual async Task<IActionResult> GetAll() => Ok(await genericRepositoryInterface.GetAll());
 
         [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public virtual async Task<IActionResult> Delete(int id)
         {
             if (id <= 0) return BadRequest("Invalid request sent");
-            return Ok(await genericRepositoryInterface.DeleteById(id)); 
+            return Ok(await genericRepositoryInterface.DeleteById(id));
         }
 
         [HttpGet("single/{id}")]
@@ -32,14 +32,14 @@ namespace Server.Controllers
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> Add(T model)
+        public virtual async Task<IActionResult> Add(T model)
         {
             if (model is null) return BadRequest("Bad request made");
             return Ok(await genericRepositoryInterface.Insert(model));
         }
 
         [HttpPut("update")]
-        public async Task<IActionResult> Update(T model)
+        public virtual async Task<IActionResult> Update(T model)
         {
             if (model is null) return BadRequest("Bad request made");
             return Ok(await genericRepositoryInterface.Update(model));
