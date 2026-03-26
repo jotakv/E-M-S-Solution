@@ -113,12 +113,21 @@ namespace ServerLibrary.Repositories.Implementations
 
                 try
                 {
-                    var payload = JsonSerializer.Serialize(item, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
-                    eventBus.Publish("ems.employee.created", payload);
+                    // Publish only essential fields — never include Photo (base64, ~150 KB).
+                    var createdPayload = new
+                    {
+                        EmployeeId = item.Id,
+                        Name       = item.Name,
+                        JobName    = item.JobName,
+                        BranchId   = item.BranchId,
+                        TownId     = item.TownId,
+                        Timestamp  = DateTime.UtcNow
+                    };
+                    eventBus.Publish("ems.employee.created", JsonSerializer.Serialize(createdPayload));
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to serialize and publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
+                    logger.LogError(ex, "Failed to publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
                 }
 
                 logger.LogInformation(
