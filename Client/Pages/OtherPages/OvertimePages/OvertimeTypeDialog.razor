@@ -79,5 +79,6 @@
         await HandleSaveOperationEvent.InvokeAsync(LocalModel);
 
         IsSaving = false;
+        StateHasChanged();
     }
 }

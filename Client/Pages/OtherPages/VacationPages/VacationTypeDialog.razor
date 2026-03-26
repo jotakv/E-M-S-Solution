@@ -82,6 +82,7 @@
         await HandleSaveOperationEvent.InvokeAsync(LocalModel);
 
         IsSaving = false;
+        StateHasChanged();
     }
 
     public void ChangeTitle(string title)

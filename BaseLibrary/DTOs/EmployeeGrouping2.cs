@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -12,20 +12,15 @@ namespace BaseLibrary.DTOs
         [Required]
         public string JobName { get; set; } = string.Empty;
 
-        [Required, Range(1, 99999, ErrorMessage = "You must select a general department")]
+        // Cascade-only selectors — not persisted on Employee; validation not required
         public int GeneralDepartmentId { get; set; }
-
-        [Required, Range(1, 99999, ErrorMessage = "You must select a department")]
         public int DepartmentId { get; set; }
+        public int CountryId { get; set; }
+        public int CityId { get; set; }
 
+        // These two ARE persisted on Employee — required
         [Required, Range(1, 99999, ErrorMessage = "You must select branch")]
         public int BranchId { get; set; }
-
-        [Required, Range(1, 99999, ErrorMessage = "You must select a country")]
-        public int CountryId { get; set; }
-
-        [Required, Range(1, 99999, ErrorMessage = "You must select a city")]
-        public int CityId { get; set; }
 
         [Required, Range(1, 99999, ErrorMessage = "You must select town")]
         public int TownId { get; set; }

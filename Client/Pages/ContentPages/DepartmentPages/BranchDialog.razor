@@ -94,6 +94,7 @@
         await HandleSaveOperationEvent.InvokeAsync(Branch);
 
         IsSaving = false;
+        StateHasChanged();
     }
 
     public void OpenDialog()

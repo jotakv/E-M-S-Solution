@@ -65,6 +65,7 @@
         await HandleSaveOperationEvent.InvokeAsync(Country);
 
         IsSaving = false;
+        StateHasChanged();
     }
 
     public void OpenDialog()

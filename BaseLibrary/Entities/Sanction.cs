@@ -18,6 +18,7 @@ namespace BaseLibrary.Entities
         // Many to one relationship with Vacation Type
         public SanctionType? SanctionType { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a Sanction Type.")]
         public int SanctionTypeId { get; set; }
         public Employee? Employee { get; set; }
     }
