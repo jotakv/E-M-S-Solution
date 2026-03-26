@@ -36,5 +36,29 @@ namespace Server.Controllers
 
             return Ok(cities);
         }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(CityCacheKey);
+            return result;
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(City model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(CityCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(City model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(CityCacheKey);
+            return result;
+        }
     }
 }

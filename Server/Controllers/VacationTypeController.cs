@@ -35,5 +35,29 @@ namespace Server.Controllers
             cache.Set(VacationTypeCacheKey, vacationTypes, cacheEntryOptions);
             return Ok(vacationTypes);
         }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(VacationTypeCacheKey);
+            return result;
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(VacationType model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(VacationTypeCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(VacationType model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(VacationTypeCacheKey);
+            return result;
+        }
     }
 }
