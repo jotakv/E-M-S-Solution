@@ -36,8 +36,31 @@ namespace Server.Controllers
                 .SetPriority(CacheItemPriority.Normal);
 
             cache.Set(GeneralDepartmentCacheKey, generalDepartments, cacheEntryOptions);
-
             return Ok(generalDepartments);
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(GeneralDepartment model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(GeneralDepartmentCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(GeneralDepartment model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(GeneralDepartmentCacheKey);
+            return result;
+        }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(GeneralDepartmentCacheKey);
+            return result;
         }
     }
 }

@@ -34,8 +34,31 @@ namespace Server.Controllers
                 .SetPriority(CacheItemPriority.Normal);
 
             cache.Set(BranchCacheKey, branches, cacheEntryOptions);
-
             return Ok(branches);
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(Branch model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(BranchCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(Branch model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(BranchCacheKey);
+            return result;
+        }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(BranchCacheKey);
+            return result;
         }
     }
 }
