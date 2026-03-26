@@ -143,10 +143,26 @@ public sealed class EmsAuditConsumer : BackgroundService
 
             _channel?.BasicAck(ea.DeliveryTag, multiple: false);
         }
+        catch (System.Text.Json.JsonException ex)
+        {
+            // Permanent failure — the message schema is wrong and will never deserialize
+            // correctly on retry. Discard it (requeue: false) so it does not create an
+            // infinite retry loop. This is what clears stale ems.employee.* messages that
+            // accumulated in the queue when the binding key was too broad (ems.#).
+            _logger.LogError(ex,
+                "Unrecoverable message — bad schema, discarding. RoutingKey: {RoutingKey}. Body snippet: {Body}",
+                routingKey, body.Length > 200 ? body[..200] : body);
+
+            _channel?.BasicNack(ea.DeliveryTag, multiple: false, requeue: false);
+        }
         catch (Exception ex)
         {
+            // Potentially transient failure (e.g. database unavailable).
+            // Requeue once so a brief outage does not lose the event.
+            // Note: if the DB is down for a long time this will still loop —
+            // a dead-letter exchange would be the production-grade solution.
             _logger.LogError(ex,
-                "Error processing RabbitMQ message — RoutingKey: {RoutingKey}. Message requeued.",
+                "Transient error processing RabbitMQ message — RoutingKey: {RoutingKey}. Message requeued.",
                 routingKey);
 
             _channel?.BasicNack(ea.DeliveryTag, multiple: false, requeue: true);

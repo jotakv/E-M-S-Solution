@@ -142,6 +142,11 @@ try
 
     var app = builder.Build();
 
+    // Force RabbitMqEventBus (singleton) to connect at startup — before the first
+    // HTTP request arrives — so the "RabbitMQ connected" log is never associated
+    // with any user's CorrelationId or UserId from the Serilog LogContext.
+    app.Services.GetRequiredService<IEventBus>();
+
     if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
     {
         await DevelopmentDataSeeder.SeedAsync(app.Services);
@@ -180,11 +185,10 @@ try
 
     app.UseHttpsRedirection();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+    // Swagger is enabled in all environments so the API is explorable during
+    // demos and coursework marking regardless of ASPNETCORE_ENVIRONMENT.
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
     app.UseCors("AllowBlazorWasm");
     app.UseAuthentication();
