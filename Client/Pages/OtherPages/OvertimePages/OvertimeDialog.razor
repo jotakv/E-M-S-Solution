@@ -42,6 +42,7 @@
                                             @bind-Value="ItemModel.OvertimeTypeld">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
                             </SfDropDownList>
+                            <ValidationMessage For="() => ItemModel.OvertimeTypeld" class="text-danger small mt-1" />
                         </div>
 
                     </div>
@@ -117,11 +118,9 @@
 
     private async Task Save()
     {
-        if (ItemModel.OvertimeTypeld <= 0)
-        {
-            toastService.ShowError("Please select an Overtime Type before saving.");
+        var isValid = editContext.Validate();
+        if (!isValid)
             return;
-        }
 
         if (ItemModel.EndDate < ItemModel.StartDate)
         {

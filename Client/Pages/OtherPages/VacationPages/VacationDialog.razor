@@ -43,6 +43,7 @@
                                             @bind-Value="ItemModel.VacationTypeId">
                                 <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
                             </SfDropDownList>
+                            <ValidationMessage For="() => ItemModel.VacationTypeId" class="text-danger small mt-1" />
                         </div>
 
                     </div>
@@ -87,18 +88,6 @@
         var isValid = editContext.Validate();
         if (!isValid)
             return;
-
-        if (ItemModel.NumberOfDays <= 0)
-        {
-            toastService.ShowError("Number of days must be greater than zero.");
-            return;
-        }
-
-        if (ItemModel.VacationTypeId <= 0)
-        {
-            toastService.ShowError("Please select a Vacation Type before saving.");
-            return;
-        }
 
         IsSaving = true;
         StateHasChanged();

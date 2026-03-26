@@ -14,6 +14,7 @@ namespace BaseLibrary.Entities
         // Many to one relationship with Vacation Type
         public OvertimeType? OvertimeType { get; set; }
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select an Overtime Type.")]
         public int OvertimeTypeld { get; set; }
         public Employee? Employee { get; set; }
     }

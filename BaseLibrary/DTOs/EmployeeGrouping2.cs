@@ -12,13 +12,24 @@ namespace BaseLibrary.DTOs
         [Required]
         public string JobName { get; set; } = string.Empty;
 
+        [Required, Range(1, 99999, ErrorMessage = "You must select a general department")]
+        public int GeneralDepartmentId { get; set; }
+
+        [Required, Range(1, 99999, ErrorMessage = "You must select a department")]
+        public int DepartmentId { get; set; }
+
         [Required, Range(1, 99999, ErrorMessage = "You must select branch")]
         public int BranchId { get; set; }
+
+        [Required, Range(1, 99999, ErrorMessage = "You must select a country")]
+        public int CountryId { get; set; }
+
+        [Required, Range(1, 99999, ErrorMessage = "You must select a city")]
+        public int CityId { get; set; }
 
         [Required, Range(1, 99999, ErrorMessage = "You must select town")]
         public int TownId { get; set; }
 
-        [Required]
         public string? Other { get; set; }
     }
 }
