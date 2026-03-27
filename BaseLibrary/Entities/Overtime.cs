@@ -9,7 +9,9 @@ namespace BaseLibrary.Entities
         public DateTime StartDate { get; set; }
         [Required]
         public DateTime EndDate { get; set; }
-        public int NumberOfDays => (EndDate - StartDate).Days;
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Number of days must be greater than zero.")]
+        public int NumberOfDays => (EndDate.Date - StartDate.Date).Days;
 
         // Many to one relationship with Vacation Type
         public OvertimeType? OvertimeType { get; set; }

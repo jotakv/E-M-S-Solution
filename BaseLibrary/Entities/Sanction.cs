@@ -9,7 +9,7 @@ namespace BaseLibrary.Entities
         [Required]
         public DateTime Date { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Punishment is required.")]
         public string Punishment { get; set; } = string.Empty;
 
         [Required]

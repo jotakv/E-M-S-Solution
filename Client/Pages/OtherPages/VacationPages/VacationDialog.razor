@@ -95,6 +95,7 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
+        StateHasChanged();
         CloseDialog();
     }
 

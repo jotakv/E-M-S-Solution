@@ -20,12 +20,14 @@ namespace BaseLibrary.DTOs
         [Required]
         public string Photo { get; set; } = string.Empty;
         [Required]
-        [RegularExpression(@"^[0-9]{1,20}$",
-            ErrorMessage = "Civil ID must be numeric only (up to 20 digits).")]
-        public string CivilId { get; set; } = string.Empty;
+        [RegularExpression(@"^CIV-\d{3}$",
+        ErrorMessage = "Civil ID must be in the format CIV-### (3 digits).")]
+        public string CivilId { get; set; } = "CIV-";
+
         [Required]
-        [RegularExpression(@"^[0-9]{1,20}$",
-            ErrorMessage = "File Number must be numeric only (up to 20 digits).")]
-        public string FileNumber { get; set; } = string.Empty;
+        [RegularExpression(@"^EMP-\d{3}$",
+        ErrorMessage = "File Number must be in the format EMP-### (3 digits).")]
+        public string FileNumber { get; set; } = "EMP-";
+
     }
 }

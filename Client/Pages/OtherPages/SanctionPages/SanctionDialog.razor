@@ -1,8 +1,6 @@
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@using Blazored.Toast.Services
-@inject IToastService toastService
 
 <SfDialog Width="280px"
           IsModal="true"
@@ -76,7 +74,11 @@
 </SfDialog>
 
 @code {
-    [Parameter] public Sanction ItemModel { get; set; } = new();
+    // ItemModel is owned by this dialog — NOT a [Parameter].
+    // Keeping it internal prevents Blazor's parent re-renders from overwriting
+    // the user's in-progress input when the parent calls StateHasChanged().
+    public Sanction ItemModel { get; private set; } = new();
+
     [Parameter] public List<SanctionType> SanctionTypes { get; set; } = new();
     [Parameter] public EventCallback<Sanction> HandleSaveOperationEvent { get; set; }
 
@@ -84,18 +86,27 @@
     private bool IsVisible { get; set; } = false;
     public bool IsSaving { get; set; } = false;
 
-    private int OriginalId;
     private EditContext editContext = default!;
 
-    protected override void OnParametersSet()
+    protected override void OnInitialized()
     {
+        // Create initial editContext once; it is replaced whenever the dialog opens.
         editContext = new EditContext(ItemModel);
     }
 
+    /// <summary>Called by SanctionPage to load an existing record for editing.</summary>
     public void SetItem(Sanction item)
     {
-        ItemModel = item;
-        OriginalId = item.Id;
+        // Copy into a fresh model so the page's list item is never mutated directly.
+        ItemModel = new Sanction
+        {
+            Id           = item.Id,
+            EmployeeId   = item.EmployeeId,
+            SanctionTypeId = item.SanctionTypeId,
+            Date         = item.Date,
+            Punishment   = item.Punishment,
+            PunishmentDate = item.PunishmentDate
+        };
         editContext = new EditContext(ItemModel);
     }
 
@@ -106,9 +117,6 @@
         var isValid = editContext.Validate();
         if (!isValid)
             return;
-
-        // Restore ID so update works
-        ItemModel.Id = OriginalId;
 
         IsSaving = true;
         StateHasChanged();
@@ -121,21 +129,18 @@
         CloseDialog();
     }
 
+    /// <summary>Open for Add — creates a fresh model with today's dates.</summary>
     public void OpenDialog(int employeeId = 0)
     {
-        IsVisible = true;
-
-        if (employeeId > 0)
-            ItemModel.EmployeeId = employeeId;
-
-        if (ItemModel.Date.Date == DateTime.MinValue.Date)
-            ItemModel.Date = DateTime.Now;
-
-        if (ItemModel.PunishmentDate.Date == DateTime.MinValue.Date)
-            ItemModel.PunishmentDate = DateTime.Now;
-
+        ItemModel = new Sanction
+        {
+            EmployeeId     = employeeId,
+            Date           = DateTime.Now,
+            PunishmentDate = DateTime.Now
+        };
         editContext = new EditContext(ItemModel);
 
+        IsVisible = true;
         StateHasChanged();
     }
 

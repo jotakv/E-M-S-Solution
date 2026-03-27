@@ -53,8 +53,16 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Telephone</label>
-                            <InputText @bind-Value="EmployeeGroup1.TelephoneNumber" class="form-control" inputmode="tel" />
+                            <InputText class="form-control"
+                                       inputmode="tel"
+                                       Value="@EmployeeGroup1.TelephoneNumber"
+                                       ValueChanged="OnPhoneChanged"
+                                       ValueExpression="() => EmployeeGroup1.TelephoneNumber" />
                             <ValidationMessage For="() => EmployeeGroup1.TelephoneNumber" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(_duplicatePhoneWarning))
+                            {
+                                <div class="text-danger small mt-1">@_duplicatePhoneWarning</div>
+                            }
                         </div>
 
                         <div class="form-group mb-3">
@@ -69,13 +77,21 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Civil Id</label>
-                            <InputText @bind-Value="EmployeeGroup1.CivilId" class="form-control" inputmode="numeric" pattern="[0-9]*" />
+                            <InputText class="form-control"
+                                       placeholder="CIV-000"
+                                       Value="@EmployeeGroup1.CivilId"
+                                       ValueChanged="OnCivilIdChanged"
+                                       ValueExpression="() => EmployeeGroup1.CivilId" />
                             <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(_duplicateCivilIdWarning))
+                            {
+                                <div class="text-danger small mt-1">@_duplicateCivilIdWarning</div>
+                            }
                         </div>
 
                         <div class="form-group mb-3">
                             <label class="form-label">File Number</label>
-                            <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" inputmode="numeric" pattern="[0-9]*" />
+                            <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" placeholder="EMP-000" />
                             <ValidationMessage For="() => EmployeeGroup1.FileNumber" class="text-danger" />
                         </div>
 
@@ -336,7 +352,9 @@
     [Parameter] public EventCallback<int> HandleDepartmentSelectedEvent { get; set; }
     [Parameter] public List<Employee> AllEmployees { get; set; } = new();
 
-    private string _duplicateNameWarning = string.Empty;
+    private string _duplicateNameWarning   = string.Empty;
+    private string _duplicatePhoneWarning  = string.Empty;
+    private string _duplicateCivilIdWarning = string.Empty;
 
     private Task OnNameChanged(string value)
     {
@@ -357,6 +375,73 @@
             : string.Empty;
 
         return Task.CompletedTask;
+    }
+
+    private Task OnPhoneChanged(string value)
+    {
+        EmployeeGroup1.TelephoneNumber = value;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _duplicatePhoneWarning = string.Empty;
+            return Task.CompletedTask;
+        }
+
+        var exists = AllEmployees.Any(e =>
+            !string.IsNullOrEmpty(e.TelephoneNumber) &&
+            e.TelephoneNumber.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            e.Id != Employee.Id);
+
+        _duplicatePhoneWarning = exists
+            ? "This telephone number is already used by another employee."
+            : string.Empty;
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnCivilIdChanged(string value)
+    {
+        EmployeeGroup1.CivilId = value;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _duplicateCivilIdWarning = string.Empty;
+            return Task.CompletedTask;
+        }
+
+        var exists = AllEmployees.Any(e =>
+            !string.IsNullOrEmpty(e.CivilId) &&
+            e.CivilId.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            e.Id != Employee.Id);
+
+        _duplicateCivilIdWarning = exists
+            ? "This Civil ID is already used by another employee."
+            : string.Empty;
+
+        return Task.CompletedTask;
+    }
+
+    // Re-run duplicate checks at submit time (catches pre-populated edit values
+    // that the user never typed into, so oninput never fired).
+    private void RefreshDuplicateWarnings()
+    {
+        if (!string.IsNullOrWhiteSpace(EmployeeGroup1.TelephoneNumber))
+        {
+            var phoneExists = AllEmployees.Any(e =>
+                !string.IsNullOrEmpty(e.TelephoneNumber) &&
+                e.TelephoneNumber.Equals(EmployeeGroup1.TelephoneNumber.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                e.Id != Employee.Id);
+            _duplicatePhoneWarning = phoneExists ? "This telephone number is already used by another employee." : string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(EmployeeGroup1.CivilId))
+        {
+            var civilExists = AllEmployees.Any(e =>
+                !string.IsNullOrEmpty(e.CivilId) &&
+                e.CivilId.Equals(EmployeeGroup1.CivilId.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                e.Id != Employee.Id);
+            _duplicateCivilIdWarning = civilExists ? "This Civil ID is already used by another employee." : string.Empty;
+        }
     }
 
     protected override void OnInitialized()
@@ -456,6 +541,13 @@
 
     private void Form1()
     {
+        // Always re-run duplicate checks at submit (covers pre-populated Edit values
+        // where the user never typed, so the oninput handlers never fired).
+        RefreshDuplicateWarnings();
+
+        if (!string.IsNullOrEmpty(_duplicatePhoneWarning) || !string.IsNullOrEmpty(_duplicateCivilIdWarning))
+            return; // Inline errors are already displayed — block progression.
+
         if (ValidateEmployeeGroup1())
         {
             Employee.Name            = EmployeeGroup1.Name;
@@ -506,7 +598,9 @@
         City              = null;
         Town              = null;
 
-        _duplicateNameWarning = string.Empty;
+        _duplicateNameWarning    = string.Empty;
+        _duplicatePhoneWarning   = string.Empty;
+        _duplicateCivilIdWarning = string.Empty;
     }
 
     public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<int?, GeneralDepartment> args)
