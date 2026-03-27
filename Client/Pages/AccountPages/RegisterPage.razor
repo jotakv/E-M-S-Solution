@@ -1,14 +1,13 @@
 ﻿@page "/identity/account/register"
 @layout AuthenticationLayout
 
-
 <div class="container">
     <div class="row">
         <div class="col-lg-4"></div>
         <div class="col-lg-4">
-            <EditForm Enhance Model="User" OnValidSubmit="HandleRegistration">
+            <EditForm Model="User" OnValidSubmit="HandleRegistration">
                 <DataAnnotationsValidator />
-                <div class="card bg-dark d-flex justify-content-center" style="opacity:0.5; margin-top:50%; border-radius:10px; color:white;font-weight:bold">
+                <div class="card bg-dark d-flex justify-content-center" style="opacity:0.5; margin-top:50%; border-radius:10px; color:white; font-weight:bold">
                     <div class="card-header text-center fs-5">Register an account</div>
                     <div class="container">
                         <div class="row">
@@ -24,28 +23,33 @@
                         <div class="form-group">
                             <label class="form-label">Fullname</label>
                             <InputText @bind-Value="User.Fullname" class="form-control" />
+                            <ValidationMessage For="() => User.Fullname" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Email</label>
                             <InputText @bind-Value="User.Email" class="form-control" />
+                            <ValidationMessage For="() => User.Email" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Password</label>
-                            <InputText @bind-Value="User.Password" type="password" class="form-control" />
+                            <InputText type="password" @bind-Value="User.Password" class="form-control" />
+                            <ValidationMessage For="() => User.Password" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Confirm Password</label>
-                            <InputText @bind-Value="User.ConfirmPassword" type="password" class="form-control" />
+                            <InputText type="password" @bind-Value="User.ConfirmPassword" class="form-control" />
+                            <ValidationMessage For="() => User.ConfirmPassword" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
-                            @if(ShowLoadingButton)
+                            @if (ShowLoadingButton)
                             {
                                 <ButtonLoadingSpinner></ButtonLoadingSpinner>
-                            } else
+                            }
+                            else
                             {
                                 <button class="btn btn-outline-primary float-end" type="submit">Register</button>
                             }
@@ -56,14 +60,11 @@
                         <span class="text-center">
                             Have account already? | <a class="btn-link" href="identity/account/login">Sign In</a>
                         </span>
-                        <ValidationSummary />
                     </div>
                 </div>
             </EditForm>
         </div>
-        <div class="col-lg-4">
-            
-        </div>
+        <div class="col-lg-4"></div>
     </div>
 </div>
 
@@ -73,25 +74,30 @@
     Register User = new();
 
     [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
     protected async override Task OnInitializedAsync()
     {
         await CheckUserAuthentication();
     }
 
-   async Task HandleRegistration()
+    async Task HandleRegistration()
     {
         ShowLoadingButton = true;
+
         var result = await accountService.CreateAsync(User);
+
+        ShowLoadingButton = false;
+
         if (result.Flag)
         {
-            toastService.ShowSuccess(result.Message);
-            User = new();
+            toastService.ShowSuccess("Account created successfully. Please log in.");
+            await Task.Delay(1500);
+            NavManager.NavigateTo("/identity/account/login");
         }
         else
         {
             toastService.ShowError(result.Message);
         }
-        ShowLoadingButton = false;
     }
 
     private async Task CheckUserAuthentication()
@@ -101,5 +107,4 @@
         if (user.Identity?.IsAuthenticated == true)
             NavManager.NavigateTo("/home/dashboard");
     }
-
 }

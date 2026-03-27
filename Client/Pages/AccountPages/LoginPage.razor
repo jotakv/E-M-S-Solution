@@ -1,13 +1,12 @@
 ﻿@page "/identity/account/login"
 @layout AuthenticationLayout
 
-
 <div class="container">
     <div class="row">
         <div class="col-lg-4"></div>
         <div class="col-lg-4">
 
-            <EditForm Model="User" OnValidSubmit="HandleLogin">
+            <EditForm Model="User" OnValidSubmit="HandleLogin" OnInvalidSubmit="HandleInvalidSubmit">
                 <DataAnnotationsValidator />
                 <div class="card bg-dark" style="opacity:0.5; margin-top:50%; border-radius:10px; color:white; font-weight:bold">
                     <div class="card-header text-center fs-5 mb-2">Login</div>
@@ -24,33 +23,40 @@
 
                         <div class="form-group mt-3">
                             <label class="form-label">Email</label>
-                            <InputText @bind-Value="User.Email" class="form-control"></InputText>
+                            <InputText @bind-Value="User.Email" class="form-control" />
+                            <ValidationMessage For="() => User.Email" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Password</label>
-                            <input type="password" @bind="User.Password" class="form-control" ></input>
+                            <InputText type="password" @bind-Value="User.Password" class="form-control" />
+                            <ValidationMessage For="() => User.Password" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             @if (ShowLoadingButton)
                             {
                                 <ButtonLoadingSpinner></ButtonLoadingSpinner>
-                            }else
+                            }
+                            else
                             {
                                 <button class="btn btn-outline-primary float-end" type="submit">Login</button>
                             }
-
                         </div>
+
                     </div>
                     <div class="card-footer">
                         <span class="text-center">
                             Don't have account? | <a class="btn-link" href="identity/account/register">Sign Up</a>
                         </span>
-                        <ValidationSummary/>
+                        @if (ShowValidationSummary)
+                        {
+                            <div class="mt-2">
+                                <ValidationSummary class="text-warning small" />
+                            </div>
+                        }
                     </div>
                 </div>
-
             </EditForm>
 
         </div>
@@ -60,21 +66,24 @@
 
 @code {
     public bool ShowLoadingButton { get; set; } = false;
+    public bool ShowValidationSummary { get; set; } = false;
 
     Login User = new();
-    
+
+    void HandleInvalidSubmit()
+    {
+        ShowValidationSummary = true;
+    }
+
     async Task HandleLogin()
     {
+        ShowValidationSummary = false;
         ShowLoadingButton = true;
 
-        // ── Client-side login performance diagnostics ─────────────────────────
-        // Measures wall-clock time visible in the browser DevTools Console tab.
-        // Phase A: API round-trip (network + BCrypt + DB on server)
         var loginSw = System.Diagnostics.Stopwatch.StartNew();
-
         var result = await accountService.SignInAsync(User);
-
         loginSw.Stop();
+
         Console.WriteLine(
             $"[Perf] Login API round-trip: {loginSw.ElapsedMilliseconds}ms " +
             $"(success={result.Flag})");
@@ -82,7 +91,7 @@
         if (result.Flag && loginSw.ElapsedMilliseconds > 2000)
             Console.WriteLine(
                 $"[Perf Warning] Login API exceeded 2000ms ({loginSw.ElapsedMilliseconds}ms). " +
-                $"BCrypt is ~100–400ms by design; the rest may be DB or network.");
+                $"BCrypt is ~100-400ms by design; the rest may be DB or network.");
 
         if (!result.Flag)
         {
@@ -91,7 +100,6 @@
             return;
         }
 
-        // Phase B: update Blazor auth state (localStorage write + JWT claim parse)
         var authSw = System.Diagnostics.Stopwatch.StartNew();
 
         var customAuthStateProvider =
@@ -100,16 +108,14 @@
         await customAuthStateProvider.UpdateAuthenticationState(
             new UserSession
             {
-                Token        = result.Token,
+                Token = result.Token,
                 RefreshToken = result.RefreshToken
             });
 
         authSw.Stop();
-        Console.WriteLine(
-            $"[Perf] Auth state update: {authSw.ElapsedMilliseconds}ms");
+        Console.WriteLine($"[Perf] Auth state update: {authSw.ElapsedMilliseconds}ms");
 
         toastService.ShowSuccess("Login successful!");
-
         NavManager.NavigateTo("/home/dashboard", replace: true);
 
         ShowLoadingButton = false;
@@ -120,12 +126,7 @@
         if (!firstRender) return;
 
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = state.User;
-
-        if (user.Identity?.IsAuthenticated == true)
-        {
+        if (state.User.Identity?.IsAuthenticated == true)
             NavManager.NavigateTo("/home/dashboard", replace: true);
-        }
     }
-
 }
