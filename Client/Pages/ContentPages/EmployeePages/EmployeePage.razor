@@ -275,6 +275,8 @@
         addOrUpdateEmployee!.SecondLayer = false;
         addOrUpdateEmployee!.Title = "Add";
 
+        addOrUpdateEmployee!.InitializeState();
+
         ShowMainPage = false;
         ShowAddOrUpdatePage = true;
     }
@@ -355,6 +357,8 @@
         addOrUpdateEmployee!.Country = employee.Town?.City?.Country?.Id;
         addOrUpdateEmployee!.City = employee.Town?.City?.Id;
         addOrUpdateEmployee!.Town = employee.Town?.Id;
+
+        addOrUpdateEmployee!.InitializeState();
 
         SelectedEmployee = new();
         ShowAddOrUpdatePage = true;
@@ -494,7 +498,6 @@
         ShowMainPage = true;
     }
 
-    // Excel export / PDF Export / Print
     public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
         var http = await HttpFactory.GetPrivateHttpClient();
