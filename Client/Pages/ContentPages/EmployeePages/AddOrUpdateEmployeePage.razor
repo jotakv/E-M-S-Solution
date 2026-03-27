@@ -234,11 +234,11 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">Other</label>
-                            <textarea @bind="EmployeeGroup2.Other" placeholder="Optional" class="form-control"></textarea>
+                            <textarea @bind="EmployeeGroup2.Other" @bind:event="oninput" placeholder="Optional" class="form-control"></textarea>
                         </div>
 
                         <div class="form-group mt-4 d-flex justify-content-end">
-                            <button class="btn btn-success" type="submit" disabled="@IsSaving">
+                            <button class="btn btn-success" type="submit" disabled="@(IsSaving || !IsDirty)">
                                 @if (IsSaving)
                                 {
                                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -310,6 +310,21 @@
     public int? Town { get; set; } = null;
 
     public bool IsSaving { get; set; } = false;
+
+    private string _originalState = "";
+    public bool IsDirty => _originalState != GetCurrentState();
+
+    public void InitializeState()
+    {
+        _originalState = GetCurrentState();
+        StateHasChanged(); 
+    }
+
+    private string GetCurrentState()
+    {
+        return $"{EmployeeGroup1.Name}|{EmployeeGroup1.TelephoneNumber}|{EmployeeGroup1.Address}|{EmployeeGroup1.CivilId}|{EmployeeGroup1.FileNumber}|{EmployeeGroup1.Photo}|{EmployeeGroup2.JobName}|{EmployeeGroup2.Other}|{EmployeeGroup2.BranchId}|{EmployeeGroup2.TownId}";
+    }
+    // -----------------------------
 
     private int _departmentListKey = 0;
     private int _branchListKey     = 0;
@@ -388,6 +403,7 @@
         {
             ImageUploadMessage   = "PNG file needed.";
             EmployeeGroup1.Photo = string.Empty;
+            StateHasChanged();
             return;
         }
 
@@ -399,15 +415,16 @@
         ImageUploadMessage = "";
         Console.WriteLine("PNG uploaded successfully");
 
-        // Audit after photo is confirmed — never allowed to block the upload
+        // Audit photo upload
         try
         {
             var client = await HttpFactory.GetPrivateHttpClient();
             await client.PostAsJsonAsync("api/audit/image-upload",
                 new ImageUploadAuditDto(Employee.Id.ToString(), file.Name, file.Size, true));
         }
-        catch { /* audit failure must never block photo upload */ }
-        ImageUploadMessage   = "";
+        catch { /* ignore audit errors to avoid blocking UI */ }
+        
+        StateHasChanged(); 
     }
 
     private bool ValidateEmployeeGroup1() =>
@@ -472,7 +489,6 @@
         Country           = null;
         City              = null;
         Town              = null;
-
     }
 
     public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<int?, GeneralDepartment> args)
@@ -486,6 +502,7 @@
 
         int id = args.Value ?? 0;
         await HandleGeneralDepartmentSelectedEvent.InvokeAsync(id);
+        StateHasChanged();
     }
 
     public async Task OnDepartmentValueChange(ChangeEventArgs<int?, Department> args)
@@ -498,6 +515,7 @@
 
         int id = args.Value ?? 0;
         await HandleDepartmentSelectedEvent.InvokeAsync(id);
+        StateHasChanged();
     }
 
     public void OnBranchValueChange(ChangeEventArgs<int?, Branch> args)
@@ -506,6 +524,7 @@
 
         Branch = args.Value;
         EmployeeGroup2.BranchId = args.Value ?? 0;
+        StateHasChanged();
     }
 
     public async Task OnCountryValueChange(ChangeEventArgs<int?, Country> args)
@@ -519,6 +538,7 @@
 
         int id = args.Value ?? 0;
         await HandleCountrySelectedEvent.InvokeAsync(id);
+        StateHasChanged();
     }
 
     public async Task OnCityValueChange(ChangeEventArgs<int?, City> args)
@@ -531,6 +551,7 @@
 
         int id = args.Value ?? 0;
         await HandleCitySelectedEvent.InvokeAsync(id);
+        StateHasChanged();
     }
 
     public void OnTownValueChange(ChangeEventArgs<int?, Town> args)
@@ -539,6 +560,7 @@
 
         Town = args.Value;
         EmployeeGroup2.TownId = args.Value ?? 0;
+        StateHasChanged();
     }
 
     public void Dispose()
