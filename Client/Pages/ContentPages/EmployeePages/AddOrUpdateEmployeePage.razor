@@ -91,8 +91,16 @@
 
                         <div class="form-group mb-3">
                             <label class="form-label">File Number</label>
-                            <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" placeholder="EMP-000" />
+                            <InputText class="form-control"
+                                       placeholder="EMP-000"
+                                       Value="@EmployeeGroup1.FileNumber"
+                                       ValueChanged="OnFileNumberChanged"
+                                       ValueExpression="() => EmployeeGroup1.FileNumber" />
                             <ValidationMessage For="() => EmployeeGroup1.FileNumber" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(_duplicateFileNumberWarning))
+                            {
+                                <div class="text-danger small mt-1">@_duplicateFileNumberWarning</div>
+                            }
                         </div>
 
                         <div class="form-group mb-3">
@@ -352,9 +360,10 @@
     [Parameter] public EventCallback<int> HandleDepartmentSelectedEvent { get; set; }
     [Parameter] public List<Employee> AllEmployees { get; set; } = new();
 
-    private string _duplicateNameWarning   = string.Empty;
-    private string _duplicatePhoneWarning  = string.Empty;
+    private string _duplicateNameWarning    = string.Empty;
+    private string _duplicatePhoneWarning   = string.Empty;
     private string _duplicateCivilIdWarning = string.Empty;
+    private string _duplicateFileNumberWarning = string.Empty;
 
     private Task OnNameChanged(string value)
     {
@@ -421,6 +430,28 @@
         return Task.CompletedTask;
     }
 
+    private Task OnFileNumberChanged(string value)
+    {
+        EmployeeGroup1.FileNumber = value;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _duplicateFileNumberWarning = string.Empty;
+            return Task.CompletedTask;
+        }
+
+        var exists = AllEmployees.Any(e =>
+            !string.IsNullOrEmpty(e.FileNumber) &&
+            e.FileNumber.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            e.Id != Employee.Id);
+
+        _duplicateFileNumberWarning = exists
+            ? "This File Number is already used by another employee."
+            : string.Empty;
+
+        return Task.CompletedTask;
+    }
+
     // Re-run duplicate checks at submit time (catches pre-populated edit values
     // that the user never typed into, so oninput never fired).
     private void RefreshDuplicateWarnings()
@@ -441,6 +472,15 @@
                 e.CivilId.Equals(EmployeeGroup1.CivilId.Trim(), StringComparison.OrdinalIgnoreCase) &&
                 e.Id != Employee.Id);
             _duplicateCivilIdWarning = civilExists ? "This Civil ID is already used by another employee." : string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(EmployeeGroup1.FileNumber))
+        {
+            var fileExists = AllEmployees.Any(e =>
+                !string.IsNullOrEmpty(e.FileNumber) &&
+                e.FileNumber.Equals(EmployeeGroup1.FileNumber.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                e.Id != Employee.Id);
+            _duplicateFileNumberWarning = fileExists ? "This File Number is already used by another employee." : string.Empty;
         }
     }
 
@@ -545,7 +585,9 @@
         // where the user never typed, so the oninput handlers never fired).
         RefreshDuplicateWarnings();
 
-        if (!string.IsNullOrEmpty(_duplicatePhoneWarning) || !string.IsNullOrEmpty(_duplicateCivilIdWarning))
+        if (!string.IsNullOrEmpty(_duplicatePhoneWarning) ||
+            !string.IsNullOrEmpty(_duplicateCivilIdWarning) ||
+            !string.IsNullOrEmpty(_duplicateFileNumberWarning))
             return; // Inline errors are already displayed — block progression.
 
         if (ValidateEmployeeGroup1())
@@ -598,9 +640,10 @@
         City              = null;
         Town              = null;
 
-        _duplicateNameWarning    = string.Empty;
-        _duplicatePhoneWarning   = string.Empty;
-        _duplicateCivilIdWarning = string.Empty;
+        _duplicateNameWarning       = string.Empty;
+        _duplicatePhoneWarning      = string.Empty;
+        _duplicateCivilIdWarning    = string.Empty;
+        _duplicateFileNumberWarning = string.Empty;
     }
 
     public async Task OnGeneralDepartmentValueChange(ChangeEventArgs<int?, GeneralDepartment> args)
