@@ -7,5 +7,5 @@ namespace BaseLibrary.DTOs
     public record PrintAuditDto(string Entity, int RecordCount);
 
     /// <summary>DTO for employee photo upload audit events.</summary>
-    public record ImageUploadAuditDto(string EmployeeId, string FileName, long FileSizeBytes, bool Success);
+    public record ImageUploadAuditDto(int EmployeeId, string FileName, long FileSizeBytes, bool Success);
 }

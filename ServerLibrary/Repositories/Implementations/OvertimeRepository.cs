@@ -77,8 +77,11 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> DeleteById(int id)
         {
+            //var item = await appDbContext.Overtimes
+            //    .FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+
             var item = await appDbContext.Overtimes
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (item is null)
             {

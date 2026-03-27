@@ -1,4 +1,5 @@
-﻿using BaseLibrary.Entities;
+#pragma warning disable CS9107
+using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using ServerLibrary.Repositories.Contracts;
@@ -35,6 +36,30 @@ namespace Server.Controllers
             cache.Set(SanctionTypeCacheKey, sanctionTypes, cacheEntryOptions);
 
             return Ok(sanctionTypes);
+        }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(SanctionTypeCacheKey);
+            return result;
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(SanctionType model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(SanctionTypeCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(SanctionType model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(SanctionTypeCacheKey);
+            return result;
         }
     }
 }

@@ -97,16 +97,16 @@ namespace ServerLibrary.Data
         private static async Task<Dictionary<string, T>> AddIfNotExistsAsync<T>(
             DbSet<T> dbSet,
             IEnumerable<T> items,
-            Func<T, string> keySelector,
+            Func<T, string?> keySelector,
             ILogger? logger,
             CancellationToken ct) where T : class
         {
             var existing = await dbSet.ToListAsync(ct);
-            var dict = existing.ToDictionary(keySelector, StringComparer.OrdinalIgnoreCase);
+            var dict = existing.ToDictionary(x => keySelector(x)!, StringComparer.OrdinalIgnoreCase);
 
             foreach (var item in items)
             {
-                var key = keySelector(item);
+                var key = keySelector(item)!;
 
                 if (!dict.ContainsKey(key))
                 {
@@ -158,7 +158,7 @@ namespace ServerLibrary.Data
             CancellationToken ct)
         {
             var existing = await context.SystemRoles.ToListAsync(ct);
-            var dict = existing.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
+            var dict = existing.ToDictionary(x => x.Name!, StringComparer.OrdinalIgnoreCase);
 
             foreach (var roleName in seedData.Roles)
             {
@@ -181,7 +181,7 @@ namespace ServerLibrary.Data
             CancellationToken ct)
         {
             var existing = await context.ApplicationUsers
-                .ToDictionaryAsync(x => x.Email, StringComparer.OrdinalIgnoreCase, ct);
+                .ToDictionaryAsync(x => x.Email!, StringComparer.OrdinalIgnoreCase, ct);
 
             foreach (var dto in seedData.Users)
             {
@@ -268,7 +268,7 @@ namespace ServerLibrary.Data
                 .ToListAsync(ct);
 
             var dict = existingInDb.ToDictionary(
-                d => CompositeKey(d.GeneralDepartment.Name, d.Name),
+                d => CompositeKey(d.GeneralDepartment!.Name!, d.Name!),
                 StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Departments)
@@ -302,11 +302,13 @@ namespace ServerLibrary.Data
         {
             var existingInDb = await context.Branches
                 .Include(b => b.Department)
+#pragma warning disable CS8602
                     .ThenInclude(d => d.GeneralDepartment)
+#pragma warning restore CS8602
                 .ToListAsync(ct);
 
             var dict = existingInDb.ToDictionary(
-                b => CompositeKey(b.Department.GeneralDepartment.Name, b.Department.Name, b.Name),
+                b => CompositeKey(b.Department!.GeneralDepartment!.Name!, b.Department.Name!, b.Name!),
                 StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Branches)
@@ -430,7 +432,7 @@ namespace ServerLibrary.Data
                 .ToListAsync(ct);
 
             var dict = existingInDb.ToDictionary(
-                c => CompositeKey(c.Country.Name, c.Name),
+                c => CompositeKey(c.Country!.Name!, c.Name!),
                 StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Cities)
@@ -464,11 +466,13 @@ namespace ServerLibrary.Data
         {
             var existingInDb = await context.Towns
                 .Include(t => t.City)
+#pragma warning disable CS8602
                     .ThenInclude(c => c.Country)
+#pragma warning restore CS8602
                 .ToListAsync(ct);
 
             var dict = existingInDb.ToDictionary(
-                t => CompositeKey(t.City.Country.Name, t.City.Name, t.Name),
+                t => CompositeKey(t.City!.Country!.Name!, t.City.Name!, t.Name!),
                 StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Towns)

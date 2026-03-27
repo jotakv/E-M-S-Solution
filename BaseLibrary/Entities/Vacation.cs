@@ -16,6 +16,7 @@ namespace BaseLibrary.Entities
         public VacationType? VacationType { get; set; }
 
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a Vacation Type.")]
         public int VacationTypeId { get; set; }
         public Employee? Employee { get; set; }
     }

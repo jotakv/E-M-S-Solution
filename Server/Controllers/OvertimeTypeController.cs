@@ -1,4 +1,5 @@
-﻿using BaseLibrary.Entities;
+#pragma warning disable CS9107
+using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using ServerLibrary.Repositories.Contracts;
@@ -34,6 +35,30 @@ namespace Server.Controllers
             cache.Set(OvertimeTypeCacheKey, overtimeTypes, cacheEntryOptions);
 
             return Ok(overtimeTypes);
+        }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(OvertimeTypeCacheKey);
+            return result;
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(OvertimeType model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(OvertimeTypeCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(OvertimeType model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(OvertimeTypeCacheKey);
+            return result;
         }
     }
 }

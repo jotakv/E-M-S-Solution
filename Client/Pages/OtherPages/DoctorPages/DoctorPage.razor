@@ -121,7 +121,7 @@
         bool confirm = await dialogService.ConfirmAsync($"Are you sure you wanna delete this?", "Confirm Delete");
         if (!confirm) return;
 
-        var response = await doctorService.DeleteById(item.EmployeeId, Constants.DoctorBaseUrl);
+        var response = await doctorService.DeleteById(item.Id, Constants.DoctorBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
         if (result)
         {

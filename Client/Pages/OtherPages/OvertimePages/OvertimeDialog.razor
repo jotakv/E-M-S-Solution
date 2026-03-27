@@ -1,7 +1,6 @@
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.DropDowns
 @using Microsoft.AspNetCore.Components.Forms
-@inject IToastService toastService
 
 <SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogTemplates>
@@ -26,11 +25,16 @@
                         <div class="form-group mt-2">
                             <label class="form-label">End Date</label>
                             <InputDate @bind-Value="ItemModel.EndDate" class="form-control" />
+                            @if (!string.IsNullOrEmpty(_endDateError))
+                            {
+                                <div class="text-danger small mt-1">@_endDateError</div>
+                            }
                         </div>
 
                         <div class="form-group mt-2">
                             <label class="form-label">Number of days</label>
                             <input value="@ItemModel.NumberOfDays" class="form-control" disabled />
+                            <ValidationMessage For="() => ItemModel.NumberOfDays" class="text-danger small mt-1" />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
@@ -42,6 +46,7 @@
                                             @bind-Value="ItemModel.OvertimeTypeld">
                                 <DropDownListFieldSettings Value="Id" Text="Name" />
                             </SfDropDownList>
+                            <ValidationMessage For="() => ItemModel.OvertimeTypeld" class="text-danger small mt-1" />
                         </div>
 
                     </div>
@@ -74,6 +79,7 @@
     public string Title { get; set; } = "Add";
     public bool IsSaving { get; set; } = false;
 
+    private string _endDateError = string.Empty;
     private EditContext editContext = default!;
 
     protected override void OnInitialized()
@@ -85,6 +91,7 @@
     {
         ItemModel = new Overtime();
         editContext = new EditContext(ItemModel);
+        _endDateError = string.Empty;
         IsVisible = true;
 
         if (employeeId > 0)
@@ -103,6 +110,7 @@
     {
         ItemModel = overtime;
         editContext = new EditContext(ItemModel);
+        _endDateError = string.Empty;
         IsVisible = true;
         StateHasChanged();
     }
@@ -117,17 +125,17 @@
 
     private async Task Save()
     {
-        if (ItemModel.OvertimeTypeld <= 0)
-        {
-            toastService.ShowError("Please select an Overtime Type before saving.");
-            return;
-        }
-
+        // Validate dates inline before running DataAnnotationsValidator
         if (ItemModel.EndDate < ItemModel.StartDate)
         {
-            toastService.ShowError("End Date cannot be earlier than Start Date.");
+            _endDateError = "End Date cannot be earlier than Start Date.";
             return;
         }
+        _endDateError = string.Empty;
+
+        var isValid = editContext.Validate();
+        if (!isValid)
+            return;
 
         IsSaving = true;
         StateHasChanged();
@@ -135,6 +143,7 @@
         await HandleSaveOperationEvent.InvokeAsync(ItemModel);
 
         IsSaving = false;
+        StateHasChanged();
         CloseDialog();
     }
 }

@@ -12,7 +12,7 @@ public class AuditLog
     public string   UserId        { get; set; } = string.Empty;
     public string?  Format        { get; set; }
     public int?     RecordCount   { get; set; }
-    public string?  EmployeeId    { get; set; }
+    public int?     EmployeeId    { get; set; }  // int to match AuditEvent and RabbitMQ payload
     public string?  FileName      { get; set; }
     public long?    FileSizeBytes { get; set; }
     public bool?    Success       { get; set; }

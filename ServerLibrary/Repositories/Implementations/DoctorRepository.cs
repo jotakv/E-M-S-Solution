@@ -76,8 +76,13 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<GeneralResponse> DeleteById(int id)
         {
-            var item = await appDbContext.Doctors
-                .FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+            //var item = await appDbContext.Doctors
+            //    .FirstOrDefaultAsync(eid => eid.EmployeeId == id);
+
+            //var item = await appDbContext.Doctors
+            //    .FirstOrDefaultAsync(x => x.Id == id);
+
+            var item = await appDbContext.Doctors.FindAsync(id);
 
             if (item is null)
             {

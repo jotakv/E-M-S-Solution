@@ -92,6 +92,7 @@
         await HandleSaveOperationEvent.InvokeAsync(City);
 
         IsSaving = false;
+        StateHasChanged();
     }
 
     public void OpenDialog()

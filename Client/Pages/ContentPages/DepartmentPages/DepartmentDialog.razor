@@ -82,11 +82,11 @@
 
     private async Task Save()
     {
-        if (string.IsNullOrWhiteSpace(Department.Name) || Department.GeneralDepartmentId <= 0)
-        {
-            await dialogService.AlertAsync("You need to provide a Department name and select a General Department.", "Alert!");
-            return;
-        }
+        // if (string.IsNullOrWhiteSpace(Department.Name) || Department.GeneralDepartmentId <= 0)
+        // {
+        //     await dialogService.AlertAsync("You need to provide a Department name and select a General Department.", "Alert!");
+        //     return;
+        // }
 
         // Activamos el loading
         IsSaving = true;
@@ -97,6 +97,7 @@
 
         // Desactivamos el loading
         IsSaving = false;
+        StateHasChanged();
     }
 
     public void OpenDialog()

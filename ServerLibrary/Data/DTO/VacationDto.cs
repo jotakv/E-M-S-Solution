@@ -8,8 +8,8 @@ namespace ServerLibrary.Data.DTO
 {
     public class VacationDto
     {
-        public string Employee { get; set; }
-        public string Type { get; set; }
+        public string Employee { get; set; } = string.Empty;
+        public string Type     { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public int NumberOfDays { get; set; }
     }

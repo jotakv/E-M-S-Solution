@@ -67,6 +67,7 @@
             await HandleSaveOperationEvent.InvokeAsync(GeneralDepartment);
 
             IsSaving = false;
+            StateHasChanged();
         }
     }
 
