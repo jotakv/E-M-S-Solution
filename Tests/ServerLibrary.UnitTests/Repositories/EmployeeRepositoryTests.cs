@@ -12,24 +12,27 @@ namespace ServerLibrary.UnitTests.Repositories;
 public class EmployeeRepositoryTests
 {
     [Fact]
-    public async Task Insert_WhenEmployeeNameAlreadyExists_ReturnsFailureResponse()
+    public async Task Insert_WhenCivilIdAlreadyExists_ReturnsFailureResponse()
     {
-        // Arrange
+        // Arrange — existing employee owns CivilId "CIV-1"
         List<Employee> employees = [CreateEmployee(1, "Alice")];
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
-        var newEmployee = CreateEmployee(2, "aLiCe");
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object);
+
+        // New employee has a different name but the same CivilId — must be rejected
+        var newEmployee = CreateEmployee(2, "Bob");
+        newEmployee.CivilId = "CIV-1"; // duplicate
 
         // Act
         var result = await repository.Insert(newEmployee);
 
         // Assert
         Assert.False(result.Flag);
-        Assert.Equal("Employee already added", result.Message);
+        Assert.Equal("Civil ID is already in use by another employee.", result.Message);
         employeeSetMock.Verify(set => set.Add(It.IsAny<Employee>()), Times.Never);
         dbContextMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

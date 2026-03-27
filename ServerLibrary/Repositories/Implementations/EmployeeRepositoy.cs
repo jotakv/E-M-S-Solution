@@ -1,12 +1,13 @@
+using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
-using System.Text.Json;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
-using System.Diagnostics;
 using ServerLibrary.Services.Contracts;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace ServerLibrary.Repositories.Implementations
 {
@@ -15,6 +16,8 @@ namespace ServerLibrary.Repositories.Implementations
         ILogger<EmployeeRepository> logger,
         IEventBus eventBus) : IGenericRepositoryInterface<Employee>
     {
+        // ── Delete ────────────────────────────────────────────────────────────────
+
         public async Task<GeneralResponse> DeleteById(int id)
         {
             logger.LogInformation(
@@ -30,6 +33,11 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            // Cascade delete is configured in AppDbContext.OnModelCreating:
+            //   Employee → Vacation, Overtime, Sanction, Doctor all have
+            //   OnDelete(DeleteBehavior.Cascade).
+            // The database engine removes child rows automatically; no manual
+            // child-record deletion is needed here.
             appDbContext.Employees.Remove(item);
             await Commit();
 
@@ -40,12 +48,10 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
         }
 
+        // ── Read ──────────────────────────────────────────────────────────────────
+
         public async Task<List<Employee>> GetAll()
         {
-            // ── Performance diagnostic ────────────────────────────────────────────
-            // This query eager-loads Town → City → Country and
-            // Branch → Department → GeneralDepartment for every employee row.
-            // Monitoring elapsed time detects slow DB response before users notice.
             var sw = Stopwatch.StartNew();
 
             var employees = await appDbContext.Employees
@@ -64,12 +70,11 @@ namespace ServerLibrary.Repositories.Implementations
                 "EmployeeRepository.GetAll fetched {Count} employees in {ElapsedMs}ms",
                 employees.Count, sw.ElapsedMilliseconds);
 
-            // Warn when the query is abnormally slow (e.g. missing index, lock, cold cache).
             if (sw.ElapsedMilliseconds > 500)
             {
                 logger.LogWarning(
                     "Slow query: EmployeeRepository.GetAll returned {Count} employees in {ElapsedMs}ms " +
-                    "(threshold 500ms). Consider verifying indexes on TownId and BranchId.",
+                    "(threshold 500ms). Verify indexes IX_Employees_TownId and IX_Employees_BranchId.",
                     employees.Count, sw.ElapsedMilliseconds);
             }
 
@@ -92,6 +97,8 @@ namespace ServerLibrary.Repositories.Implementations
             return employee!;
         }
 
+        // ── Insert ────────────────────────────────────────────────────────────────
+
         public async Task<GeneralResponse> Insert(Employee item)
         {
             logger.LogInformation(
@@ -100,34 +107,49 @@ namespace ServerLibrary.Repositories.Implementations
 
             try
             {
-                if (!await CheckName(item.Name!))
+                // ── Uniqueness guards ─────────────────────────────────────────────
+                // Name is not unique — multiple employees can share a name.
+                // CivilId and FileNumber are unique identifiers enforced at both the
+                // application layer (here) and the database layer (unique index).
+
+                if (!await IsCivilIdUnique(item.CivilId!, excludeEmployeeId: 0))
                 {
                     logger.LogWarning(
-                        "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Name: {Name} | Result: {Result}",
-                        "EmployeeCreate", "Create", "Employee", item.Name, "Failure:DuplicateName");
-                    return new GeneralResponse(false, "Employee already added");
+                        "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | CivilId: {CivilId} | Result: {Result}",
+                        "EmployeeCreate", "Create", "Employee", item.CivilId, "Failure:DuplicateCivilId");
+                    return new GeneralResponse(false, "Civil ID is already in use by another employee.");
+                }
+
+                if (!await IsFileNumberUnique(item.FileNumber!, excludeEmployeeId: 0))
+                {
+                    logger.LogWarning(
+                        "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | FileNumber: {FileNumber} | Result: {Result}",
+                        "EmployeeCreate", "Create", "Employee", item.FileNumber, "Failure:DuplicateFileNumber");
+                    return new GeneralResponse(false, "File Number is already in use by another employee.");
                 }
 
                 appDbContext.Employees.Add(item);
                 await Commit();
 
+                // ── Publish event ─────────────────────────────────────────────────
+                // Use the typed DTO so EmployeeId is always serialised as a JSON number.
+                // Consumers must not cast it to string.
                 try
                 {
-                    // Publish only essential fields — never include Photo (base64, ~150 KB).
-                    var createdPayload = new
-                    {
-                        EmployeeId = item.Id,
-                        Name       = item.Name,
-                        JobName    = item.JobName,
-                        BranchId   = item.BranchId,
-                        TownId     = item.TownId,
-                        Timestamp  = DateTime.UtcNow
-                    };
-                    eventBus.Publish("ems.employee.created", JsonSerializer.Serialize(createdPayload));
+                    var evt = new EmployeeCreatedEvent(
+                        EmployeeId: item.Id,
+                        Name:       item.Name,
+                        JobName:    item.JobName,
+                        BranchId:   item.BranchId,
+                        TownId:     item.TownId,
+                        Timestamp:  DateTime.UtcNow);
+
+                    eventBus.Publish("ems.employee.created", JsonSerializer.Serialize(evt));
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
+                    logger.LogError(ex,
+                        "Failed to publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
                 }
 
                 logger.LogInformation(
@@ -147,6 +169,8 @@ namespace ServerLibrary.Repositories.Implementations
             }
         }
 
+        // ── Update ────────────────────────────────────────────────────────────────
+
         public async Task<GeneralResponse> Update(Employee employee)
         {
             logger.LogInformation(
@@ -164,8 +188,24 @@ namespace ServerLibrary.Repositories.Implementations
                 return new GeneralResponse(false, "Employee does not exist");
             }
 
-            // Build a change list — only include fields that actually changed so the
-            // audit log stays concise and Seq can filter on specific field changes.
+            // ── Uniqueness guards (exclude the employee being updated) ─────────────
+            if (!await IsCivilIdUnique(employee.CivilId!, excludeEmployeeId: employee.Id))
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | CivilId: {CivilId} | Result: {Result}",
+                    "EmployeeUpdate", "Update", "Employee", employee.Id, employee.CivilId, "Failure:DuplicateCivilId");
+                return new GeneralResponse(false, "Civil ID is already in use by another employee.");
+            }
+
+            if (!await IsFileNumberUnique(employee.FileNumber!, excludeEmployeeId: employee.Id))
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | FileNumber: {FileNumber} | Result: {Result}",
+                    "EmployeeUpdate", "Update", "Employee", employee.Id, employee.FileNumber, "Failure:DuplicateFileNumber");
+                return new GeneralResponse(false, "File Number is already in use by another employee.");
+            }
+
+            // Track changed fields for the audit event
             var changes = new List<object>();
 
             if (findUser.Name != employee.Name)
@@ -200,29 +240,25 @@ namespace ServerLibrary.Repositories.Implementations
             findUser.JobName         = employee.JobName;
             findUser.Photo           = employee.Photo;
 
-            // BUG FIX: only one SaveChangesAsync is needed here.
-            // Previously both appDbContext.SaveChangesAsync() and Commit() were called,
-            // causing two redundant round-trips to the database on every employee update.
             await Commit();
 
+            // ── Publish event ─────────────────────────────────────────────────────
             try
             {
                 if (changes.Any())
                 {
-                    var updatePayloadObj = new
-                    {
-                        EmployeeId = employee.Id,
-                        Timestamp = DateTime.UtcNow,
-                        Changes = changes
-                    };
+                    var evt = new EmployeeUpdatedEvent(
+                        EmployeeId: employee.Id,
+                        Timestamp:  DateTime.UtcNow,
+                        Changes:    changes);
 
-                    var payload = JsonSerializer.Serialize(updatePayloadObj);
-                    eventBus.Publish("ems.employee.updated", payload);
+                    eventBus.Publish("ems.employee.updated", JsonSerializer.Serialize(evt));
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to serialize and publish EmployeeUpdated event for EmployeeId: {EmployeeId}", employee.Id);
+                logger.LogError(ex,
+                    "Failed to publish EmployeeUpdated event for EmployeeId: {EmployeeId}", employee.Id);
             }
 
             logger.LogInformation(
@@ -232,17 +268,27 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
         }
 
+        // ── Helpers ───────────────────────────────────────────────────────────────
+
         private async Task Commit() => await appDbContext.SaveChangesAsync();
 
         private static GeneralResponse NotFound() => new(false, "Sorry employee not found");
+        private static GeneralResponse Success()  => new(true,  "Process completed");
 
-        private static GeneralResponse Success() => new(true, "Process completed");
+        /// <summary>
+        /// Returns true when no OTHER employee already owns <paramref name="civilId"/>.
+        /// Pass <paramref name="excludeEmployeeId"/> > 0 on updates to skip the current row.
+        /// </summary>
+        private async Task<bool> IsCivilIdUnique(string civilId, int excludeEmployeeId)
+            => !await appDbContext.Employees
+                .AnyAsync(e => e.CivilId == civilId && e.Id != excludeEmployeeId);
 
-        private async Task<bool> CheckName(string name)
-        {
-            var item = await appDbContext.Employees
-                .FirstOrDefaultAsync(x => x.Name!.ToLower().Equals(name.ToLower()));
-            return item is null;
-        }
+        /// <summary>
+        /// Returns true when no OTHER employee already owns <paramref name="fileNumber"/>.
+        /// Pass <paramref name="excludeEmployeeId"/> > 0 on updates to skip the current row.
+        /// </summary>
+        private async Task<bool> IsFileNumberUnique(string fileNumber, int excludeEmployeeId)
+            => !await appDbContext.Employees
+                .AnyAsync(e => e.FileNumber == fileNumber && e.Id != excludeEmployeeId);
     }
 }

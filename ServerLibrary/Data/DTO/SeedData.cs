@@ -26,9 +26,9 @@ namespace ServerLibrary.Data.DTO
         public List<VacationDto> Vacations { get; set; } = new();
     }
 
-    public class UserDto { public string Fullname { get; set; } public string Email { get; set; } public string Password { get; set; } public string Role { get; set; } }
-    public class NameDto { public string Name { get; set; }}
-    public class BranchDto { public string Name { get; set; } public string Department { get; set; } }
+    public class UserDto  { public string Fullname   { get; set; } = string.Empty; public string Email    { get; set; } = string.Empty; public string Password { get; set; } = string.Empty; public string Role { get; set; } = string.Empty; }
+    public class NameDto  { public string Name       { get; set; } = string.Empty; }
+    public class BranchDto { public string Name      { get; set; } = string.Empty; public string Department { get; set; } = string.Empty; }
     public class CountryDto
     {
         public string Name { get; set; } = default!;

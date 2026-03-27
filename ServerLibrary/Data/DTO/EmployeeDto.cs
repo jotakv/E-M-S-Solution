@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,16 +8,16 @@ namespace ServerLibrary.Data.DTO
 {
     public class EmployeeDto
     {
-        public string Name { get; set; }
-        public string CivilId { get; set; }
-        public string FileNumber { get; set; }
-        public string JobName { get; set; }
-        public string Address { get; set; }
-        public string TelephoneNumber { get; set; }
-        public string Branch { get; set; }
-        public string Town { get; set; }
-        public string Other { get; set; }
-        public string BackgroundColor { get; set; }
-        public string ForegroundColor { get; set; }
+        public string Name            { get; set; } = string.Empty;
+        public string CivilId         { get; set; } = string.Empty;
+        public string FileNumber      { get; set; } = string.Empty;
+        public string JobName         { get; set; } = string.Empty;
+        public string Address         { get; set; } = string.Empty;
+        public string TelephoneNumber { get; set; } = string.Empty;
+        public string Branch          { get; set; } = string.Empty;
+        public string Town            { get; set; } = string.Empty;
+        public string Other           { get; set; } = string.Empty;
+        public string BackgroundColor { get; set; } = string.Empty;
+        public string ForegroundColor { get; set; } = string.Empty;
     }
 }

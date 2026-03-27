@@ -1,3 +1,4 @@
+#pragma warning disable CS9107
 using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -61,6 +62,30 @@ namespace Server.Controllers
             cache.Set(CountryCacheKey, countries, cacheEntryOptions);
 
             return Ok(countries);
+        }
+
+        [HttpDelete("delete/{id}")]
+        public override async Task<IActionResult> Delete(int id)
+        {
+            var result = await base.Delete(id);
+            cache.Remove(CountryCacheKey);
+            return result;
+        }
+
+        [HttpPost("add")]
+        public override async Task<IActionResult> Add(Country model)
+        {
+            var result = await base.Add(model);
+            cache.Remove(CountryCacheKey);
+            return result;
+        }
+
+        [HttpPut("update")]
+        public override async Task<IActionResult> Update(Country model)
+        {
+            var result = await base.Update(model);
+            cache.Remove(CountryCacheKey);
+            return result;
         }
     }
 }

@@ -140,7 +140,7 @@
 
         if (!confirm) return;
 
-        var response = await overtimeService.DeleteById(item.EmployeeId, Constants.OvertimeBaseUrl);
+        var response = await overtimeService.DeleteById(item.Id, Constants.OvertimeBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)

@@ -98,7 +98,6 @@
 
 <!-- Dialog Component -->
 <SanctionDialog @ref="sanctionDialog"
-                ItemModel="ItemModel"
                 SanctionTypes="SanctionTypes"
                 HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
@@ -173,7 +172,7 @@
 
         if (!confirm) return;
 
-        var response = await sanctionService.DeleteById(item.EmployeeId, Constants.OvertimeBaseUrl);
+        var response = await sanctionService.DeleteById(item.Id, Constants.SanctionBaseUrl);
         var result = await DisplayMessage(response.Flag, response.Message);
 
         if (result)
