@@ -44,28 +44,28 @@ public class EmployeeRepositoryLoggingTests
     }
 
     [Fact]
-    public async Task Insert_DuplicateName_BreaksFlowGracefullyAndLogsWarning()
+    public async Task Insert_DuplicateCivilId_BreaksFlowGracefullyAndLogsWarning()
     {
-        // Arrange
-        var existingEmployee = new Employee { Id = 1, Name = "Jane Doe" };
-        var newEmployee = new Employee { Id = 2, Name = "Jane Doe" };
+        // Arrange — existing employee owns CivilId "CIV-DUPE"
+        var existingEmployee = new Employee { Id = 1, Name = "Jane Doe",  CivilId = "CIV-DUPE", FileNumber = "FILE-1" };
+        var newEmployee      = new Employee { Id = 2, Name = "John Smith", CivilId = "CIV-DUPE", FileNumber = "FILE-2" };
 
         var dbContextMock = CreateDbContextMock(new List<Employee> { existingEmployee });
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object);
 
         // Act
         var result = await repository.Insert(newEmployee);
 
-        // Assert 
+        // Assert — rejected with the correct message, nothing persisted
         Assert.False(result.Flag);
-        Assert.Equal("Employee already added", result.Message);
+        Assert.Equal("Civil ID is already in use by another employee.", result.Message);
         dbContextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-        // Assert 
-        VerifyLog(loggerMock, LogLevel.Warning, "Failure:DuplicateName", Times.Once());
+        // Warning log must carry the DuplicateCivilId event marker
+        VerifyLog(loggerMock, LogLevel.Warning, "Failure:DuplicateCivilId", Times.Once());
     }
 
     [Fact]
