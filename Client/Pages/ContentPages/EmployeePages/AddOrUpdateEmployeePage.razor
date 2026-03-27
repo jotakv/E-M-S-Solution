@@ -520,7 +520,7 @@
         {
             var client = await HttpFactory.GetPrivateHttpClient();
             await client.PostAsJsonAsync("api/audit/image-upload",
-                new ImageUploadAuditDto(Employee.Id.ToString(), file.Name, file.Size, true));
+                new ImageUploadAuditDto(Employee.Id, file.Name, file.Size, true));
         }
         catch { /* audit failure must never block photo upload */ }
         ImageUploadMessage   = "";

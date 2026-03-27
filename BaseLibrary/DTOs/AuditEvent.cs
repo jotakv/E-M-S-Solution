@@ -11,7 +11,9 @@ public sealed class AuditEvent
     public string   UserId        { get; set; } = string.Empty;
     public string?  Format        { get; set; }                  // PDF | Excel
     public int?     RecordCount   { get; set; }
-    public string?  EmployeeId    { get; set; }
+    // int? aligns with the EmployeeId published by EmployeeRepository (JSON number).
+    // string? caused JsonException in EmsAuditConsumer when deserialising employee events.
+    public int?     EmployeeId    { get; set; }
     public string?  FileName      { get; set; }
     public long?    FileSizeBytes { get; set; }
     public bool?    Success       { get; set; }

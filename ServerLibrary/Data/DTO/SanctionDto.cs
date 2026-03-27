@@ -8,11 +8,11 @@ namespace ServerLibrary.Data.DTO
 {
     public class SanctionDto
     {
-        public string Employee { get; set; }
-        public string Type { get; set; }
+        public string Employee   { get; set; } = string.Empty;
+        public string Type       { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public DateTime PunishmentDate { get; set; }
-        public string Punishment { get; set; }
+        public string Punishment { get; set; } = string.Empty;
     }
 
 }

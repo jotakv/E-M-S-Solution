@@ -17,8 +17,8 @@ namespace ServerLibrary.Repositories.Implementations
                 .Include(t => t.SanctionType)
                 .ToListAsync();
 
-        public async Task<Sanction?> GetById(int id) =>
-            await appDbContext.Sanctions.FirstOrDefaultAsync(x => x.Id == id);
+        public async Task<Sanction> GetById(int id) =>
+            (await appDbContext.Sanctions.FirstOrDefaultAsync(x => x.Id == id))!;
 
         public async Task<GeneralResponse> Insert(Sanction item)
         {

@@ -1,3 +1,4 @@
+#pragma warning disable CS9107
 using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Authorization;

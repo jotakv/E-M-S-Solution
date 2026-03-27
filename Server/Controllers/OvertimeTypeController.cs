@@ -1,4 +1,5 @@
-﻿using BaseLibrary.Entities;
+#pragma warning disable CS9107
+using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using ServerLibrary.Repositories.Contracts;
