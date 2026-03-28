@@ -56,8 +56,8 @@ namespace ServerLibrary.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EmployeeId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Entity")
                         .IsRequired()
@@ -268,9 +268,19 @@ namespace ServerLibrary.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BranchId");
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("IX_Employees_BranchId");
 
-                    b.HasIndex("TownId");
+                    b.HasIndex("CivilId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Employees_CivilId");
+
+                    b.HasIndex("FileNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Employees_FileNumber");
+
+                    b.HasIndex("TownId")
+                        .HasDatabaseName("IX_Employees_TownId");
 
                     b.ToTable("Employees");
                 });
@@ -567,7 +577,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Doctor", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany()
+                        .WithMany("Doctors")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -597,7 +607,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Overtime", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany()
+                        .WithMany("Overtimes")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -614,7 +624,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Sanction", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany()
+                        .WithMany("Sanctions")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -663,7 +673,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Vacation", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany()
+                        .WithMany("Vacations")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -688,6 +698,17 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Branch", b =>
                 {
                     b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Employee", b =>
+                {
+                    b.Navigation("Doctors");
+
+                    b.Navigation("Overtimes");
+
+                    b.Navigation("Sanctions");
+
+                    b.Navigation("Vacations");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.City", b =>
