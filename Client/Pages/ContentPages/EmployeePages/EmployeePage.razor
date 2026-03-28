@@ -20,14 +20,16 @@
                                 <i class="bi bi-plus-circle-dotted"></i> Add Employee
                             </button>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body ems-grid-wrapper">
                             @{
                                 var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
                             }
-                            <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+                            <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool
+                                    AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true"
+                                    AllowResizing="true" EnableAdaptiveUI="true">
                                 <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="Employee"></GridEvents>
                                 <GridColumns>
-                                    <GridColumn HeaderText="Employee Image">
+                                    <GridColumn HeaderText="Employee Image" Width="120" MinWidth="80">
                                         <Template>
                                             @{
                                                 var employee = (context as Employee);
@@ -37,14 +39,14 @@
                                             }
                                         </Template>
                                     </GridColumn>
-                                    <GridColumn Field="@nameof(Employee.CivilId)" HeaderText="Civil ID"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.FileNumber)" HeaderText="File Number"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.Name)" HeaderText="Name"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.TelephoneNumber)" HeaderText="Telephone"></GridColumn>
-                                    <GridColumn Field="@nameof(Employee.JobName)" HeaderText="Job Name"></GridColumn>
-                                    <GridColumn Field="Branch.Name" HeaderText="Branch"></GridColumn>
-                                    <GridColumn Field="Town.Name" HeaderText="Town"></GridColumn>
-                                    <GridColumn HeaderText="Menu" HeaderTextAlign="TextAlign.Left">
+                                    <GridColumn Field="@nameof(Employee.CivilId)"      HeaderText="Civil ID"    Width="120" MinWidth="80"></GridColumn>
+                                    <GridColumn Field="@nameof(Employee.FileNumber)"   HeaderText="File No."    Width="110" MinWidth="80"></GridColumn>
+                                    <GridColumn Field="@nameof(Employee.Name)"         HeaderText="Name"        Width="150" MinWidth="100"></GridColumn>
+                                    <GridColumn Field="@nameof(Employee.TelephoneNumber)" HeaderText="Phone"    Width="130" MinWidth="90" HideAtMedia="(max-width: 768px)"></GridColumn>
+                                    <GridColumn Field="@nameof(Employee.JobName)"      HeaderText="Job Name"    Width="140" MinWidth="90"></GridColumn>
+                                    <GridColumn Field="Branch.Name"                    HeaderText="Branch"      Width="130" MinWidth="90" HideAtMedia="(max-width: 900px)"></GridColumn>
+                                    <GridColumn Field="Town.Name"                      HeaderText="Town"        Width="120" MinWidth="80" HideAtMedia="(max-width: 900px)"></GridColumn>
+                                    <GridColumn HeaderText="Menu" HeaderTextAlign="TextAlign.Left" Width="70" MinWidth="60">
                                         <Template>
                                             @{
                                                 var employee = (context as Employee);
