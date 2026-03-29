@@ -1,6 +1,7 @@
-@page "/feedback"
-@attribute [Authorize]
+@implements IDisposable
 
+@if (allState.ShowFeedback)
+{
 <div class="container-fluid mt-4">
 
     <!-- ── Page Header ─────────────────────────────────────────────────────── -->
@@ -180,6 +181,7 @@
 
     </div>
 </div>
+}
 
 @code {
     // HttpFactory and toastService are injected globally via _Imports.razor
@@ -193,6 +195,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        allState.Action += StateHasChanged;
         await LoadSummaryAsync();
         await LoadEmployeesAsync();
     }
@@ -258,4 +261,6 @@
 
     private static string TruncateComment(string text, int maxLen) =>
         text.Length <= maxLen ? text : text[..maxLen] + "…";
+
+    public void Dispose() => allState.Action -= StateHasChanged;
 }

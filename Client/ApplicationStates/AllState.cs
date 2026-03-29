@@ -145,6 +145,14 @@
             Action?.Invoke();
         }
 
+        // Feedback
+        public bool ShowFeedback { get; set; }
+        public void FeedbackClicked()
+        {
+            ResetAllDepartments();
+            ShowFeedback = true;
+            Action?.Invoke();
+        }
 
         private void ResetAllDepartments()
         {
@@ -163,7 +171,7 @@
             ShowOvertimeType = false;
             ShowVacationType = false;
             ShowSanctionType = false;
-
+            ShowFeedback = false;
         }
                 
     }
