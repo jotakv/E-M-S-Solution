@@ -64,7 +64,9 @@ try
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ??
-            throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured."));
+            throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured."),
+            sql => sql.MigrationsAssembly("ServerLibrary")
+            );
     });
 
     builder.Services.AddAuthentication(options =>
@@ -151,6 +153,15 @@ try
     // HTTP request arrives — so the "RabbitMQ connected" log is never associated
     // with any user's CorrelationId or UserId from the Serilog LogContext.
     app.Services.GetRequiredService<IEventBus>();
+
+    // Always apply pending EF migrations on startup (Development and Production).
+    // DevelopmentDataSeeder.SeedAsync also calls MigrateAsync, but it is only
+    // invoked in Development, so Production would otherwise never migrate.
+    using (var migrateScope = app.Services.CreateScope())
+    {
+        var dbContext = migrateScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
 
     if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
     {

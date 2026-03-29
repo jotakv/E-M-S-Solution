@@ -56,6 +56,7 @@ namespace ServerLibrary.Repositories.Implementations
 
             var employees = await appDbContext.Employees
                 .AsNoTracking()
+                .AsSplitQuery()   // avoids cartesian explosion across 6-table JOIN
                 .Include(t => t.Town)
                     .ThenInclude(b => b!.City)
                         .ThenInclude(c => c!.Country)

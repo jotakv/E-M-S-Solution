@@ -93,16 +93,18 @@ namespace ServerLibrary.Data
 
             // ── Unique constraints ────────────────────────────────────────────────
 
-            // CivilId must be unique across all employees
+            // CivilId must be unique across all employees (nullable → filter nulls)
             modelBuilder.Entity<Employee>()
                 .HasIndex(e => e.CivilId)
                 .IsUnique()
+                .HasFilter("[CivilId] IS NOT NULL")
                 .HasDatabaseName("IX_Employees_CivilId");
 
-            // FileNumber must be unique across all employees
+            // FileNumber must be unique across all employees (nullable → filter nulls)
             modelBuilder.Entity<Employee>()
                 .HasIndex(e => e.FileNumber)
                 .IsUnique()
+                .HasFilter("[FileNumber] IS NOT NULL")
                 .HasDatabaseName("IX_Employees_FileNumber");
 
             // ── Performance indexes ───────────────────────────────────────────────

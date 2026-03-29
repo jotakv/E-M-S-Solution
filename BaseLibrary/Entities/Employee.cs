@@ -9,9 +9,9 @@ namespace BaseLibrary.Entities
 {
     public class Employee : BaseEntity
     {
-        [Required]
+        [Required, MaxLength(100)]
         public string? CivilId { get; set; }
-        [Required]
+        [Required, MaxLength(100)]
         public string? FileNumber { get; set; }
 
         [Required]
