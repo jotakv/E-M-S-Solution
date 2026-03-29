@@ -44,6 +44,42 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("ApplicationUsers");
                 });
 
+            modelBuilder.Entity("BaseLibrary.Entities.Feedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPositive")
+                        .HasColumnType("bit");
+
+                    b.Property<float>("SentimentScore")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Feedbacks_CreatedAt");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("IX_Feedbacks_EmployeeId");
+
+                    b.ToTable("Feedbacks");
+                });
+
             modelBuilder.Entity("BaseLibrary.Entities.AuditLog", b =>
                 {
                     b.Property<int>("Id")
@@ -529,6 +565,16 @@ namespace ServerLibrary.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("VacationTypes");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Feedback", b =>
+                {
+                    b.HasOne("BaseLibrary.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Branch", b =>

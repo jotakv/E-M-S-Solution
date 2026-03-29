@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="Azure.Identity" Version="1.17.1" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+		<PackageReference Include="Microsoft.ML" Version="3.0.1" />
 		<PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
@@ -35,6 +36,13 @@
 	<ItemGroup>
 		<ProjectReference Include="..\BaseLibrary\BaseLibrary.csproj" />
 		<ProjectReference Include="..\ServerLibrary\ServerLibrary.csproj" />
+	</ItemGroup>
+
+	<!-- ML.NET training data — must be present in the output directory at runtime -->
+	<ItemGroup>
+		<Content Include="Data\sentiment_data.tsv">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 </Project>

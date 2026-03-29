@@ -15,5 +15,8 @@ namespace ClientLibrary.Helpers
         public const string OvertimeBaseUrl = "api/overtime"; public const string OvertimeTypeBaseUrl = "api/overtimetype";
         public const string SanctionTypeBaseUrl = "api/sanctiontype"; public const string SanctionBaseUrl = "api/sanction";
         public const string VacationBaseUrl = "api/vacation"; public const string VacationTypeBaseUrl = "api/vacationtype";
+
+        public const string FeedbackBaseUrl    = "api/feedback";
+        public const string FeedbackSummaryUrl = "api/feedback/summary";
     }
 }

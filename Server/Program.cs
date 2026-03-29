@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Server.BackgroundServices;
 using Server.Middleware;
+using Server.Services;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
@@ -118,6 +119,10 @@ try
 
     builder.Services.AddScoped<IGenericRepositoryInterface<Doctor>, DoctorRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<Employee>, EmployeeRepository>();
+
+    // Sentiment Analysis — singleton so the ML.NET model is trained once at startup
+    builder.Services.AddSingleton<ISentimentService, SentimentService>();
+    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 
     builder.Services.AddMemoryCache();
 
