@@ -21,12 +21,6 @@
                          InitialSanctions="dashboardSanctions"
                          InitialVacations="dashboardVacations"
                          InitialHealth="dashboardHealth" />
-            <DashboardCharts Employees="dashboardEmployees"
-                             Departments="dashboardDepartments"
-                             Overtimes="dashboardOvertimes"
-                             Sanctions="dashboardSanctions"
-                             Vacations="dashboardVacations"
-                             Health="dashboardHealth" />
             <GeneralDepartmentPage />
             <DepartmentPage />
             <BranchPage />
@@ -41,7 +35,12 @@
             <VacationTypePage />
             <OvertimeTypePage />
             <SanctionTypePage />
-            <EmployeePage InitialEmployees="dashboardEmployees" />
+            <EmployeePage InitialEmployees="dashboardEmployees"
+                         InitialDepartments="dashboardDepartments"
+                         InitialOvertimes="dashboardOvertimes"
+                         InitialSanctions="dashboardSanctions"
+                         InitialVacations="dashboardVacations"
+                         InitialHealth="dashboardHealth" />
             <FeedbackPage />
         }
     </Authorized>

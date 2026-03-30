@@ -29,7 +29,7 @@ namespace ServerLibrary.Repositories.Implementations
             var recent = await db.Feedbacks
                 .AsNoTracking()
                 .OrderByDescending(f => f.CreatedAt)
-                .Take(5)
+                .Take(10)
                 .Select(f => new FeedbackItemDto
                 {
                     Id             = f.Id,

@@ -105,6 +105,295 @@ code {
 
 /*START NEW CSS*/
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MODERN EMS THEME  —  Apple-inspired, clean HR application design
+   All rules are additive. No existing Bootstrap or Syncfusion rules removed.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+    --ems-bg:           #f5f5f7;
+    --ems-surface:      #ffffff;
+    --ems-border:       #d2d2d7;
+    --ems-text:         #1d1d1f;
+    --ems-text-muted:   #6e6e73;
+    --ems-accent:       #0071e3;
+    --ems-accent-hover: #0077ed;
+    --ems-radius-sm:    8px;
+    --ems-radius-md:    12px;
+    --ems-radius-lg:    16px;
+    --ems-shadow-xs:    0 1px 3px rgba(0,0,0,0.07);
+    --ems-shadow-sm:    0 2px 8px rgba(0,0,0,0.08);
+    --ems-shadow-md:    0 4px 16px rgba(0,0,0,0.10);
+    --ems-shadow-hover: 0 8px 24px rgba(0,0,0,0.12);
+    --ems-transition:   0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── Global background & typography ─────────────────────────────────────── */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+                 'Helvetica Neue', Arial, sans-serif !important;
+    background-color: var(--ems-bg) !important;
+    color: var(--ems-text) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Main content area ───────────────────────────────────────────────────── */
+main {
+    background-color: var(--ems-bg);
+}
+
+article.content {
+    background-color: var(--ems-bg);
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.top-row {
+    background-color: rgba(255,255,255,0.85) !important;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--ems-border) !important;
+    box-shadow: var(--ems-shadow-xs);
+}
+
+/* ── Sidebar refinement ──────────────────────────────────────────────────── */
+.sidebar {
+    background: linear-gradient(180deg, #1c1c1e 0%, #2c2c2e 100%) !important;
+    box-shadow: 2px 0 16px rgba(0,0,0,0.18);
+}
+
+.sidebar .navbar {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.sidebar .navbar-brand {
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+}
+
+.sidebar .nav-link {
+    color: rgba(255,255,255,0.75) !important;
+    border-radius: var(--ems-radius-sm) !important;
+    transition: background var(--ems-transition), color var(--ems-transition) !important;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem !important;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255,255,255,0.1) !important;
+    color: #ffffff !important;
+}
+
+.sidebar hr {
+    border-color: rgba(255,255,255,0.10) !important;
+    margin: 0.5rem 1rem !important;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.card {
+    border: 1px solid var(--ems-border) !important;
+    border-radius: var(--ems-radius-md) !important;
+    box-shadow: var(--ems-shadow-sm) !important;
+    background-color: var(--ems-surface) !important;
+    transition: box-shadow var(--ems-transition), transform var(--ems-transition);
+    min-width: 0;
+}
+
+.card:hover {
+    box-shadow: var(--ems-shadow-hover) !important;
+}
+
+.card-header {
+    background-color: var(--ems-surface) !important;
+    border-bottom: 1px solid var(--ems-border) !important;
+    border-radius: var(--ems-radius-md) var(--ems-radius-md) 0 0 !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--ems-text);
+    padding: 0.875rem 1rem !important;
+}
+
+.card-body {
+    padding: 1rem !important;
+}
+
+/* Dashboard summary banner cards — lift on click */
+.cursorStyle .card {
+    transition: transform var(--ems-transition), box-shadow var(--ems-transition) !important;
+}
+
+.cursorStyle:hover .card {
+    transform: translateY(-2px);
+    box-shadow: var(--ems-shadow-md) !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+    border-radius: var(--ems-radius-sm) !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    transition: all var(--ems-transition) !important;
+    letter-spacing: 0.01em;
+}
+
+.btn-primary {
+    background-color: var(--ems-accent) !important;
+    border-color: var(--ems-accent) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--ems-accent-hover) !important;
+    border-color: var(--ems-accent-hover) !important;
+    box-shadow: 0 4px 12px rgba(0,113,227,0.30) !important;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: var(--ems-accent) !important;
+    border-color: var(--ems-accent) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--ems-accent) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,113,227,0.25) !important;
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border-radius: 0 var(--ems-radius-sm) var(--ems-radius-sm) 0 !important;
+}
+
+/* ── Form inputs ─────────────────────────────────────────────────────────── */
+.form-control,
+.form-select {
+    border-radius: var(--ems-radius-sm) !important;
+    border-color: var(--ems-border) !important;
+    font-size: 0.875rem !important;
+    transition: border-color var(--ems-transition), box-shadow var(--ems-transition) !important;
+    background-color: var(--ems-surface) !important;
+    color: var(--ems-text) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ems-accent) !important;
+    box-shadow: 0 0 0 3px rgba(0,113,227,0.15) !important;
+    outline: none !important;
+}
+
+.input-group .form-control {
+    border-radius: var(--ems-radius-sm) 0 0 var(--ems-radius-sm) !important;
+}
+
+/* ── Form labels ─────────────────────────────────────────────────────────── */
+.form-label {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--ems-text-muted);
+    margin-bottom: 0.375rem;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 0.75rem !important;
+    padding: 0.3em 0.65em !important;
+}
+
+/* ── Alerts ──────────────────────────────────────────────────────────────── */
+.alert {
+    border-radius: var(--ems-radius-md) !important;
+    border: none !important;
+    font-size: 0.875rem;
+}
+
+.alert-success {
+    background-color: rgba(52,199,89,0.12) !important;
+    color: #1a7f3c !important;
+}
+
+.alert-danger {
+    background-color: rgba(255,59,48,0.10) !important;
+    color: #c0392b !important;
+}
+
+.alert-warning {
+    background-color: rgba(255,149,0,0.12) !important;
+    color: #a05a00 !important;
+}
+
+.alert-info {
+    background-color: rgba(0,113,227,0.08) !important;
+    color: #004a99 !important;
+}
+
+/* ── Tables & list groups ────────────────────────────────────────────────── */
+.list-group-item {
+    border-color: var(--ems-border) !important;
+    font-size: 0.875rem;
+    transition: background var(--ems-transition);
+}
+
+.list-group-item:hover {
+    background-color: rgba(0,113,227,0.04) !important;
+}
+
+/* ── Progress bars ───────────────────────────────────────────────────────── */
+.progress {
+    border-radius: 99px !important;
+    background-color: #e5e5ea !important;
+}
+
+.progress-bar {
+    border-radius: 99px !important;
+}
+
+/* ── Headings inside content ─────────────────────────────────────────────── */
+h4, h5 {
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
+    color: var(--ems-text) !important;
+}
+
+/* ── Dialogs / modals ────────────────────────────────────────────────────── */
+.e-dialog {
+    border-radius: var(--ems-radius-lg) !important;
+    box-shadow: var(--ems-shadow-md) !important;
+    border: 1px solid var(--ems-border) !important;
+}
+
+/* ── Syncfusion DataGrid polish ──────────────────────────────────────────── */
+.e-grid {
+    border-radius: var(--ems-radius-md) !important;
+    border-color: var(--ems-border) !important;
+    font-size: 0.875rem !important;
+}
+
+.e-grid .e-headercell {
+    background-color: #f5f5f7 !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    color: var(--ems-text-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.e-grid .e-row:hover .e-rowcell {
+    background-color: rgba(0,113,227,0.04) !important;
+}
+
+.e-toolbar {
+    border-radius: var(--ems-radius-sm) !important;
+    background-color: var(--ems-bg) !important;
+    border-bottom: 1px solid var(--ems-border) !important;
+}
+
 /* ── Responsive DataGrid wrapper ──────────────────────────────────────────── */
 /* Prevents the grid from breaking out of the card on narrow or split windows */
 .ems-grid-wrapper {
@@ -137,6 +426,98 @@ code {
     }
 }
 
+/* ── Profile avatar ──────────────────────────────────────────────────────── */
+.ems-avatar-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0071e3 0%, #34aadc 100%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    user-select: none;
+}
 
+.ems-avatar-initials.ems-avatar-lg {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+}
+
+.ems-avatar-img {
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ems-profile-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ems-text);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ems-profile-btn .btn:hover {
+    opacity: 0.85;
+}
+
+.ems-profile-menu {
+    border-radius: 14px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14) !important;
+}
+
+/* ── Collapse/Expand charts button ──────────────────────────────────────── */
+.ems-toggle-charts {
+    font-size: 0.78rem !important;
+    padding: 0.25rem 0.6rem !important;
+    border-radius: 6px !important;
+    color: var(--ems-text-muted) !important;
+    border-color: var(--ems-border) !important;
+}
+
+.ems-toggle-charts:hover {
+    background-color: var(--ems-bg) !important;
+    color: var(--ems-text) !important;
+}
+
+/* ── Apple-style dialog chrome ───────────────────────────────────────────── */
+.e-dialog .e-dlg-header {
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    color: var(--ems-text) !important;
+    padding: 1rem 1.25rem 0.5rem !important;
+}
+
+.e-dialog .e-dlg-content {
+    padding: 0.75rem 1.25rem 1rem !important;
+    font-size: 0.875rem !important;
+}
+
+.e-dialog .e-footer-content {
+    padding: 0.75rem 1.25rem !important;
+    border-top: 1px solid var(--ems-border) !important;
+    background: var(--ems-surface) !important;
+    border-radius: 0 0 var(--ems-radius-lg) var(--ems-radius-lg) !important;
+}
+
+.e-dialog .e-footer-content .e-btn {
+    border-radius: var(--ems-radius-sm) !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+}
+
+/* ── Sidebar Feedback item accent ───────────────────────────────────────── */
+.sidebar .nav-link .bi-chat-heart-fill {
+    color: #ff375f !important;
+}
 
 
