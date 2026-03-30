@@ -64,10 +64,10 @@
                     <!-- Sentiment Result Card -->
                     @if (_lastResult is not null)
                     {
-                        <div class="alert @(_lastResult.IsPositive ? "alert-success" : "alert-danger") mt-3 mb-0 d-flex align-items-center gap-2">
-                            <i class="bi @(_lastResult.IsPositive ? "bi-emoji-smile-fill" : "bi-emoji-frown-fill") fs-5"></i>
+                        <div class="alert @SentimentAlertClass(_lastResult.SentimentScore) mt-3 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi @SentimentIcon(_lastResult.SentimentScore) fs-5"></i>
                             <div>
-                                <strong>@(_lastResult.IsPositive ? "Positive" : "Negative") sentiment detected</strong>
+                                <strong>@SentimentLabel(_lastResult.SentimentScore) sentiment detected</strong>
                                 <div class="small">Confidence: @(MathF.Round(_lastResult.SentimentScore * 100, 1))%</div>
                             </div>
                         </div>
@@ -163,8 +163,8 @@
                             @foreach (var item in _summary.RecentFeedback)
                             {
                                 <li class="list-group-item d-flex align-items-start gap-2 py-2">
-                                    <span class="badge mt-1 @(item.IsPositive ? "bg-success" : "bg-danger")" style="min-width:72px;">
-                                        @(item.IsPositive ? "Positive" : "Negative")
+                                    <span class="badge mt-1 @SentimentBadgeClass(item.SentimentScore)" style="min-width:72px;">
+                                        @SentimentLabel(item.SentimentScore)
                                     </span>
                                     <div class="flex-grow-1">
                                         <div class="small">@TruncateComment(item.Comment, 100)</div>
@@ -245,6 +245,20 @@
 
     private static string TruncateComment(string text, int maxLen) =>
         text.Length <= maxLen ? text : text[..maxLen] + "…";
+
+    // ── Sentiment display helpers (Positive / Neutral / Negative) ────────────
+    // Neutral zone: confidence within 35–65% — model is uncertain / ambiguous.
+    private static string SentimentLabel(float score) =>
+        score > 0.65f ? "Positive" : score < 0.35f ? "Negative" : "Neutral";
+
+    private static string SentimentAlertClass(float score) =>
+        score > 0.65f ? "alert-success" : score < 0.35f ? "alert-danger" : "alert-warning";
+
+    private static string SentimentIcon(float score) =>
+        score > 0.65f ? "bi-emoji-smile-fill" : score < 0.35f ? "bi-emoji-frown-fill" : "bi-emoji-neutral-fill";
+
+    private static string SentimentBadgeClass(float score) =>
+        score > 0.65f ? "bg-success" : score < 0.35f ? "bg-danger" : "bg-warning text-dark";
 
     public void Dispose() => allState.Action -= StateHasChanged;
 }
