@@ -1,0 +1,95 @@
+@using Syncfusion.Blazor.Charts
+@if (_chartData is null || _chartData.Count == 0) { return; }
+
+<div class="container-fluid mt-3 mb-4">
+    <div class="row g-3">
+
+        <!-- ── Donut: HR Module Overview ──────────────────────────────────── -->
+        <div class="col-lg-5 col-md-12">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i>HR Module Overview
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <SfAccumulationChart EnableAnimation="true" Background="transparent">
+                        <AccumulationChartTooltipSettings Enable="true"
+                            Format="${point.x}: <b>${point.y}</b>">
+                        </AccumulationChartTooltipSettings>
+                        <AccumulationChartLegendSettings Visible="true"
+                            Position="LegendPosition.Bottom">
+                        </AccumulationChartLegendSettings>
+                        <AccumulationChartSeriesCollection>
+                            <AccumulationChartSeries DataSource="_chartData"
+                                XName="Label" YName="Count"
+                                InnerRadius="40%"
+                                Radius="80%">
+                                <AccumulationDataLabelSettings Visible="true"
+                                    Name="Label"
+                                    Position="AccumulationLabelPosition.Outside">
+                                </AccumulationDataLabelSettings>
+                            </AccumulationChartSeries>
+                        </AccumulationChartSeriesCollection>
+                    </SfAccumulationChart>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Column: HR Module Counts ──────────────────────────────────── -->
+        <div class="col-lg-7 col-md-12">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-bar-chart-fill text-success me-2"></i>Module Record Counts
+                </div>
+                <div class="card-body">
+                    <SfChart Background="transparent">
+                        <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"
+                            LabelRotation="-30">
+                        </ChartPrimaryXAxis>
+                        <ChartPrimaryYAxis Title="Records" Minimum="0">
+                        </ChartPrimaryYAxis>
+                        <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                        <ChartSeriesCollection>
+                            <ChartSeries DataSource="_chartData"
+                                XName="Label" YName="Count"
+                                Type="ChartSeriesType.Column"
+                                Width="2">
+                                <ChartMarker Visible="true">
+                                    <ChartDataLabel Visible="true"
+                                        Position="LabelPosition.Top">
+                                    </ChartDataLabel>
+                                </ChartMarker>
+                            </ChartSeries>
+                        </ChartSeriesCollection>
+                    </SfChart>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<Employee>?   Employees   { get; set; }
+    [Parameter] public List<Department>? Departments { get; set; }
+    [Parameter] public List<Overtime>?   Overtimes   { get; set; }
+    [Parameter] public List<Sanction>?   Sanctions   { get; set; }
+    [Parameter] public List<Vacation>?   Vacations   { get; set; }
+    [Parameter] public List<Doctor>?     Health      { get; set; }
+
+    private List<ChartPoint>? _chartData;
+
+    private sealed record ChartPoint(string Label, int Count);
+
+    protected override void OnParametersSet()
+    {
+        _chartData = new List<ChartPoint>
+        {
+            new("Employees",   Employees?.Count   ?? 0),
+            new("Overtime",    Overtimes?.Count   ?? 0),
+            new("Sanctions",   Sanctions?.Count   ?? 0),
+            new("Vacations",   Vacations?.Count   ?? 0),
+            new("Health",      Health?.Count      ?? 0),
+            new("Departments", Departments?.Count ?? 0),
+        };
+    }
+}
