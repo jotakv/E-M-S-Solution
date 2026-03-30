@@ -51,7 +51,7 @@
                             }
                             <SfGrid DataSource="@Employees" AllowPaging="true" AllowSorting="true" Toolbar=@Tool
                                     AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true"
-                                    AllowResizing="true" EnableAdaptiveUI="true">
+                                    AllowResizing="true">
                                 <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="Employee"></GridEvents>
                                 <GridColumns>
                                     <GridColumn HeaderText="Employee Image" Width="120" MinWidth="80">

@@ -1,102 +1,95 @@
 @page "/identity/account/login"
 @layout AuthenticationLayout
 
-<div class="container">
-    <div class="row">
-        <div class="col-lg-4"></div>
-        <div class="col-lg-4">
+<div class="auth-wrapper d-flex align-items-center justify-content-center">
+    <div class="auth-card">
+        <EditForm Model="User" OnValidSubmit="HandleLogin" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
 
-            <EditForm Model="User" OnValidSubmit="HandleLogin" OnInvalidSubmit="HandleInvalidSubmit">
-                <DataAnnotationsValidator />
-                <div class="card bg-dark" style="opacity:0.5; margin-top:50%; border-radius:10px; color:white; font-weight:bold">
-                    <div class="card-header text-center fs-5 mb-2">Login</div>
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-4 col-sm-4"></div>
-                            <div class="col-lg-4 col-md-4 col-sm-4 d-flex justify-content-center">
-                                <img style="border-radius:20px" src="../images/companylogos/netcode.jpg" height="50" width="50" />
-                            </div>
-                            <div class="col-lg-4 col-md-4 col-sm-4"></div>
-                        </div>
-                    </div>
-                    <div class="card-body">
+            <!-- Logo + title -->
+            <div class="text-center mb-4">
+                <img src="../images/companylogos/netcode.jpg"
+                     class="auth-logo mb-3" alt="EMS Logo" />
+                <h5 class="fw-semibold mb-1" style="color:#fff; letter-spacing:-0.01em;">
+                    Sign in to EMS
+                </h5>
+                <p class="auth-subtitle">Employee Management System</p>
+            </div>
 
-                        @* Inline error — wrong credentials or server error *@
-                        @if (!string.IsNullOrEmpty(_loginError))
-                        {
-                            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-                                <span class="small fw-normal">@_loginError</span>
-                            </div>
-                        }
-
-                        <div class="form-group mt-3">
-                            <label class="form-label">Email</label>
-                            <input type="email"
-                                   value="@User.Email"
-                                   class="form-control"
-                                   @oninput="OnEmailInput"
-                                   autocomplete="username" />
-                            <ValidationMessage For="() => User.Email" class="text-warning small" />
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label class="form-label">Password</label>
-                            <div class="input-group">
-                                <input type="@_passwordType"
-                                       value="@User.Password"
-                                       class="form-control"
-                                       @oninput="OnPasswordInput"
-                                       autocomplete="current-password" />
-                                <button class="btn btn-outline-secondary" type="button"
-                                        @onclick="TogglePassword" tabindex="-1">
-                                    <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
-                                </button>
-                            </div>
-                            <ValidationMessage For="() => User.Password" class="text-warning small" />
-                        </div>
-
-                        <div class="form-group mt-3">
-                            @if (ShowLoadingButton)
-                            {
-                                <ButtonLoadingSpinner></ButtonLoadingSpinner>
-                            }
-                            else
-                            {
-                                <button class="btn btn-outline-primary float-end" type="submit">Login</button>
-                            }
-                        </div>
-
-                    </div>
-                    <div class="card-footer">
-                        <span class="text-center">
-                            Don't have account? | <a class="btn-link" href="identity/account/register">Sign Up</a>
-                        </span>
-                    </div>
+            <!-- Inline error -->
+            @if (!string.IsNullOrEmpty(_loginError))
+            {
+                <div class="auth-error mb-3">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>@_loginError
                 </div>
-            </EditForm>
+            }
 
-        </div>
-        <div class="col-lg-4"></div>
+            <!-- Email -->
+            <div class="mb-3">
+                <label class="auth-label">Email</label>
+                <input type="email"
+                       value="@User.Email"
+                       class="form-control auth-input"
+                       placeholder="you@company.com"
+                       @oninput="OnEmailInput"
+                       autocomplete="username" />
+                <ValidationMessage For="() => User.Email" class="auth-validation" />
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+                <label class="auth-label">Password</label>
+                <div class="input-group auth-input-group">
+                    <input type="@_passwordType"
+                           value="@User.Password"
+                           class="form-control auth-input"
+                           placeholder="Your password"
+                           @oninput="OnPasswordInput"
+                           autocomplete="current-password" />
+                    <button class="auth-eye-btn" type="button"
+                            @onclick="TogglePassword" tabindex="-1">
+                        <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
+                </div>
+                <ValidationMessage For="() => User.Password" class="auth-validation" />
+            </div>
+
+            <!-- Submit -->
+            @if (ShowLoadingButton)
+            {
+                <ButtonLoadingSpinner></ButtonLoadingSpinner>
+            }
+            else
+            {
+                <button class="btn auth-submit-btn w-100 mb-3" type="submit">
+                    Sign In
+                </button>
+            }
+
+            <div class="text-center auth-footer-text">
+                Don't have an account?
+                <a href="identity/account/register" class="auth-link">Sign Up</a>
+            </div>
+
+        </EditForm>
     </div>
 </div>
 
 @code {
     public bool ShowLoadingButton { get; set; } = false;
-    private string _loginError    = string.Empty;
-    private bool   _showPassword  = false;
+    private string _loginError   = string.Empty;
+    private bool   _showPassword = false;
     private string _passwordType => _showPassword ? "text" : "password";
 
     Login User = new();
 
     void HandleInvalidSubmit() { }
-
     void TogglePassword() => _showPassword = !_showPassword;
 
     void OnEmailInput(ChangeEventArgs e)
     {
-        User.Email   = e.Value?.ToString() ?? string.Empty;
-        _loginError  = string.Empty;
+        User.Email  = e.Value?.ToString() ?? string.Empty;
+        _loginError = string.Empty;
     }
 
     void OnPasswordInput(ChangeEventArgs e)
@@ -109,10 +102,10 @@
     {
         _loginError       = string.Empty;
         ShowLoadingButton = true;
-        await Task.Yield(); // let Blazor render the spinner before the API call blocks
+        await Task.Yield();
 
         var loginSw = System.Diagnostics.Stopwatch.StartNew();
-        var result = await accountService.SignInAsync(User);
+        var result  = await accountService.SignInAsync(User);
         loginSw.Stop();
 
         Console.WriteLine(
@@ -126,16 +119,12 @@
 
         if (!result.Flag)
         {
-            _loginError       = result.Message;   // show inline inside the card
+            _loginError       = result.Message;
             ShowLoadingButton = false;
             return;
         }
 
-        var authSw = System.Diagnostics.Stopwatch.StartNew();
-
-        var customAuthStateProvider =
-            (CustomAuthenticationStateProvider)AuthStateProvider;
-
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
         await customAuthStateProvider.UpdateAuthenticationState(
             new UserSession
             {
@@ -143,19 +132,16 @@
                 RefreshToken = result.RefreshToken
             });
 
-        authSw.Stop();
-        Console.WriteLine($"[Perf] Auth state update: {authSw.ElapsedMilliseconds}ms");
+        Console.WriteLine($"[Perf] Login OnInitializedAsync total: {loginSw.ElapsedMilliseconds}ms");
 
         toastService.ShowSuccess("Login successful!");
         NavManager.NavigateTo("/home/dashboard", replace: true);
-
         ShowLoadingButton = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         if (state.User.Identity?.IsAuthenticated == true)
             NavManager.NavigateTo("/home/dashboard", replace: true);

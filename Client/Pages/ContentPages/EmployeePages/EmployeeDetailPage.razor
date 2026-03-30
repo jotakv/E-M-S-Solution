@@ -1,88 +1,147 @@
-﻿@if (ShowDetailsPage)
+@if (ShowDetailsPage)
 {
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card border-success shadow-lg">
-                    <div class="card-header">@EmployeeDetails.Name Details</div>
-                    <div class="card-body">
-                        <div class="hstack gap-2">
-                            <div class="vstack gap-3">
-                                <img src="@EmployeeDetails.Photo" class="card-img-top border-warning shadow-sm" style="width:100px; height:100px; border-radius:50%;" />
-                                <table class="table border-danger">
-                                    <tbody>
-                                        <tr>
-                                            <td> <h6 class="fw-bold">Name:</h6> </td>
-                                            <td> @EmployeeDetails.Name </td>
-                                        </tr>
-                                        <tr>
-                                            <td> <h6 class="fw-bold">Job Title:</h6> </td>
-                                            <td> @EmployeeDetails.JobName </td>
-                                        </tr>
-                                        <tr>
-                                            <td> <h6 class="fw-bold">Telephone:</h6> </td>
-                                            <td> @EmployeeDetails.TelephoneNumber </td>
-                                        </tr>
-                                        <tr>
-                                            <td> <h6 class="fw-bold">Address:</h6> </td>
-                                            <td> @EmployeeDetails.Address </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+
+                <div class="card shadow-sm ems-detail-card">
+
+                    <!-- ── Header bar ──────────────────────────────────────── -->
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Avatar -->
+                            @if (!string.IsNullOrEmpty(EmployeeDetails.Photo))
+                            {
+                                <img src="@EmployeeDetails.Photo"
+                                     class="ems-detail-avatar"
+                                     alt="@EmployeeDetails.Name" />
+                            }
+                            else
+                            {
+                                <span class="ems-detail-avatar-initials">
+                                    @BuildInitials(EmployeeDetails.Name)
+                                </span>
+                            }
+                            <div>
+                                <div class="fw-semibold" style="font-size:1rem; color:var(--ems-text);">
+                                    @EmployeeDetails.Name
+                                </div>
+                                <div class="text-muted" style="font-size:0.8rem;">
+                                    @EmployeeDetails.JobName
+                                </div>
                             </div>
-                            <table class="table border-primary">
-                                <tbody>
-                                    <tr>
-                                        <td colspan="2" class="text-center"> <h6 class="fw-bold">Department Information</h6> </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">General Department:</h6> </td>
-                                        <td> @EmployeeDetails.Branch?.Department?.GeneralDepartment?.Name </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">Department:</h6> </td>
-                                        <td> @EmployeeDetails.Branch?.Department?.Name </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">Branch:</h6> </td>
-                                        <td> @EmployeeDetails.Branch?.Name </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <table class="table border-success">
-                                <tbody>
-                                    <tr>
-                                        <td colspan="2" class="text-center"> <h6 class="fw-bold">Location Information</h6> </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">Country:</h6> </td>
-                                        <td> @EmployeeDetails.Town?.City?.Country?.Name </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">City:</h6> </td>
-                                        <td> @EmployeeDetails.Town?.City?.Name </td>
-                                    </tr>
-                                    <tr>
-                                        <td> <h6 class="fw-bold">Town:</h6> </td>
-                                        <td> @EmployeeDetails.Town?.Name </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="DetailsPageCloseBtnClicked">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- ── Body ───────────────────────────────────────────── -->
+                    <div class="card-body px-4 py-3">
+                        <div class="row g-3">
+
+                            <!-- Personal Info -->
+                            <div class="col-md-4">
+                                <div class="ems-info-section">
+                                    <div class="ems-info-section-title">
+                                        <i class="bi bi-person-fill me-1 text-primary"></i>Personal
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Telephone</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.TelephoneNumber ?? "—")</span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Civil ID</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.CivilId ?? "—")</span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">File No.</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.FileNumber ?? "—")</span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Address</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.Address ?? "—")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Department Info -->
+                            <div class="col-md-4">
+                                <div class="ems-info-section">
+                                    <div class="ems-info-section-title">
+                                        <i class="bi bi-building me-1 text-success"></i>Department
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">General Dep.</span>
+                                        <span class="ems-info-value">
+                                            @(EmployeeDetails.Branch?.Department?.GeneralDepartment?.Name ?? "—")
+                                        </span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Department</span>
+                                        <span class="ems-info-value">
+                                            @(EmployeeDetails.Branch?.Department?.Name ?? "—")
+                                        </span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Branch</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.Branch?.Name ?? "—")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Location Info -->
+                            <div class="col-md-4">
+                                <div class="ems-info-section">
+                                    <div class="ems-info-section-title">
+                                        <i class="bi bi-geo-alt-fill me-1 text-danger"></i>Location
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Country</span>
+                                        <span class="ems-info-value">
+                                            @(EmployeeDetails.Town?.City?.Country?.Name ?? "—")
+                                        </span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">City</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.Town?.City?.Name ?? "—")</span>
+                                    </div>
+                                    <div class="ems-info-row">
+                                        <span class="ems-info-label">Town</span>
+                                        <span class="ems-info-value">@(EmployeeDetails.Town?.Name ?? "—")</span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <button class="btn btn-danger" @onclick="DetailsPageCloseBtnClicked">Close</button>
+
+                    <!-- ── Footer ─────────────────────────────────────────── -->
+                    <div class="card-footer px-4 py-3 d-flex justify-content-end">
+                        <button class="btn btn-sm btn-primary px-4" @onclick="DetailsPageCloseBtnClicked">
+                            <i class="bi bi-check-lg me-1"></i>Done
+                        </button>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 }
 
 @code {
-    [Parameter] public bool ShowDetailsPage { get; set; }
-    [Parameter] public Employee EmployeeDetails { get; set; } = new();
+    [Parameter] public bool     ShowDetailsPage                    { get; set; }
+    [Parameter] public Employee EmployeeDetails                    { get; set; } = new();
     [Parameter] public EventCallback HandleDetailsPageCloseBtnClicked { get; set; } = new();
 
     async Task DetailsPageCloseBtnClicked() => await HandleDetailsPageCloseBtnClicked.InvokeAsync();
+
+    private static string BuildInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant()
+            : name[0].ToString().ToUpperInvariant();
+    }
 }
