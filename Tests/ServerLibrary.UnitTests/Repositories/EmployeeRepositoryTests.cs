@@ -1,10 +1,11 @@
 using BaseLibrary.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Implementations;
-using ServerLibrary.Services.Contracts; 
+using ServerLibrary.Services.Contracts;
 using ServerLibrary.UnitTests.Helpers;
 
 namespace ServerLibrary.UnitTests.Repositories;
@@ -20,8 +21,10 @@ public class EmployeeRepositoryTests
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
         var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object);
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
 
         // New employee has a different name but the same CivilId — must be rejected
         var newEmployee = CreateEmployee(2, "Bob");
@@ -46,8 +49,10 @@ public class EmployeeRepositoryTests
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
         var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
         var newEmployee = CreateEmployee(2, "Bob");
 
         // Act
@@ -69,9 +74,11 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
         var employeeToUpdate = CreateEmployee(999, "Ghost");
 
         // Act
@@ -91,9 +98,11 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
         var updatedEmployee = CreateEmployee(1, "Alice Updated");
         updatedEmployee.CivilId = "CIV-UPDATED";
         updatedEmployee.FileNumber = "FILE-UPDATED";
@@ -133,9 +142,11 @@ public class EmployeeRepositoryTests
         var employeeSetMock = CreateEmployeeDbSetMock(employees);
         var dbContextMock = CreateDbContextMock(employeeSetMock);
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
 
         // Act
         var result = await repository.DeleteById(999);

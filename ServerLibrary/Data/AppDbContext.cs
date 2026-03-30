@@ -135,6 +135,12 @@ namespace ServerLibrary.Data
             modelBuilder.Entity<Feedback>()
                 .HasIndex(f => f.CreatedAt)
                 .HasDatabaseName("IX_Feedbacks_CreatedAt");
+            // ── Login performance ─────────────────────────────────────────────────
+            // FindUserByEmail does a lookup by email on every login. Without an
+            // index this is a full table scan. Index drops login Phase-1 from ~2s to <10ms.
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(u => u.Email)
+                .HasDatabaseName("IX_ApplicationUsers_Email");
 
             // ── Seed roles ────────────────────────────────────────────────────────
             modelBuilder.Entity<SystemRole>().HasData(

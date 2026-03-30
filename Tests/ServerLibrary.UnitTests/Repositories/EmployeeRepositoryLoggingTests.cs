@@ -1,6 +1,7 @@
 ﻿using BaseLibrary.Entities;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ServerLibrary.Data;
@@ -25,9 +26,11 @@ public class EmployeeRepositoryLoggingTests
         var newEmployee = new Employee { Id = 1, Name = "John Doe", JobName = "Dev", BranchId = 1 };
         var dbContextMock = CreateDbContextMock(new List<Employee>());
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
 
         // Act
         var result = await repository.Insert(newEmployee);
@@ -53,8 +56,10 @@ public class EmployeeRepositoryLoggingTests
         var dbContextMock = CreateDbContextMock(new List<Employee> { existingEmployee });
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
         var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object);
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
 
         // Act
         var result = await repository.Insert(newEmployee);
@@ -79,9 +84,11 @@ public class EmployeeRepositoryLoggingTests
                      .ThrowsAsync(new DbUpdateException("Database connection lost"));
 
         var loggerMock = new Mock<ILogger<EmployeeRepository>>();
-        var eventBusMock = new Mock<IEventBus>(); 
+        var eventBusMock = new Mock<IEventBus>();
+        var cacheMock = new Mock<IMemoryCache>();
+        cacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Returns(false);
 
-        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object); // <-- ACTUALIZADO
+        var repository = new EmployeeRepository(dbContextMock.Object, loggerMock.Object, eventBusMock.Object, cacheMock.Object);
 
         // Act
         var result = await repository.Insert(newEmployee);

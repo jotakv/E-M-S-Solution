@@ -105,6 +105,38 @@ code {
 
 /*START NEW CSS*/
 
+/* ── Responsive DataGrid wrapper ──────────────────────────────────────────── */
+/* Prevents the grid from breaking out of the card on narrow or split windows */
+.ems-grid-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+}
+
+/* ── Dashboard summary cards ─────────────────────────────────────────────── */
+/* Cards (Vacation, Overtime, Health, Sanctions, Departments) shrink gracefully */
+.card {
+    min-width: 0;
+}
+
+/* ── Sidebar + content layout ────────────────────────────────────────────── */
+/* When the window is narrow, allow the main content to shrink without overflow */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .card-body {
+        padding: 0.5rem;
+    }
+
+    /* Stack the summary row cards vertically on small screens */
+    .row > [class*="col-"] {
+        margin-bottom: 0.5rem;
+    }
+}
+
 
 
 
