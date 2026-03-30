@@ -1,52 +1,35 @@
-﻿@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.DropDowns
 @using Syncfusion.Blazor.Popups
 @using Microsoft.AspNetCore.Components.Forms
 
 <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
-    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
-
     <DialogTemplates>
         <Header>@Title Department</Header>
 
         <Content>
-            <EditForm Model="Department" Enhance OnSubmit="Save">
+            <EditForm Model="LocalModel" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Id</label>
-                            <input @bind="Department.Id" class="form-control" disabled />
+                            <input @bind="LocalModel.Id" class="form-control" disabled />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Name</label>
-                            <InputText @bind-Value="Department.Name" class="form-control" />
+                            <InputText @bind-Value="LocalModel.Name" class="form-control" />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
                             <label class="form-label">Select General Department</label>
-
-                            @if (Department.GeneralDepartment != null)
-                            {
-                                string selected = Department.GeneralDepartment!.Name;
-
-                                <SfDropDownList TValue="string" TItem="GeneralDepartment"
-                                                Placeholder="@selected"
-                                                DataSource="GeneralDepartments">
-                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment"
-                                                        ValueChange="OnValueChange"></DropDownListEvents>
-                                </SfDropDownList>
-                            }
-                            else
-                            {
-                                <SfDropDownList TValue="string" TItem="GeneralDepartment"
-                                                Placeholder="Select General Department"
-                                                DataSource="GeneralDepartments">
-                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment"
-                                                        ValueChange="OnValueChange"></DropDownListEvents>
-                                </SfDropDownList>
-                            }
+                            <SfDropDownList TValue="int" TItem="GeneralDepartment"
+                                            Value="@LocalModel.GeneralDepartmentId"
+                                            Placeholder="Select General Department"
+                                            DataSource="GeneralDepartments">
+                                <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="int" TItem="GeneralDepartment"
+                                                    ValueChange="OnValueChange"></DropDownListEvents>
+                            </SfDropDownList>
                         </div>
                     </div>
                 </div>
@@ -74,52 +57,52 @@
     [Parameter] public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
     [Parameter] public EventCallback<Department> HandleSaveOperationEvent { get; set; }
 
+    private Department LocalModel = new();
+
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
-
-    // Variable para controlar el spinner
     public bool IsSaving { get; set; } = false;
-
-    private async Task Save()
-    {
-        // if (string.IsNullOrWhiteSpace(Department.Name) || Department.GeneralDepartmentId <= 0)
-        // {
-        //     await dialogService.AlertAsync("You need to provide a Department name and select a General Department.", "Alert!");
-        //     return;
-        // }
-
-        // Activamos el loading
-        IsSaving = true;
-        StateHasChanged();
-
-        // Enviamos al padre
-        await HandleSaveOperationEvent.InvokeAsync(Department);
-
-        // Desactivamos el loading
-        IsSaving = false;
-        StateHasChanged();
-    }
 
     public void OpenDialog()
     {
+        LocalModel = new Department
+        {
+            Id                  = Department.Id,
+            Name                = Department.Name,
+            GeneralDepartmentId = Department.GeneralDepartmentId,
+            GeneralDepartment   = Department.GeneralDepartment
+        };
         IsVisible = true;
         StateHasChanged();
     }
 
-    // Método para cerrar el modal desde el padre
     public void CloseDialog()
     {
         IsVisible = false;
         StateHasChanged();
     }
 
-    public void ChangeTitle(string title)
+    public async Task Save()
     {
-        Title = title;
+        if (string.IsNullOrWhiteSpace(LocalModel.Name) || LocalModel.GeneralDepartmentId <= 0)
+        {
+            await dialogService.AlertAsync("You need to provide a Department name and select a General Department.", "Alert!");
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        await HandleSaveOperationEvent.InvokeAsync(LocalModel);
+
+        IsSaving = false;
+        StateHasChanged();
     }
 
-    public void OnValueChange(ChangeEventArgs<string, GeneralDepartment> args)
+    public void ChangeTitle(string title) => Title = title;
+
+    public void OnValueChange(ChangeEventArgs<int, GeneralDepartment> args)
     {
-        Department.GeneralDepartmentId = int.Parse(args.Value);
+        LocalModel.GeneralDepartmentId = args.Value;
     }
 }

@@ -1,45 +1,35 @@
-﻿@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.DropDowns
 @using Syncfusion.Blazor.Popups
 @using Microsoft.AspNetCore.Components.Forms
 
 <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
-    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
-
     <DialogTemplates>
         <Header>@Title Town</Header>
 
         <Content>
-            <EditForm Model="Town" Enhance OnSubmit="Save">
+            <EditForm Model="LocalModel" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Id</label>
-                            <input @bind="Town.Id" class="form-control" disabled />
+                            <input @bind="LocalModel.Id" class="form-control" disabled />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Name</label>
-                            <InputText @bind-Value="Town.Name" class="form-control" />
+                            <InputText @bind-Value="LocalModel.Name" class="form-control" />
                         </div>
 
                         <div class="form-group mt-3 mb-3">
                             <label class="form-label">Select City</label>
-
-                            @if (Town.City != null)
-                            {
-                                string selected = Town.City!.Name;
-                                <SfDropDownList TValue="string" TItem="City" Placeholder="@selected" DataSource="Cities">
-                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                    <DropDownListEvents TValue="string" TItem="City" ValueChange="OnValueChange"></DropDownListEvents>
-                                </SfDropDownList>
-                            }
-                            else
-                            {
-                                <SfDropDownList TValue="string" TItem="City" Placeholder="Select City" DataSource="Cities">
-                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                    <DropDownListEvents TValue="string" TItem="City" ValueChange="OnValueChange"></DropDownListEvents>
-                                </SfDropDownList>
-                            }
+                            <SfDropDownList TValue="int" TItem="City"
+                                            Value="@LocalModel.CityId"
+                                            Placeholder="Select City"
+                                            DataSource="Cities">
+                                <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="int" TItem="City"
+                                                    ValueChange="OnValueChange"></DropDownListEvents>
+                            </SfDropDownList>
                         </div>
                     </div>
                 </div>
@@ -67,29 +57,21 @@
     [Parameter] public List<City> Cities { get; set; } = new();
     [Parameter] public EventCallback<Town> HandleSaveOperationEvent { get; set; }
 
+    private Town LocalModel = new();
+
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
     public bool IsSaving { get; set; } = false;
 
-    private async Task Save()
-    {
-        if (string.IsNullOrEmpty(Town.Name) || Town.CityId <= 0)
-        {
-            await dialogService.AlertAsync("You need to provide a Town name and select a City.", "Alert!");
-            return;
-        }
-
-        IsSaving = true;
-        StateHasChanged();
-
-        await HandleSaveOperationEvent.InvokeAsync(Town);
-
-        IsSaving = false;
-        StateHasChanged();
-    }
-
     public void OpenDialog()
     {
+        LocalModel = new Town
+        {
+            Id     = Town.Id,
+            Name   = Town.Name,
+            CityId = Town.CityId,
+            City   = Town.City
+        };
         IsVisible = true;
         StateHasChanged();
     }
@@ -100,13 +82,27 @@
         StateHasChanged();
     }
 
-    public void ChangeTitle(string title)
+    public async Task Save()
     {
-        Title = title;
+        if (string.IsNullOrWhiteSpace(LocalModel.Name) || LocalModel.CityId <= 0)
+        {
+            await dialogService.AlertAsync("You need to provide a Town name and select a City.", "Alert!");
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        await HandleSaveOperationEvent.InvokeAsync(LocalModel);
+
+        IsSaving = false;
+        StateHasChanged();
     }
 
-    public void OnValueChange(ChangeEventArgs<string, City> args)
+    public void ChangeTitle(string title) => Title = title;
+
+    public void OnValueChange(ChangeEventArgs<int, City> args)
     {
-        Town.CityId = int.Parse(args.Value);
+        LocalModel.CityId = args.Value;
     }
 }

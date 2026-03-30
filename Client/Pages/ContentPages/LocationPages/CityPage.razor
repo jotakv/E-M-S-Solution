@@ -27,7 +27,13 @@
                             </thead>
 
                             <tbody>
-                                @if (Cities is not null && Cities.Any())
+                                @if (_isLoading)
+                                {
+                                    <tr><td colspan="4" class="text-center py-3">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading…
+                                    </td></tr>
+                                }
+                                else @if (Cities is not null && Cities.Any())
                                 {
                                     var count = 1;
 
@@ -121,9 +127,13 @@
     {
         Countries = await countryService.GetAll(Constants.CountryBaseUrl);
     }
+    private bool _isLoading = false;
+
     private async Task GetCities()
     {
-        Cities = await cityService.GetAll(Constants.CityBaseUrl);
+        _isLoading = true;
+        Cities     = await cityService.GetAll(Constants.CityBaseUrl);
+        _isLoading = false;
     }
 
 

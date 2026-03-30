@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ServerLibrary.Data;
 
@@ -11,9 +12,11 @@ using ServerLibrary.Data;
 namespace ServerLibrary.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327000000_AddUniqueIndexesAndFixAuditLogEmployeeId")]
+    partial class AddUniqueIndexesAndFixAuditLogEmployeeId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,9 +43,6 @@ namespace ServerLibrary.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .HasDatabaseName("IX_ApplicationUsers_Email");
 
                     b.ToTable("ApplicationUsers");
                 });
@@ -288,42 +288,6 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("BaseLibrary.Entities.Feedback", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsPositive")
-                        .HasColumnType("bit");
-
-                    b.Property<float>("SentimentScore")
-                        .HasColumnType("real");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_Feedbacks_CreatedAt");
-
-                    b.HasIndex("EmployeeId")
-                        .HasDatabaseName("IX_Feedbacks_EmployeeId");
-
-                    b.ToTable("Feedbacks");
-                });
-
             modelBuilder.Entity("BaseLibrary.Entities.GeneralDepartment", b =>
                 {
                     b.Property<int>("Id")
@@ -476,16 +440,8 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("SystemRoles");
 
                     b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "User"
-                        });
+                        new { Id = 1, Name = "Admin" },
+                        new { Id = 2, Name = "User" });
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Town", b =>
@@ -616,7 +572,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Doctor", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Doctors")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -643,20 +599,10 @@ namespace ServerLibrary.Data.Migrations
                     b.Navigation("Town");
                 });
 
-            modelBuilder.Entity("BaseLibrary.Entities.Feedback", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("BaseLibrary.Entities.Overtime", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Overtimes")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -673,7 +619,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Sanction", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Sanctions")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -722,7 +668,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Vacation", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Vacations")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -747,17 +693,6 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Branch", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Employee", b =>
-                {
-                    b.Navigation("Doctors");
-
-                    b.Navigation("Overtimes");
-
-                    b.Navigation("Sanctions");
-
-                    b.Navigation("Vacations");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.City", b =>

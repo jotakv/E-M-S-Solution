@@ -94,20 +94,23 @@
         editContext = new EditContext(ItemModel);
     }
 
-    /// <summary>Called by SanctionPage to load an existing record for editing.</summary>
+    /// <summary>Called by SanctionPage to load an existing record for editing and open the dialog.</summary>
     public void SetItem(Sanction item)
     {
         // Copy into a fresh model so the page's list item is never mutated directly.
         ItemModel = new Sanction
         {
-            Id           = item.Id,
-            EmployeeId   = item.EmployeeId,
+            Id             = item.Id,
+            EmployeeId     = item.EmployeeId,
             SanctionTypeId = item.SanctionTypeId,
-            Date         = item.Date,
-            Punishment   = item.Punishment,
+            Date           = item.Date,
+            Punishment     = item.Punishment,
             PunishmentDate = item.PunishmentDate
         };
         editContext = new EditContext(ItemModel);
+        // Open the dialog here — do NOT call OpenDialog() afterwards, as that would reset the model.
+        IsVisible = true;
+        StateHasChanged();
     }
 
     public void ChangeTitle(string title) => Title = title;

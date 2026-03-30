@@ -38,7 +38,10 @@ namespace ServerLibrary.Data
         public DbSet<Doctor>        Doctors        { get; set; }
 
         // Audit
-        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<AuditLog>  AuditLogs  { get; set; }
+
+        // Sentiment Feedback
+        public DbSet<Feedback> Feedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -90,16 +93,18 @@ namespace ServerLibrary.Data
 
             // ── Unique constraints ────────────────────────────────────────────────
 
-            // CivilId must be unique across all employees
+            // CivilId must be unique across all employees (nullable → filter nulls)
             modelBuilder.Entity<Employee>()
                 .HasIndex(e => e.CivilId)
                 .IsUnique()
+                .HasFilter("[CivilId] IS NOT NULL")
                 .HasDatabaseName("IX_Employees_CivilId");
 
-            // FileNumber must be unique across all employees
+            // FileNumber must be unique across all employees (nullable → filter nulls)
             modelBuilder.Entity<Employee>()
                 .HasIndex(e => e.FileNumber)
                 .IsUnique()
+                .HasFilter("[FileNumber] IS NOT NULL")
                 .HasDatabaseName("IX_Employees_FileNumber");
 
             // ── Performance indexes ───────────────────────────────────────────────
@@ -114,6 +119,22 @@ namespace ServerLibrary.Data
                 .HasIndex(e => e.TownId)
                 .HasDatabaseName("IX_Employees_TownId");
 
+            // ── Feedback / Sentiment ──────────────────────────────────────────────
+            // EmployeeId is nullable — anonymous submissions are allowed.
+            // SetNull so feedback survives employee deletion.
+            modelBuilder.Entity<Feedback>()
+                .HasOne(f => f.Employee)
+                .WithMany()
+                .HasForeignKey(f => f.EmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Feedback>()
+                .HasIndex(f => f.EmployeeId)
+                .HasDatabaseName("IX_Feedbacks_EmployeeId");
+
+            modelBuilder.Entity<Feedback>()
+                .HasIndex(f => f.CreatedAt)
+                .HasDatabaseName("IX_Feedbacks_CreatedAt");
             // ── Login performance ─────────────────────────────────────────────────
             // FindUserByEmail does a lookup by email on every login. Without an
             // index this is a full table scan. Index drops login Phase-1 from ~2s to <10ms.

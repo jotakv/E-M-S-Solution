@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ServerLibrary.Data;
 
@@ -11,9 +12,11 @@ using ServerLibrary.Data;
 namespace ServerLibrary.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328010000_AddFeedbackTable")]
+    partial class AddFeedbackTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,9 +43,6 @@ namespace ServerLibrary.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .HasDatabaseName("IX_ApplicationUsers_Email");
 
                     b.ToTable("ApplicationUsers");
                 });
@@ -476,16 +476,8 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("SystemRoles");
 
                     b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "User"
-                        });
+                        new { Id = 1, Name = "Admin" },
+                        new { Id = 2, Name = "User" });
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Town", b =>
@@ -616,7 +608,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Doctor", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Doctors")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -656,7 +648,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Overtime", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Overtimes")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -673,7 +665,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Sanction", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Sanctions")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -722,7 +714,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Vacation", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.Employee", "Employee")
-                        .WithMany("Vacations")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -747,17 +739,6 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Branch", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Employee", b =>
-                {
-                    b.Navigation("Doctors");
-
-                    b.Navigation("Overtimes");
-
-                    b.Navigation("Sanctions");
-
-                    b.Navigation("Vacations");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.City", b =>

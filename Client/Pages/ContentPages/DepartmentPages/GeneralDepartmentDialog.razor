@@ -1,4 +1,4 @@
-﻿<SfDialog Width="250px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+<SfDialog Width="250px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
     <DialogEvents OnOpen="OpenDialog"></DialogEvents>
 
     <DialogTemplates>
@@ -58,6 +58,7 @@
         if (string.IsNullOrEmpty(GeneralDepartment.Name))
         {
             await dialogService.AlertAsync("You need to provide Department name. ", "Alert!");
+            return;
         }
         else
         {

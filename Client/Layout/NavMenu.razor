@@ -138,6 +138,16 @@
                 }
                 </div>
 
+                @* {{!-- FEEDBACK / SENTIMENT (all authenticated users) --}} *@
+                <div class="nav-item px-3" style="margin-top:0.5rem;">
+                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="FeedbackClicked">
+                        <div class="hstack gap-2">
+                            <span class="bi bi-chat-heart-fill fs-5" aria-hidden="true"></span>
+                            <span>Feedback</span>
+                        </div>
+                    </a>
+                </div>
+
             </nav>
         </div>
 
@@ -201,4 +211,5 @@
     void VacationTypeClicked() => allState.VacationTypeClicked();
     void UserClicked() => allState.UserClicked();
     void EmployeeClicked() => allState.EmployeeClicked();
+    void FeedbackClicked() => allState.FeedbackClicked();
 }

@@ -1,4 +1,4 @@
-﻿@page "/identity/account/register"
+@page "/identity/account/register"
 @layout AuthenticationLayout
 
 <div class="container">
@@ -20,6 +20,15 @@
                     </div>
                     <div class="card-body">
 
+                        @* Inline server error (e.g. email already taken) *@
+                        @if (!string.IsNullOrEmpty(_registerError))
+                        {
+                            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                                <span class="small fw-normal">@_registerError</span>
+                            </div>
+                        }
+
                         <div class="form-group">
                             <label class="form-label">Fullname</label>
                             <InputText @bind-Value="User.Fullname" class="form-control" />
@@ -34,14 +43,52 @@
 
                         <div class="form-group mt-3">
                             <label class="form-label">Password</label>
-                            <InputText type="password" @bind-Value="User.Password" class="form-control" />
+                            <div class="input-group">
+                                <input type="@_passwordType"
+                                       value="@User.Password"
+                                       class="form-control"
+                                       @oninput="OnPasswordInput"
+                                       autocomplete="new-password" />
+                                <button class="btn btn-outline-secondary" type="button"
+                                        @onclick="TogglePassword" tabindex="-1">
+                                    <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
                             <ValidationMessage For="() => User.Password" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Confirm Password</label>
-                            <InputText type="password" @bind-Value="User.ConfirmPassword" class="form-control" />
-                            <ValidationMessage For="() => User.ConfirmPassword" class="text-warning small" />
+                            <div class="input-group">
+                                <input type="@_confirmType"
+                                       value="@User.ConfirmPassword"
+                                       class="form-control @ConfirmBorderClass"
+                                       @oninput="OnConfirmPasswordInput"
+                                       autocomplete="new-password" />
+                                <button class="btn btn-outline-secondary" type="button"
+                                        @onclick="ToggleConfirm" tabindex="-1">
+                                    <i class="bi @(_showConfirm ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
+
+                            @* Live password-match indicator *@
+                            @if (_confirmTouched && !string.IsNullOrEmpty(User.ConfirmPassword))
+                            {
+                                @if (_passwordsMatch)
+                                {
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <i class="bi bi-check-circle-fill text-success small"></i>
+                                        <span class="text-success small fw-normal">Passwords match</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <i class="bi bi-x-circle-fill text-danger small"></i>
+                                        <span class="text-danger small fw-normal">Passwords do not match</span>
+                                    </div>
+                                }
+                            }
                         </div>
 
                         <div class="form-group mt-3">
@@ -70,10 +117,43 @@
 
 @code {
     public bool ShowLoadingButton { get; set; } = false;
+    private string _registerError  = string.Empty;
+    private bool   _confirmTouched = false;
+    private bool   _passwordsMatch = false;
+    private bool   _showPassword   = false;
+    private bool   _showConfirm    = false;
+    private string _passwordType   => _showPassword ? "text" : "password";
+    private string _confirmType    => _showConfirm  ? "text" : "password";
 
     Register User = new();
 
+    void TogglePassword() => _showPassword = !_showPassword;
+    void ToggleConfirm()  => _showConfirm  = !_showConfirm;
+
     [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    // CSS class to colour the confirm-password border green/red as user types
+    private string ConfirmBorderClass =>
+        !_confirmTouched || string.IsNullOrEmpty(User.ConfirmPassword)
+            ? string.Empty
+            : _passwordsMatch ? "border-success" : "border-danger";
+
+    void OnPasswordInput(ChangeEventArgs e)
+    {
+        User.Password   = e.Value?.ToString() ?? string.Empty;
+        CheckPasswordMatch();
+    }
+
+    void OnConfirmPasswordInput(ChangeEventArgs e)
+    {
+        User.ConfirmPassword = e.Value?.ToString() ?? string.Empty;
+        _confirmTouched      = true;
+        CheckPasswordMatch();
+    }
+
+    void CheckPasswordMatch() =>
+        _passwordsMatch = !string.IsNullOrEmpty(User.Password)
+                       && User.Password == User.ConfirmPassword;
 
     protected async override Task OnInitializedAsync()
     {
@@ -82,7 +162,9 @@
 
     async Task HandleRegistration()
     {
+        _registerError    = string.Empty;
         ShowLoadingButton = true;
+        await Task.Yield(); // let Blazor render the spinner before the API call blocks
 
         var result = await accountService.CreateAsync(User);
 
@@ -96,7 +178,7 @@
         }
         else
         {
-            toastService.ShowError(result.Message);
+            _registerError = result.Message;   // show inline inside the card
         }
     }
 

@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Server.BackgroundServices;
 using Server.Middleware;
+using Server.Services;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
@@ -63,7 +64,9 @@ try
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ??
-            throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured."));
+            throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured."),
+            sql => sql.MigrationsAssembly("ServerLibrary")
+            );
     });
 
     builder.Services.AddAuthentication(options =>
@@ -119,6 +122,10 @@ try
     builder.Services.AddScoped<IGenericRepositoryInterface<Doctor>, DoctorRepository>();
     builder.Services.AddScoped<IGenericRepositoryInterface<Employee>, EmployeeRepository>();
 
+    // Sentiment Analysis — singleton so the ML.NET model is trained once at startup
+    builder.Services.AddSingleton<ISentimentService, SentimentService>();
+    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+
     builder.Services.AddMemoryCache();
 
     // ── RabbitMQ / Event Bus ──────────────────────────────────────────────────
@@ -146,6 +153,15 @@ try
     // HTTP request arrives — so the "RabbitMQ connected" log is never associated
     // with any user's CorrelationId or UserId from the Serilog LogContext.
     app.Services.GetRequiredService<IEventBus>();
+
+    // Always apply pending EF migrations on startup (Development and Production).
+    // DevelopmentDataSeeder.SeedAsync also calls MigrateAsync, but it is only
+    // invoked in Development, so Production would otherwise never migrate.
+    using (var migrateScope = app.Services.CreateScope())
+    {
+        var dbContext = migrateScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
 
     if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
     {

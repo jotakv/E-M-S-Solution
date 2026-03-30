@@ -25,23 +25,69 @@ namespace ServerLibrary.Data.Migrations
                 oldNullable: true);
 
             // ── 2. Unique index on Employees.CivilId ─────────────────────────────
-            // CivilId is a unique employee identifier (format: CIV-###).
-            // IMPORTANT: run the cleanup script below to deduplicate any existing
-            // rows before applying this migration to a populated database.
+            // nvarchar(max) cannot be a key column in SQL Server. Shrink to 100
+            // first, then deduplicate any existing rows, then create the unique index.
+            migrationBuilder.AlterColumn<string>(
+                name: "CivilId",
+                table: "Employees",
+                type: "nvarchar(100)",
+                maxLength: 100,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            // Fix duplicate CivilId values by appending -2, -3, etc. to later rows
+            migrationBuilder.Sql(@"
+                WITH cte AS (
+                    SELECT Id, CivilId,
+                           ROW_NUMBER() OVER (PARTITION BY CivilId ORDER BY Id) AS rn
+                    FROM Employees
+                    WHERE CivilId IS NOT NULL
+                )
+                UPDATE cte
+                SET CivilId = CivilId + '-DUP' + CAST(rn AS nvarchar(10))
+                WHERE rn > 1;
+            ");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Employees_CivilId",
                 table: "Employees",
                 column: "CivilId",
-                unique: true);
+                unique: true,
+                filter: "[CivilId] IS NOT NULL");
 
             // ── 3. Unique index on Employees.FileNumber ───────────────────────────
-            // FileNumber is a unique employee identifier (format: EMP-###).
-            // IMPORTANT: run the cleanup script below before migrating a populated DB.
+            // Same reason — shrink from nvarchar(max) before indexing.
+            migrationBuilder.AlterColumn<string>(
+                name: "FileNumber",
+                table: "Employees",
+                type: "nvarchar(100)",
+                maxLength: 100,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            // Fix duplicate FileNumber values by appending -2, -3, etc. to later rows
+            migrationBuilder.Sql(@"
+                WITH cte AS (
+                    SELECT Id, FileNumber,
+                           ROW_NUMBER() OVER (PARTITION BY FileNumber ORDER BY Id) AS rn
+                    FROM Employees
+                    WHERE FileNumber IS NOT NULL
+                )
+                UPDATE cte
+                SET FileNumber = FileNumber + '-DUP' + CAST(rn AS nvarchar(10))
+                WHERE rn > 1;
+            ");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Employees_FileNumber",
                 table: "Employees",
                 column: "FileNumber",
-                unique: true);
+                unique: true,
+                filter: "[FileNumber] IS NOT NULL");
 
             // ── Note on cascade delete ────────────────────────────────────────────
             // Employee → Vacation, Overtime, Sanction, Doctor cascade delete was
@@ -61,9 +107,29 @@ namespace ServerLibrary.Data.Migrations
                 name: "IX_Employees_CivilId",
                 table: "Employees");
 
+            migrationBuilder.AlterColumn<string>(
+                name: "CivilId",
+                table: "Employees",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(100)",
+                oldMaxLength: 100,
+                oldNullable: true);
+
             migrationBuilder.DropIndex(
                 name: "IX_Employees_FileNumber",
                 table: "Employees");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileNumber",
+                table: "Employees",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(100)",
+                oldMaxLength: 100,
+                oldNullable: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "EmployeeId",

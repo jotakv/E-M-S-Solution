@@ -22,7 +22,13 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (Towns is not null && Towns.Any())
+                                    @if (_isLoading)
+                                    {
+                                        <tr><td colspan="4" class="text-center py-3">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading…
+                                        </td></tr>
+                                    }
+                                    else @if (Towns is not null && Towns.Any())
                                     {
                                         int count = 1;
                                         foreach (var item in Towns)
@@ -100,9 +106,13 @@
         Cities = await cityService.GetAll(Constants.CityBaseUrl);
     }
 
+    private bool _isLoading = false;
+
     private async Task GetTowns()
     {
-        Towns = await townService.GetAll(Constants.TownBaseUrl);
+        _isLoading = true;
+        Towns      = await townService.GetAll(Constants.TownBaseUrl);
+        _isLoading = false;
     }
 
     private async Task AddButtonClicked()

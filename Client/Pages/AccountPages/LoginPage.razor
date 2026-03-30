@@ -1,4 +1,4 @@
-﻿@page "/identity/account/login"
+@page "/identity/account/login"
 @layout AuthenticationLayout
 
 <div class="container">
@@ -21,15 +21,38 @@
                     </div>
                     <div class="card-body">
 
+                        @* Inline error — wrong credentials or server error *@
+                        @if (!string.IsNullOrEmpty(_loginError))
+                        {
+                            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                                <span class="small fw-normal">@_loginError</span>
+                            </div>
+                        }
+
                         <div class="form-group mt-3">
                             <label class="form-label">Email</label>
-                            <InputText @bind-Value="User.Email" class="form-control" />
+                            <input type="email"
+                                   value="@User.Email"
+                                   class="form-control"
+                                   @oninput="OnEmailInput"
+                                   autocomplete="username" />
                             <ValidationMessage For="() => User.Email" class="text-warning small" />
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="form-label">Password</label>
-                            <InputText type="password" @bind-Value="User.Password" class="form-control" />
+                            <div class="input-group">
+                                <input type="@_passwordType"
+                                       value="@User.Password"
+                                       class="form-control"
+                                       @oninput="OnPasswordInput"
+                                       autocomplete="current-password" />
+                                <button class="btn btn-outline-secondary" type="button"
+                                        @onclick="TogglePassword" tabindex="-1">
+                                    <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
                             <ValidationMessage For="() => User.Password" class="text-warning small" />
                         </div>
 
@@ -49,12 +72,6 @@
                         <span class="text-center">
                             Don't have account? | <a class="btn-link" href="identity/account/register">Sign Up</a>
                         </span>
-                        @if (ShowValidationSummary)
-                        {
-                            <div class="mt-2">
-                                <ValidationSummary class="text-warning small" />
-                            </div>
-                        }
                     </div>
                 </div>
             </EditForm>
@@ -66,19 +83,33 @@
 
 @code {
     public bool ShowLoadingButton { get; set; } = false;
-    public bool ShowValidationSummary { get; set; } = false;
+    private string _loginError    = string.Empty;
+    private bool   _showPassword  = false;
+    private string _passwordType => _showPassword ? "text" : "password";
 
     Login User = new();
 
-    void HandleInvalidSubmit()
+    void HandleInvalidSubmit() { }
+
+    void TogglePassword() => _showPassword = !_showPassword;
+
+    void OnEmailInput(ChangeEventArgs e)
     {
-        ShowValidationSummary = true;
+        User.Email   = e.Value?.ToString() ?? string.Empty;
+        _loginError  = string.Empty;
+    }
+
+    void OnPasswordInput(ChangeEventArgs e)
+    {
+        User.Password = e.Value?.ToString() ?? string.Empty;
+        _loginError   = string.Empty;
     }
 
     async Task HandleLogin()
     {
-        ShowValidationSummary = false;
+        _loginError       = string.Empty;
         ShowLoadingButton = true;
+        await Task.Yield(); // let Blazor render the spinner before the API call blocks
 
         var loginSw = System.Diagnostics.Stopwatch.StartNew();
         var result = await accountService.SignInAsync(User);
@@ -95,7 +126,7 @@
 
         if (!result.Flag)
         {
-            toastService.ShowError(result.Message);
+            _loginError       = result.Message;   // show inline inside the card
             ShowLoadingButton = false;
             return;
         }
@@ -108,7 +139,7 @@
         await customAuthStateProvider.UpdateAuthenticationState(
             new UserSession
             {
-                Token = result.Token,
+                Token        = result.Token,
                 RefreshToken = result.RefreshToken
             });
 

@@ -1,0 +1,250 @@
+@implements IDisposable
+
+@if (allState.ShowFeedback)
+{
+<div class="container-fluid mt-4">
+
+    <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <h4 class="fw-semibold">
+                <i class="bi bi-chat-heart-fill text-primary me-2"></i>Employee Feedback
+            </h4>
+            <p class="text-muted mb-0">Share your thoughts anonymously and safely. Your identity is never recorded.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- ── Submission Form ───────────────────────────────────────────────── -->
+        <div class="col-lg-5 col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <span class="fw-semibold">Submit Feedback</span>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="_submitDto" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+
+                        <!-- Anonymity notice -->
+                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span class="small">Your feedback is always submitted anonymously. No identifying information is attached.</span>
+                        </div>
+
+                        <!-- Comment textarea -->
+                        <!-- NOTE: native <textarea> with @bind:event="oninput" is required here.
+                             Using Blazor's <InputTextArea> with @bind-Value:event="oninput" causes a
+                             ChangeEventArgs → string cast exception at runtime. -->
+                        <div class="mb-3">
+                            <label class="form-label">Your Feedback <span class="text-danger">*</span></label>
+                            <textarea class="form-control"
+                                      rows="5"
+                                      placeholder="Describe your experience, suggestions, or concerns..."
+                                      @bind="_submitDto.Comment"
+                                      @bind:event="oninput"
+                                      maxlength="1000"></textarea>
+                            <ValidationMessage For="@(() => _submitDto.Comment)" class="text-danger small mt-1" />
+                            <div class="text-end text-muted small mt-1">@(_submitDto.Comment?.Length ?? 0) / 1000</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@_isSaving">
+                            @if (_isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Analyzing...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-send-fill me-2"></i><span>Submit Feedback</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <!-- Sentiment Result Card -->
+                    @if (_lastResult is not null)
+                    {
+                        <div class="alert @(_lastResult.IsPositive ? "alert-success" : "alert-danger") mt-3 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi @(_lastResult.IsPositive ? "bi-emoji-smile-fill" : "bi-emoji-frown-fill") fs-5"></i>
+                            <div>
+                                <strong>@(_lastResult.IsPositive ? "Positive" : "Negative") sentiment detected</strong>
+                                <div class="small">Confidence: @(MathF.Round(_lastResult.SentimentScore * 100, 1))%</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">@_errorMessage</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Summary Panel ─────────────────────────────────────────────────── -->
+        <div class="col-lg-7 col-md-6">
+
+            @if (_summary is null)
+            {
+                <div class="d-flex justify-content-center align-items-center h-100 py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading summary...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Stat Cards Row -->
+                <div class="row g-3 mb-3">
+                    <div class="col-4">
+                        <div class="card text-center border-0 bg-light">
+                            <div class="card-body py-3">
+                                <div class="fs-3 fw-bold text-secondary">@_summary.TotalCount</div>
+                                <div class="small text-muted">Total</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-center border-0" style="background-color:#d1fae5;">
+                            <div class="card-body py-3">
+                                <div class="fs-3 fw-bold text-success">@_summary.PositivePercent%</div>
+                                <div class="small text-success">Positive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-center border-0" style="background-color:#fee2e2;">
+                            <div class="card-body py-3">
+                                <div class="fs-3 fw-bold text-danger">@_summary.NegativePercent%</div>
+                                <div class="small text-danger">Negative</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment Bar -->
+                @if (_summary.TotalCount > 0)
+                {
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Positive (@_summary.PositiveCount)</span>
+                            <span>Negative (@_summary.NegativeCount)</span>
+                        </div>
+                        <div class="progress" style="height:12px; border-radius:6px;">
+                            <div class="progress-bar bg-success"
+                                 role="progressbar"
+                                 style="width:@(_summary.PositivePercent)%"
+                                 aria-valuenow="@_summary.PositivePercent"
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                            <div class="progress-bar bg-danger"
+                                 role="progressbar"
+                                 style="width:@(_summary.NegativePercent)%"
+                                 aria-valuenow="@_summary.NegativePercent"
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Recent Feedback List -->
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Recent Feedback</span>
+                        <span class="badge bg-secondary">Last 5</span>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        @if (!_summary.RecentFeedback.Any())
+                        {
+                            <li class="list-group-item text-muted text-center py-4">No feedback submitted yet.</li>
+                        }
+                        else
+                        {
+                            @foreach (var item in _summary.RecentFeedback)
+                            {
+                                <li class="list-group-item d-flex align-items-start gap-2 py-2">
+                                    <span class="badge mt-1 @(item.IsPositive ? "bg-success" : "bg-danger")" style="min-width:72px;">
+                                        @(item.IsPositive ? "Positive" : "Negative")
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="small">@TruncateComment(item.Comment, 100)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">@item.CreatedAt.ToLocalTime().ToString("MMM d, HH:mm")</div>
+                                    </div>
+                                </li>
+                            }
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+}
+
+@code {
+    // HttpFactory and toastService are injected globally via _Imports.razor
+
+    private FeedbackSubmitDto         _submitDto    = new();
+    private FeedbackItemDto?          _lastResult;
+    private FeedbackSummaryDto?       _summary;
+    private bool                      _isSaving;
+    private string                    _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+        await LoadSummaryAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isSaving     = true;
+        _errorMessage = string.Empty;
+        _lastResult   = null;
+
+        try
+        {
+            var http = await HttpFactory.GetPrivateHttpClient();
+            var response = await http.PostAsJsonAsync(Constants.FeedbackBaseUrl, _submitDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _lastResult    = await response.Content.ReadFromJsonAsync<FeedbackItemDto>();
+                _submitDto     = new FeedbackSubmitDto();
+                await LoadSummaryAsync();
+            }
+            else
+            {
+                _errorMessage = "Submission failed. Please try again.";
+            }
+        }
+        catch
+        {
+            _errorMessage = "Unable to reach the server. Please check your connection.";
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadSummaryAsync()
+    {
+        try
+        {
+            var http = await HttpFactory.GetPrivateHttpClient();
+            _summary = await http.GetFromJsonAsync<FeedbackSummaryDto>(Constants.FeedbackSummaryUrl);
+        }
+        catch
+        {
+            _summary = new FeedbackSummaryDto();
+        }
+    }
+
+    private static string TruncateComment(string text, int maxLen) =>
+        text.Length <= maxLen ? text : text[..maxLen] + "…";
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
