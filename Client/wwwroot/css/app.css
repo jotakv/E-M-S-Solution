@@ -769,3 +769,80 @@ h4, h5 {
     word-break: break-word;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   APPLE-STYLE TOAST NOTIFICATIONS  (Blazored.Toast override)
+   Dark frosted-glass pill — matches macOS/iOS notification aesthetic.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes ems-toast-in {
+    from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
+.blazored-toast {
+    background:              rgba(44, 44, 46, 0.90)        !important;
+    backdrop-filter:         saturate(180%) blur(20px)      !important;
+    -webkit-backdrop-filter: saturate(180%) blur(20px)      !important;
+    border:                  1px solid rgba(255,255,255,0.10) !important;
+    border-radius:           14px                           !important;
+    box-shadow:              0 8px 32px rgba(0,0,0,0.28),
+                             0 1px 0 rgba(255,255,255,0.06) inset !important;
+    color:                   #ffffff                        !important;
+    font-family:             -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+                             'Helvetica Neue', Arial, sans-serif !important;
+    font-size:               0.875rem                       !important;
+    min-width:               260px                          !important;
+    max-width:               360px                          !important;
+    animation:               ems-toast-in 0.28s cubic-bezier(0.34, 1.20, 0.64, 1) both !important;
+    overflow:                hidden                         !important;
+}
+
+.blazored-toast__icon {
+    font-size:    1.1rem    !important;
+    margin-right: 0.6rem   !important;
+    flex-shrink:  0        !important;
+}
+
+.blazored-toast__message {
+    color:       rgba(255,255,255,0.92) !important;
+    line-height: 1.4                   !important;
+}
+
+.blazored-toast__close-btn {
+    color:      rgba(255,255,255,0.45) !important;
+    opacity:    1                      !important;
+    background: transparent            !important;
+    border:     none                   !important;
+    transition: color 0.15s            !important;
+}
+
+.blazored-toast__close-btn:hover {
+    color: rgba(255,255,255,0.85) !important;
+}
+
+.blazored-toast__progress {
+    height:        3px              !important;
+    border-radius: 0 0 14px 14px   !important;
+    opacity:       0.55             !important;
+}
+
+/* Success — Apple green #30d158 */
+.blazored-toast-success { border-left: 3px solid #30d158 !important; }
+.blazored-toast-success .blazored-toast__icon     { color:      #30d158 !important; }
+.blazored-toast-success .blazored-toast__progress { background: #30d158 !important; }
+
+/* Error — Apple red #ff453a */
+.blazored-toast-error   { border-left: 3px solid #ff453a !important; }
+.blazored-toast-error   .blazored-toast__icon     { color:      #ff453a !important; }
+.blazored-toast-error   .blazored-toast__progress { background: #ff453a !important; }
+
+/* Warning — Apple orange #ff9f0a */
+.blazored-toast-warning { border-left: 3px solid #ff9f0a !important; }
+.blazored-toast-warning .blazored-toast__icon     { color:      #ff9f0a !important; }
+.blazored-toast-warning .blazored-toast__progress { background: #ff9f0a !important; }
+
+/* Info — Apple blue #0a84ff */
+.blazored-toast-info    { border-left: 3px solid #0a84ff !important; }
+.blazored-toast-info    .blazored-toast__icon     { color:      #0a84ff !important; }
+.blazored-toast-info    .blazored-toast__progress { background: #0a84ff !important; }
+
