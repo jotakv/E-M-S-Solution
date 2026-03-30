@@ -41,6 +41,9 @@ namespace ServerLibrary.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .HasDatabaseName("IX_ApplicationUsers_Email");
+
                     b.ToTable("ApplicationUsers");
                 });
 

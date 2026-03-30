@@ -55,7 +55,7 @@ namespace Server.Controllers
             countries = await genericRepositoryInterface.GetAll();
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromSeconds(60))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetAbsoluteExpiration(TimeSpan.FromHours(1))
                 .SetPriority(CacheItemPriority.Normal);
 

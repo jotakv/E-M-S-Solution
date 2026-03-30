@@ -2,6 +2,7 @@ using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using BaseLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Data;
 using ServerLibrary.Repositories.Contracts;
@@ -14,8 +15,10 @@ namespace ServerLibrary.Repositories.Implementations
     public class EmployeeRepository(
         AppDbContext appDbContext,
         ILogger<EmployeeRepository> logger,
-        IEventBus eventBus) : IGenericRepositoryInterface<Employee>
+        IEventBus eventBus,
+        IMemoryCache cache) : IGenericRepositoryInterface<Employee>
     {
+        private const string EmployeeListCacheKey = "EmployeeList";
         // ── Delete ────────────────────────────────────────────────────────────────
 
         public async Task<GeneralResponse> DeleteById(int id)
@@ -40,6 +43,7 @@ namespace ServerLibrary.Repositories.Implementations
             // child-record deletion is needed here.
             appDbContext.Employees.Remove(item);
             await Commit();
+            cache.Remove(EmployeeListCacheKey);
 
             logger.LogInformation(
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
@@ -52,6 +56,12 @@ namespace ServerLibrary.Repositories.Implementations
 
         public async Task<List<Employee>> GetAll()
         {
+            if (cache.TryGetValue(EmployeeListCacheKey, out List<Employee>? cached) && cached is not null)
+            {
+                logger.LogDebug("EmployeeRepository.GetAll returned {Count} employees from cache.", cached.Count);
+                return cached;
+            }
+
             var sw = Stopwatch.StartNew();
 
             var employees = await appDbContext.Employees
@@ -67,7 +77,7 @@ namespace ServerLibrary.Repositories.Implementations
             sw.Stop();
 
             logger.LogDebug(
-                "EmployeeRepository.GetAll fetched {Count} employees in {ElapsedMs}ms",
+                "EmployeeRepository.GetAll fetched {Count} employees from DB in {ElapsedMs}ms",
                 employees.Count, sw.ElapsedMilliseconds);
 
             if (sw.ElapsedMilliseconds > 500)
@@ -77,6 +87,12 @@ namespace ServerLibrary.Repositories.Implementations
                     "(threshold 500ms). Verify indexes IX_Employees_TownId and IX_Employees_BranchId.",
                     employees.Count, sw.ElapsedMilliseconds);
             }
+
+            cache.Set(EmployeeListCacheKey, employees, new MemoryCacheEntryOptions
+            {
+                SlidingExpiration            = TimeSpan.FromMinutes(2),
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            });
 
             return employees;
         }
@@ -151,6 +167,8 @@ namespace ServerLibrary.Repositories.Implementations
                     logger.LogError(ex,
                         "Failed to publish EmployeeCreated event for EmployeeId: {EmployeeId}", item.Id);
                 }
+
+                cache.Remove(EmployeeListCacheKey);
 
                 logger.LogInformation(
                     "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | JobName: {JobName} | BranchId: {BranchId} | TownId: {TownId} | Result: {Result}",
@@ -260,6 +278,8 @@ namespace ServerLibrary.Repositories.Implementations
                 logger.LogError(ex,
                     "Failed to publish EmployeeUpdated event for EmployeeId: {EmployeeId}", employee.Id);
             }
+
+            cache.Remove(EmployeeListCacheKey);
 
             logger.LogInformation(
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Changes: {@Changes} | Result: {Result}",

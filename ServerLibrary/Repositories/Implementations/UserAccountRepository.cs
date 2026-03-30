@@ -245,7 +245,12 @@ namespace ServerLibrary.Repositories.Implementations
         private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
         private async Task<ApplicationUser> FindUserByEmail(string email) =>
-            (await appDbContext.ApplicationUsers.FirstOrDefaultAsync(_ => _.Email!.ToLower()!.Equals(email!.ToLower())))!;
+            // Direct equality comparison — EF translates to WHERE Email = @p0 which
+            // uses IX_ApplicationUsers_Email. SQL Server's default CI_AS collation
+            // makes this case-insensitive, so ToLower() is unnecessary and harmful
+            // (it prevents index usage by forcing a function-based scan).
+            (await appDbContext.ApplicationUsers
+                .FirstOrDefaultAsync(u => u.Email == email))!;
 
         private async Task<T> AddToDatabase<T>(T model)
         {
