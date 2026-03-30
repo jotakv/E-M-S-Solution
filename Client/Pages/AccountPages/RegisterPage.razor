@@ -1,117 +1,117 @@
 @page "/identity/account/register"
 @layout AuthenticationLayout
 
-<div class="container">
-    <div class="row">
-        <div class="col-lg-4"></div>
-        <div class="col-lg-4">
-            <EditForm Model="User" OnValidSubmit="HandleRegistration">
-                <DataAnnotationsValidator />
-                <div class="card bg-dark d-flex justify-content-center" style="opacity:0.5; margin-top:50%; border-radius:10px; color:white; font-weight:bold">
-                    <div class="card-header text-center fs-5">Register an account</div>
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-4 col-sm-4"></div>
-                            <div class="col-lg-4 col-md-4 col-sm-4 d-flex justify-content-center">
-                                <img style="border-radius:20px" src="../images/companylogos/netcode.jpg" height="50" width="50" />
-                            </div>
-                            <div class="col-lg-4 col-md-4 col-sm-4"></div>
-                        </div>
-                    </div>
-                    <div class="card-body">
+<div class="auth-wrapper d-flex align-items-center justify-content-center">
+    <div class="auth-card">
+        <EditForm Model="User" OnValidSubmit="HandleRegistration">
+            <DataAnnotationsValidator />
 
-                        @* Inline server error (e.g. email already taken) *@
-                        @if (!string.IsNullOrEmpty(_registerError))
-                        {
-                            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-                                <span class="small fw-normal">@_registerError</span>
-                            </div>
-                        }
+            <!-- Logo + title -->
+            <div class="text-center mb-4">
+                <img src="../images/companylogos/netcode.jpg"
+                     class="auth-logo mb-3" alt="EMS Logo" />
+                <h5 class="fw-semibold mb-1" style="color:#fff; letter-spacing:-0.01em;">
+                    Create your account
+                </h5>
+                <p class="auth-subtitle">Employee Management System</p>
+            </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Fullname</label>
-                            <InputText @bind-Value="User.Fullname" class="form-control" />
-                            <ValidationMessage For="() => User.Fullname" class="text-warning small" />
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label class="form-label">Email</label>
-                            <InputText @bind-Value="User.Email" class="form-control" />
-                            <ValidationMessage For="() => User.Email" class="text-warning small" />
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label class="form-label">Password</label>
-                            <div class="input-group">
-                                <input type="@_passwordType"
-                                       value="@User.Password"
-                                       class="form-control"
-                                       @oninput="OnPasswordInput"
-                                       autocomplete="new-password" />
-                                <button class="btn btn-outline-secondary" type="button"
-                                        @onclick="TogglePassword" tabindex="-1">
-                                    <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
-                                </button>
-                            </div>
-                            <ValidationMessage For="() => User.Password" class="text-warning small" />
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label class="form-label">Confirm Password</label>
-                            <div class="input-group">
-                                <input type="@_confirmType"
-                                       value="@User.ConfirmPassword"
-                                       class="form-control @ConfirmBorderClass"
-                                       @oninput="OnConfirmPasswordInput"
-                                       autocomplete="new-password" />
-                                <button class="btn btn-outline-secondary" type="button"
-                                        @onclick="ToggleConfirm" tabindex="-1">
-                                    <i class="bi @(_showConfirm ? "bi-eye-slash" : "bi-eye")"></i>
-                                </button>
-                            </div>
-
-                            @* Live password-match indicator *@
-                            @if (_confirmTouched && !string.IsNullOrEmpty(User.ConfirmPassword))
-                            {
-                                @if (_passwordsMatch)
-                                {
-                                    <div class="d-flex align-items-center gap-1 mt-1">
-                                        <i class="bi bi-check-circle-fill text-success small"></i>
-                                        <span class="text-success small fw-normal">Passwords match</span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="d-flex align-items-center gap-1 mt-1">
-                                        <i class="bi bi-x-circle-fill text-danger small"></i>
-                                        <span class="text-danger small fw-normal">Passwords do not match</span>
-                                    </div>
-                                }
-                            }
-                        </div>
-
-                        <div class="form-group mt-3">
-                            @if (ShowLoadingButton)
-                            {
-                                <ButtonLoadingSpinner></ButtonLoadingSpinner>
-                            }
-                            else
-                            {
-                                <button class="btn btn-outline-primary float-end" type="submit">Register</button>
-                            }
-                        </div>
-
-                    </div>
-                    <div class="card-footer">
-                        <span class="text-center">
-                            Have account already? | <a class="btn-link" href="identity/account/login">Sign In</a>
-                        </span>
-                    </div>
+            <!-- Inline server error -->
+            @if (!string.IsNullOrEmpty(_registerError))
+            {
+                <div class="auth-error mb-3">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>@_registerError
                 </div>
-            </EditForm>
-        </div>
-        <div class="col-lg-4"></div>
+            }
+
+            <!-- Full name -->
+            <div class="mb-3">
+                <label class="auth-label">Full Name</label>
+                <InputText @bind-Value="User.Fullname"
+                           class="form-control auth-input"
+                           placeholder="John Smith" />
+                <ValidationMessage For="() => User.Fullname" class="auth-validation" />
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label class="auth-label">Email</label>
+                <InputText @bind-Value="User.Email"
+                           class="form-control auth-input"
+                           placeholder="you@company.com" />
+                <ValidationMessage For="() => User.Email" class="auth-validation" />
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label class="auth-label">Password</label>
+                <div class="input-group auth-input-group">
+                    <input type="@_passwordType"
+                           value="@User.Password"
+                           class="form-control auth-input"
+                           placeholder="Min. 8 characters"
+                           @oninput="OnPasswordInput"
+                           autocomplete="new-password" />
+                    <button class="auth-eye-btn" type="button"
+                            @onclick="TogglePassword" tabindex="-1">
+                        <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
+                </div>
+                <ValidationMessage For="() => User.Password" class="auth-validation" />
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4">
+                <label class="auth-label">Confirm Password</label>
+                <div class="input-group auth-input-group">
+                    <input type="@_confirmType"
+                           value="@User.ConfirmPassword"
+                           class="form-control auth-input @ConfirmBorderClass"
+                           placeholder="Repeat password"
+                           @oninput="OnConfirmPasswordInput"
+                           autocomplete="new-password" />
+                    <button class="auth-eye-btn" type="button"
+                            @onclick="ToggleConfirm" tabindex="-1">
+                        <i class="bi @(_showConfirm ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
+                </div>
+                @if (_confirmTouched && !string.IsNullOrEmpty(User.ConfirmPassword))
+                {
+                    @if (_passwordsMatch)
+                    {
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <i class="bi bi-check-circle-fill auth-match-ok"></i>
+                            <span class="auth-match-ok" style="font-size:0.78rem;">Passwords match</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <i class="bi bi-x-circle-fill auth-match-fail"></i>
+                            <span class="auth-match-fail" style="font-size:0.78rem;">Passwords do not match</span>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Submit -->
+            @if (ShowLoadingButton)
+            {
+                <ButtonLoadingSpinner></ButtonLoadingSpinner>
+            }
+            else
+            {
+                <button class="btn auth-submit-btn w-100 mb-3" type="submit">
+                    Create Account
+                </button>
+            }
+
+            <div class="text-center auth-footer-text">
+                Already have an account?
+                <a href="identity/account/login" class="auth-link">Sign In</a>
+            </div>
+
+        </EditForm>
     </div>
 </div>
 
@@ -132,15 +132,14 @@
 
     [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
 
-    // CSS class to colour the confirm-password border green/red as user types
     private string ConfirmBorderClass =>
         !_confirmTouched || string.IsNullOrEmpty(User.ConfirmPassword)
             ? string.Empty
-            : _passwordsMatch ? "border-success" : "border-danger";
+            : _passwordsMatch ? "is-valid-soft" : "is-invalid-soft";
 
     void OnPasswordInput(ChangeEventArgs e)
     {
-        User.Password   = e.Value?.ToString() ?? string.Empty;
+        User.Password = e.Value?.ToString() ?? string.Empty;
         CheckPasswordMatch();
     }
 
@@ -164,7 +163,7 @@
     {
         _registerError    = string.Empty;
         ShowLoadingButton = true;
-        await Task.Yield(); // let Blazor render the spinner before the API call blocks
+        await Task.Yield();
 
         var result = await accountService.CreateAsync(User);
 
@@ -178,14 +177,13 @@
         }
         else
         {
-            _registerError = result.Message;   // show inline inside the card
+            _registerError = result.Message;
         }
     }
 
     private async Task CheckUserAuthentication()
     {
         var user = (await AuthenticationState).User;
-
         if (user.Identity?.IsAuthenticated == true)
             NavManager.NavigateTo("/home/dashboard");
     }
