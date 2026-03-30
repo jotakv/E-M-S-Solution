@@ -10,7 +10,7 @@
             <h4 class="fw-semibold">
                 <i class="bi bi-chat-heart-fill text-primary me-2"></i>Employee Feedback
             </h4>
-            <p class="text-muted mb-0">Share your thoughts anonymously. Your feedback helps us improve.</p>
+            <p class="text-muted mb-0">Share your thoughts anonymously and safely. Your identity is never recorded.</p>
         </div>
     </div>
 
@@ -26,25 +26,24 @@
                     <EditForm Model="_submitDto" OnValidSubmit="HandleSubmit">
                         <DataAnnotationsValidator />
 
-                        <!-- Optional employee selector -->
-                        <div class="mb-3">
-                            <label class="form-label">Employee <span class="text-muted">(optional)</span></label>
-                            <select class="form-select" @bind="_submitDto.EmployeeId">
-                                <option value="">Anonymous</option>
-                                @foreach (var emp in _employees)
-                                {
-                                    <option value="@emp.Id">@emp.Name</option>
-                                }
-                            </select>
+                        <!-- Anonymity notice -->
+                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span class="small">Your feedback is always submitted anonymously. No identifying information is attached.</span>
                         </div>
 
                         <!-- Comment textarea -->
+                        <!-- NOTE: native <textarea> with @bind:event="oninput" is required here.
+                             Using Blazor's <InputTextArea> with @bind-Value:event="oninput" causes a
+                             ChangeEventArgs → string cast exception at runtime. -->
                         <div class="mb-3">
                             <label class="form-label">Your Feedback <span class="text-danger">*</span></label>
-                            <InputTextArea class="form-control"
-                                           rows="5"
-                                           placeholder="Describe your experience, suggestions, or concerns..."
-                                           @bind-Value="_submitDto.Comment" />
+                            <textarea class="form-control"
+                                      rows="5"
+                                      placeholder="Describe your experience, suggestions, or concerns..."
+                                      @bind="_submitDto.Comment"
+                                      @bind:event="oninput"
+                                      maxlength="1000"></textarea>
                             <ValidationMessage For="@(() => _submitDto.Comment)" class="text-danger small mt-1" />
                             <div class="text-end text-muted small mt-1">@(_submitDto.Comment?.Length ?? 0) / 1000</div>
                         </div>
@@ -189,7 +188,6 @@
     private FeedbackSubmitDto         _submitDto    = new();
     private FeedbackItemDto?          _lastResult;
     private FeedbackSummaryDto?       _summary;
-    private List<Employee>            _employees    = new();
     private bool                      _isSaving;
     private string                    _errorMessage = string.Empty;
 
@@ -197,7 +195,6 @@
     {
         allState.Action += StateHasChanged;
         await LoadSummaryAsync();
-        await LoadEmployeesAsync();
     }
 
     private async Task HandleSubmit()
@@ -243,19 +240,6 @@
         catch
         {
             _summary = new FeedbackSummaryDto();
-        }
-    }
-
-    private async Task LoadEmployeesAsync()
-    {
-        try
-        {
-            var http = await HttpFactory.GetPrivateHttpClient();
-            _employees = await http.GetFromJsonAsync<List<Employee>>(Constants.EmployeeBaseUrl + "/all") ?? new();
-        }
-        catch
-        {
-            _employees = new();
         }
     }
 

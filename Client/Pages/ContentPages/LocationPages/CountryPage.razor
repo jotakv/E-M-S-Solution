@@ -79,7 +79,13 @@
                             </thead>
 
                             <tbody>
-                                @if (Countries is not null && Countries.Any())
+                                @if (_isLoading)
+                                {
+                                    <tr><td colspan="4" class="text-center py-3">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading…
+                                    </td></tr>
+                                }
+                                else @if (Countries is not null && Countries.Any())
                                 {
                                     var count = 1;
 
@@ -138,6 +144,7 @@
     CountryDialog? countryDialog;
     Country Country = new();
     public List<Country> Countries { get; set; } = new();
+    private bool _isLoading = false;
     private CountrySyncResultDto? lastCountrySyncResult;
     private CapitalSyncResultDto? lastCapitalSyncResult;
     private bool isSyncingCountries;
@@ -170,7 +177,9 @@
 
     private async Task GetCountries()
     {
-        Countries = await countryService.GetAll(Constants.CountryBaseUrl);
+        _isLoading = true;
+        Countries  = await countryService.GetAll(Constants.CountryBaseUrl);
+        _isLoading = false;
     }
 
     private async Task SyncCountriesClicked()

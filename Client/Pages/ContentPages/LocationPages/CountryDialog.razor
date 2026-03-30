@@ -1,31 +1,25 @@
-﻿@using Syncfusion.Blazor.DropDowns
 @using Syncfusion.Blazor.Popups
 @using Microsoft.AspNetCore.Components.Forms
 
 <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
-    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
-
     <DialogTemplates>
         <Header>@Title Country</Header>
-
         <Content>
-            <EditForm Model="Country" Enhance OnSubmit="Save">
+            <EditForm Model="LocalModel" Enhance OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Id</label>
-                            <input @bind="Country.Id" class="form-control" disabled />
+                            <input @bind="LocalModel.Id" class="form-control" disabled />
                         </div>
-
                         <div class="form-group">
                             <label class="form-label">Name</label>
-                            <InputText @bind-Value="Country.Name" class="form-control" />
+                            <InputText @bind-Value="LocalModel.Name" class="form-control" />
                         </div>
                     </div>
                 </div>
             </EditForm>
         </Content>
-
         <FooterTemplate>
             <button class="btn btn-primary" type="button" disabled="@IsSaving" @onclick="Save">
                 @if (IsSaving)
@@ -46,30 +40,19 @@
     [Parameter] public Country Country { get; set; } = new();
     [Parameter] public EventCallback<Country> HandleSaveOperationEvent { get; set; }
 
+    private Country LocalModel = new();
+
     private bool IsVisible { get; set; } = false;
     public string Title { get; set; } = "Add";
-
     public bool IsSaving { get; set; } = false;
-
-    private async Task Save()
-    {
-        if (string.IsNullOrWhiteSpace(Country.Name))
-        {
-            await dialogService.AlertAsync("You need to provide Country name.", "Alert!");
-            return;
-        }
-
-        IsSaving = true;
-        StateHasChanged();
-
-        await HandleSaveOperationEvent.InvokeAsync(Country);
-
-        IsSaving = false;
-        StateHasChanged();
-    }
 
     public void OpenDialog()
     {
+        LocalModel = new Country
+        {
+            Id   = Country.Id,
+            Name = Country.Name
+        };
         IsVisible = true;
         StateHasChanged();
     }
@@ -80,8 +63,22 @@
         StateHasChanged();
     }
 
-    public void ChangeTitle(string title)
+    public async Task Save()
     {
-        Title = title;
+        if (string.IsNullOrWhiteSpace(LocalModel.Name))
+        {
+            await dialogService.AlertAsync("You need to provide a Country name.", "Alert!");
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        await HandleSaveOperationEvent.InvokeAsync(LocalModel);
+
+        IsSaving = false;
+        StateHasChanged();
     }
+
+    public void ChangeTitle(string title) => Title = title;
 }

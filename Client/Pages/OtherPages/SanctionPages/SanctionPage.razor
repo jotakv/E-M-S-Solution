@@ -148,19 +148,11 @@
 
     private void EditClicked(Sanction item)
     {
-        ItemModel = new Sanction
-    {
-        Id = item.Id,
-        EmployeeId = item.EmployeeId,
-        SanctionTypeId = item.SanctionTypeId,
-        Date = item.Date,
-        Punishment = item.Punishment,
-        PunishmentDate = item.PunishmentDate
-    };
-
-        sanctionDialog!.SetItem(ItemModel);
+        // ChangeTitle before SetItem so the header is correct when the dialog opens.
         sanctionDialog!.ChangeTitle("Edit");
-        sanctionDialog!.OpenDialog();
+        // SetItem copies data into a fresh model AND opens the dialog.
+        // Do NOT call OpenDialog() after this — it would reset the model to blank.
+        sanctionDialog!.SetItem(item);
     }
 
 
