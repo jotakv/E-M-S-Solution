@@ -56,6 +56,10 @@ namespace ServerLibrary.Data
 
                 var employees = await SeedEmployeesAsync(context, seedData, branches, towns, logger, cancellationToken);
 
+                // Flush employees (and everything above) to the DB so they get real PK IDs.
+                // Notes reference EmployeeId FK, so they must be inserted after IDs are known.
+                await context.SaveChangesAsync(cancellationToken);
+
                 await SeedDoctorsAsync(context, seedData, employees, logger, cancellationToken);
                 await SeedOvertimesAsync(context, seedData, employees, overtimeTypes, logger, cancellationToken);
                 await SeedSanctionsAsync(context, seedData, employees, sanctionTypes, logger, cancellationToken);

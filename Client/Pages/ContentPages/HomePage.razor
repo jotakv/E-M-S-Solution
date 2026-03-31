@@ -54,8 +54,6 @@
                       InitialSanctions="_sanctions"
                       InitialVacations="_vacations"
                       InitialHealth="_health" />
-        <FeedbackPage />
-
         <!-- ── Home dashboard panels (visible when ShowDashboard) ────────── -->
         @if (allState.ShowDashboard)
         {
@@ -530,23 +528,32 @@
 
     private async Task LoadCoreDataAsync()
     {
-        var t1 = employeeService.GetAll(ClientLibrary.Helpers.Constants.EmployeeBaseUrl);
-        var t2 = departmentService.GetAll(ClientLibrary.Helpers.Constants.DepartmentBaseUrl);
-        var t3 = overtimeService.GetAll(ClientLibrary.Helpers.Constants.OvertimeBaseUrl);
-        var t4 = sanctionService.GetAll(ClientLibrary.Helpers.Constants.SanctionBaseUrl);
-        var t5 = vacationService.GetAll(ClientLibrary.Helpers.Constants.VacationBaseUrl);
-        var t6 = doctorService.GetAll(ClientLibrary.Helpers.Constants.DoctorBaseUrl);
+        try
+        {
+            var t1 = employeeService.GetAll(ClientLibrary.Helpers.Constants.EmployeeBaseUrl);
+            var t2 = departmentService.GetAll(ClientLibrary.Helpers.Constants.DepartmentBaseUrl);
+            var t3 = overtimeService.GetAll(ClientLibrary.Helpers.Constants.OvertimeBaseUrl);
+            var t4 = sanctionService.GetAll(ClientLibrary.Helpers.Constants.SanctionBaseUrl);
+            var t5 = vacationService.GetAll(ClientLibrary.Helpers.Constants.VacationBaseUrl);
+            var t6 = doctorService.GetAll(ClientLibrary.Helpers.Constants.DoctorBaseUrl);
 
-        await Task.WhenAll(t1, t2, t3, t4, t5, t6);
+            await Task.WhenAll(t1, t2, t3, t4, t5, t6);
 
-        _employees   = t1.Result;
-        _departments = t2.Result;
-        _overtimes   = t3.Result;
-        _sanctions   = t4.Result;
-        _vacations   = t5.Result;
-        _health      = t6.Result;
-
-        await InvokeAsync(StateHasChanged);
+            _employees   = t1.Result;
+            _departments = t2.Result;
+            _overtimes   = t3.Result;
+            _sanctions   = t4.Result;
+            _vacations   = t5.Result;
+            _health      = t6.Result;
+        }
+        catch
+        {
+            // API unavailable — keep nulls; UI shows skeleton placeholders
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadHrIntelligenceAsync()

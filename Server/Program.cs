@@ -167,7 +167,7 @@ try
         await dbContext.Database.MigrateAsync();
     }
 
-    if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
+    if (seedDemoDataOnStartup)
     {
         await DevelopmentDataSeeder.SeedAsync(app.Services);
     }
