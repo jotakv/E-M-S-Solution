@@ -138,12 +138,12 @@
                 }
                 </div>
 
-                @* {{!-- FEEDBACK / SENTIMENT (all authenticated users) --}} *@
+                @* {{!-- HR NOTES --}} *@
                 <div class="nav-item px-3" style="margin-top:0.5rem;">
-                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="FeedbackClicked">
+                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="HrNotesClicked">
                         <div class="hstack gap-2">
-                            <span class="bi bi-chat-heart-fill fs-5" aria-hidden="true"></span>
-                            <span>Feedback</span>
+                            <span class="bi bi-journal-text fs-5" aria-hidden="true"></span>
+                            <span>HR Notes</span>
                         </div>
                     </a>
                 </div>
@@ -211,5 +211,5 @@
     void VacationTypeClicked() => allState.VacationTypeClicked();
     void UserClicked() => allState.UserClicked();
     void EmployeeClicked() => allState.EmployeeClicked();
-    void FeedbackClicked() => allState.FeedbackClicked();
+    void HrNotesClicked() => NavManager.NavigateTo("/hr-notes");
 }
