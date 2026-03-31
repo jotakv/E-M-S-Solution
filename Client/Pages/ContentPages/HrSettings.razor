@@ -26,7 +26,7 @@
                     </div>
                     <div class="ems-info-row">
                         <span class="ems-info-label">Email</span>
-                        <span class="ems-info-value">@_email</span>
+                        <span class="ems-info-value">@(_email.Length > 0 ? _email : "—")</span>
                     </div>
                     <div class="ems-info-row">
                         <span class="ems-info-label">Role</span>
@@ -50,8 +50,8 @@
                 <div class="card-body px-3 py-3">
 
                     <!-- Default time filter -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:0.82rem; color:#444;">Default time filter</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold mb-2" style="font-size:0.82rem; color:#444;">Default time filter</label>
                         <div class="d-flex gap-2 flex-wrap">
                             @foreach (var opt in _timeFilterOptions)
                             {
@@ -68,7 +68,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <div class="fw-semibold" style="font-size:0.85rem; color:#333;">Show analytics panel by default</div>
-                            <div class="text-muted" style="font-size:0.75rem;">When enabled, the analytics panel opens automatically on the home page</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Analytics panel opens automatically on the home page</div>
                         </div>
                         <div class="form-check form-switch ms-3 mb-0">
                             <input class="form-check-input" type="checkbox" role="switch"
@@ -95,15 +95,15 @@
     private string _email       = "";
     private string? _role;
 
-    private string _selectedTimeFilter   = "30";
-    private bool   _showAnalyticsByDefault = true;
+    private string _selectedTimeFilter      = "30";
+    private bool   _showAnalyticsByDefault  = true;
 
     private readonly (string Label, string Value)[] _timeFilterOptions =
     [
-        ("30 days",   "30"),
-        ("3 months",  "90"),
-        ("1 year",    "365"),
-        ("All time",  "0"),
+        ("30 days",  "30"),
+        ("3 months", "90"),
+        ("1 year",   "365"),
+        ("All time", "0"),
     ];
 
     protected override async Task OnInitializedAsync()
@@ -126,8 +126,8 @@
                  ?? user.FindFirst("role")?.Value;
         }
 
-        _selectedTimeFilter    = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days") ?? "30";
-        var analyticsRaw       = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
+        _selectedTimeFilter   = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days") ?? "30";
+        var analyticsRaw      = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
         _showAnalyticsByDefault = analyticsRaw != "false";
     }
 

@@ -18,5 +18,11 @@ namespace ClientLibrary.Helpers
 
         public const string FeedbackBaseUrl    = "api/feedback";
         public const string FeedbackSummaryUrl = "api/feedback/summary";
+
+        public const string HRNotesUrl             = "api/hrnotes";
+        public const string HRSummaryUrl           = "api/hrintelligence/summary";
+        public const string HRTrendUrl             = "api/hrintelligence/trend";
+        public const string HRDepartmentsUrl       = "api/hrintelligence/departments";
+        public const string HRRisksUrl             = "api/hrintelligence/risks";
     }
 }

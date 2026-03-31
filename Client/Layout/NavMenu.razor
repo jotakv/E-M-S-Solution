@@ -1,10 +1,11 @@
-﻿<AuthorizeView>
+<AuthorizeView>
     <Authorized>
 
-        <div class="top-row ps-3 navbar navbar-dark">
+        <div class="top-row ps-3 navbar navbar-dark ems-nav-brand">
             <div class="container-fluid">
-                <a class="navbar-brand" style="cursor:pointer;" @onclick="HomeClicked">
-                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <a class="navbar-brand d-flex align-items-center gap-2" style="cursor:pointer;" @onclick="HomeClicked">
+                    <span class="bi bi-grid-fill fs-5" aria-hidden="true" style="color:#1d9e75;"></span>
+                    <span style="font-weight:700; letter-spacing:.01em;">EMS</span>
                 </a>
                 <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
                     <span class="navbar-toggler-icon"></span>
@@ -13,171 +14,183 @@
         </div>
 
         <div class="@NavMenuCssClass nav-scrollable">
-            <nav class="flex-column">
+            <nav class="flex-column pb-3">
 
-                @* {{!-- ADMINISTRATION (Admin only) --}} *@
+                @* ── ADMINISTRATION ────────────────────────────────────────────────── *@
                 <AuthorizeView Roles="Admin" Context="adminCtx">
-                    <Authorized> 
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="ShowAdminMenuContainer">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-person-fill fs-5" aria-hidden="true"></span>
-                                    <span>Administration</span>
-                                </div>
-                            </a>
-                            @if (ShowHide)
-                            {
-                                <div style="margin-left:1.5rem;">
-                                    <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="UserClicked">
-                                        <div class="hstack gap-2">
-                                            <span class="bi bi-people fs-5" aria-hidden="true"></span>
-                                            <span>Users</span>
-                                        </div>
-                                    </a>
-                                </div>
-                            }
-                        </div>
-                  </Authorized>
-                </AuthorizeView> 
+                    <Authorized>
+                        <div class="ems-section-header">Administration</div>
 
-                @* {{!-- MANAGEMENT (all authenticated users) --}} *@
-                <div class="nav-item px-3">
-                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="ShowDepartmentContainer">
-                        <div class="hstack gap-2">
-                            <span class="bi bi-backpack4-fill fs-5" aria-hidden="true"></span>
-                            <span>Management</span>
-                        </div>
-                    </a>
-                    @if (ShowHideDepartment)
-                    {
-                        <div style="margin-left:1.5rem;">
-                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="GeneralDepartmentClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-file-medical fs-5" aria-hidden="true"></span>
-                                    <span>General Dep</span>
-                                </div>
-                            </a>
-                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="DepartmentClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-substack fs-5" aria-hidden="true"></span>
-                                    <span>Department</span>
-                                </div>
-                            </a>
-                            <a class="nav-link p-2 text-white" style="cursor:pointer;" @onclick="BranchClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-chevron-bar-contract fs-5" aria-hidden="true"></span>
-                                    <span>Branch</span>
-                                </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="ShowAdminMenuContainer">
+                                <span class="bi bi-person-fill ems-nav-icon" aria-hidden="true"></span>
+                                <span>Administration</span>
                             </a>
                         </div>
 
-                        <hr class="border-secondary mx-3" />
-                        @* { { !--LOCATION--} } *@
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="CountryClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-geo-alt fs-5" aria-hidden="true"></span>
-                                    <span>Country</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="CityClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-pin-map-fill fs-5" aria-hidden="true"></span>
-                                    <span>City</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="TownClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-geo fs-5" aria-hidden="true"></span>
-                                    <span>Town</span>
-                                </div>
-                            </a>
-                        </div>
+                        @if (ShowHide)
+                        {
+                            <div class="ems-nav-item ems-nav-sub">
+                                <a class="ems-nav-link" style="cursor:pointer;" @onclick="UserClicked">
+                                    <span class="bi bi-people ems-nav-icon" aria-hidden="true"></span>
+                                    <span>Users</span>
+                                </a>
+                            </div>
+                        }
+                    </Authorized>
+                </AuthorizeView>
 
-                        <hr class="border-secondary mx-3" />
-                        @* { {!--TYPES--} } *@
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="OvertimeTypeClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-stopwatch fs-5" aria-hidden="true"></span>
-                                    <span>Overtime Type</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="SanctionTypeClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-x-octagon fs-5" aria-hidden="true"></span>
-                                    <span>Sanction Type</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="VacationTypeClicked">
-                                <div class="hstack gap-2">
-                                    <span class="bi bi-backpack3 fs-5" aria-hidden="true"></span>
-                                    <span>Vacation Type</span>
-                                </div>
-                            </a>
-                        </div>
+                @* ── MANAGEMENT ────────────────────────────────────────────────────── *@
+                <div class="ems-section-header">Management</div>
 
-                        <hr class="border-secondary mx-3" />
-                        @* { {!--EMPLOYEES--} } *@
-                        <div class="nav-item px-3">
-                            <a class="nav-link p-2" style="cursor:pointer;" @onclick="EmployeeClicked">
-                        <div class="hstack gap-2">
-                            <span class="bi bi-people-fill fs-5" aria-hidden="true"></span>
-                            <span>Employees</span>
-                        </div>
+                <div class="ems-nav-item">
+                    <a class="ems-nav-link" style="cursor:pointer;" @onclick="ShowDepartmentContainer">
+                        <span class="bi bi-backpack4-fill ems-nav-icon" aria-hidden="true"></span>
+                        <span>Management</span>
                     </a>
                 </div>
+
+                @if (ShowHideDepartment)
+                {
+                    <div class="ems-nav-sub">
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="GeneralDepartmentClicked">
+                                <span class="bi bi-file-medical ems-nav-icon" aria-hidden="true"></span>
+                                <span>General Dep</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="DepartmentClicked">
+                                <span class="bi bi-substack ems-nav-icon" aria-hidden="true"></span>
+                                <span>Department</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="BranchClicked">
+                                <span class="bi bi-chevron-bar-contract ems-nav-icon" aria-hidden="true"></span>
+                                <span>Branch</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="CountryClicked">
+                                <span class="bi bi-geo-alt ems-nav-icon" aria-hidden="true"></span>
+                                <span>Country</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="CityClicked">
+                                <span class="bi bi-pin-map-fill ems-nav-icon" aria-hidden="true"></span>
+                                <span>City</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="TownClicked">
+                                <span class="bi bi-geo ems-nav-icon" aria-hidden="true"></span>
+                                <span>Town</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="OvertimeTypeClicked">
+                                <span class="bi bi-stopwatch ems-nav-icon" aria-hidden="true"></span>
+                                <span>Overtime Type</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="SanctionTypeClicked">
+                                <span class="bi bi-x-octagon ems-nav-icon" aria-hidden="true"></span>
+                                <span>Sanction Type</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="VacationTypeClicked">
+                                <span class="bi bi-backpack3 ems-nav-icon" aria-hidden="true"></span>
+                                <span>Vacation Type</span>
+                            </a>
+                        </div>
+                        <div class="ems-nav-item">
+                            <a class="ems-nav-link" style="cursor:pointer;" @onclick="EmployeeClicked">
+                                <span class="bi bi-people-fill ems-nav-icon" aria-hidden="true"></span>
+                                <span>Employees</span>
+                            </a>
+                        </div>
+                    </div>
                 }
-                </div>
 
-                @* {{!-- HR NOTES --}} *@
-                <div class="nav-item px-3" style="margin-top:0.5rem;">
-                    <a class="nav-link p-2" style="cursor:pointer;" @onclick="HrNotesClicked">
-                        <div class="hstack gap-2">
-                            <span class="bi bi-journal-text fs-5" aria-hidden="true"></span>
-                            <span>HR Notes</span>
-                        </div>
+                @* ── HR NOTES ──────────────────────────────────────────────────────── *@
+                <div class="ems-nav-item mt-1">
+                    <a class="ems-nav-link" style="cursor:pointer;" @onclick='() => NavManager.NavigateTo("/hr-notes")'>
+                        <span class="bi bi-journal-text ems-nav-icon" aria-hidden="true"></span>
+                        <span>HR Notes</span>
                     </a>
                 </div>
 
             </nav>
         </div>
 
-
     </Authorized>
     <NotAuthorized>
-        {{!-- Nav hidden when not logged in --}}
+        @* Nav hidden when not logged in *@
     </NotAuthorized>
 </AuthorizeView>
 
 <style>
-    .nav-link {
-        color: rgba(255,255,255,0.8) !important;
+    /* ── Sidebar brand row ────────────────────────────────────────────── */
+    .ems-nav-brand {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
-    .nav-link:hover {
-        color: white !important;
-        background-color: rgba(255,255,255,0.1);
-        border-radius: 4px;
+    /* ── Section header labels ────────────────────────────────────────── */
+    .ems-section-header {
+        padding: 12px 16px 4px 16px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.35);
+        user-select: none;
     }
 
-    .hstack .bi {
-        line-height: 1;
+    /* ── Nav items ────────────────────────────────────────────────────── */
+    .ems-nav-item {
+        padding: 1px 8px;
+    }
+
+    .ems-nav-sub {
+        padding-left: 8px;
+        border-left: 2px solid rgba(255,255,255,0.06);
+        margin-left: 20px;
+    }
+
+    .ems-nav-link {
         display: flex;
         align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: 7px;
+        color: rgba(255,255,255,0.75) !important;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 450;
+        transition: background .13s ease, color .13s ease;
     }
 
-    .hstack span:not(.bi) {
-        line-height: 1.5;
-        margin-top: 2px; 
+    .ems-nav-link:hover {
+        background: rgba(255,255,255,0.09);
+        color: #fff !important;
+    }
+
+    .ems-nav-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+        width: 18px;
+        text-align: center;
+        line-height: 1;
+        color: rgba(255,255,255,0.55);
+        transition: color .13s ease;
+    }
+
+    .ems-nav-link:hover .ems-nav-icon {
+        color: #1d9e75;
     }
 </style>
 
@@ -186,30 +199,31 @@
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
     private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
 
-    // Administration
-    public bool ShowHide { get; set; } = false;
+    // Administration — expanded by default
+    public bool ShowHide { get; set; } = true;
     private void ShowAdminMenuContainer() => ShowHide = !ShowHide;
 
-    // Management
-    public bool ShowHideDepartment { get; set; } = false;
+    // Management — expanded by default
+    public bool ShowHideDepartment { get; set; } = true;
     private void ShowDepartmentContainer() => ShowHideDepartment = !ShowHideDepartment;
 
     void HomeClicked()
     {
-        allState.EmployeeClicked();
+        allState.HomeClicked();
         NavManager.NavigateTo("/home/dashboard");
     }
 
-    void GeneralDepartmentClicked() => allState.GeneralDepartmentClicked();
-    void DepartmentClicked() => allState.DepartmentClicked();
-    void BranchClicked() => allState.BranchClicked();
-    void CountryClicked() => allState.CountryClicked();
-    void CityClicked() => allState.CityClicked();
-    void TownClicked() => allState.TownClicked();
-    void OvertimeTypeClicked() => allState.OvertimeTypeClicked();
-    void SanctionTypeClicked() => allState.SanctionTypeClicked();
-    void VacationTypeClicked() => allState.VacationTypeClicked();
-    void UserClicked() => allState.UserClicked();
-    void EmployeeClicked() => allState.EmployeeClicked();
-    void HrNotesClicked() => NavManager.NavigateTo("/hr-notes");
+    void EnsureHome() { if (!NavManager.Uri.Contains("/home/dashboard")) NavManager.NavigateTo("/home/dashboard"); }
+
+    void GeneralDepartmentClicked() { EnsureHome(); allState.GeneralDepartmentClicked(); }
+    void DepartmentClicked()        { EnsureHome(); allState.DepartmentClicked(); }
+    void BranchClicked()            { EnsureHome(); allState.BranchClicked(); }
+    void CountryClicked()           { EnsureHome(); allState.CountryClicked(); }
+    void CityClicked()              { EnsureHome(); allState.CityClicked(); }
+    void TownClicked()              { EnsureHome(); allState.TownClicked(); }
+    void OvertimeTypeClicked()      { EnsureHome(); allState.OvertimeTypeClicked(); }
+    void SanctionTypeClicked()      { EnsureHome(); allState.SanctionTypeClicked(); }
+    void VacationTypeClicked()      { EnsureHome(); allState.VacationTypeClicked(); }
+    void UserClicked()              { EnsureHome(); allState.UserClicked(); }
+    void EmployeeClicked()          { EnsureHome(); allState.EmployeeClicked(); }
 }
