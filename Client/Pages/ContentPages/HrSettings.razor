@@ -1,0 +1,146 @@
+@page "/hr-settings"
+@attribute [Authorize]
+@inject IJSRuntime JS
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+
+            <!-- Page header -->
+            <div class="mb-4">
+                <h4 class="fw-semibold mb-0" style="color:var(--ems-text,#111);">HR Settings</h4>
+                <p class="text-muted mb-0" style="font-size:0.85rem;">Manage your account info and HR Intelligence preferences</p>
+            </div>
+
+            <!-- Account info card -->
+            <div class="card shadow-sm mb-4" style="border:1px solid #ebebeb; border-radius:10px;">
+                <div class="card-header py-2 px-3 border-bottom" style="background:#f8f8f8; border-radius:10px 10px 0 0;">
+                    <span class="fw-semibold text-muted" style="font-size:0.82rem;">
+                        <i class="bi bi-person-circle text-primary me-1"></i>Account
+                    </span>
+                </div>
+                <div class="card-body px-3 py-3">
+                    <div class="ems-info-row">
+                        <span class="ems-info-label">Username</span>
+                        <span class="ems-info-value fw-semibold">@_displayName</span>
+                    </div>
+                    <div class="ems-info-row">
+                        <span class="ems-info-label">Email</span>
+                        <span class="ems-info-value">@_email</span>
+                    </div>
+                    <div class="ems-info-row">
+                        <span class="ems-info-label">Role</span>
+                        <span class="ems-info-value">
+                            <span class="badge @(_role == "Admin" ? "bg-danger" : "bg-primary") bg-opacity-10 text-@(_role == "Admin" ? "danger" : "primary")"
+                                  style="font-size:0.78rem; border-radius:6px; padding:3px 8px;">
+                                @(_role ?? "User")
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HR Intelligence preferences card -->
+            <div class="card shadow-sm mb-4" style="border:1px solid #ebebeb; border-radius:10px;">
+                <div class="card-header py-2 px-3 border-bottom" style="background:#f8f8f8; border-radius:10px 10px 0 0;">
+                    <span class="fw-semibold text-muted" style="font-size:0.82rem;">
+                        <i class="bi bi-sliders text-primary me-1"></i>HR Intelligence preferences
+                    </span>
+                </div>
+                <div class="card-body px-3 py-3">
+
+                    <!-- Default time filter -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:0.82rem; color:#444;">Default time filter</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var opt in _timeFilterOptions)
+                            {
+                                <button class="btn btn-sm @(_selectedTimeFilter == opt.Value ? "btn-dark" : "btn-outline-secondary")"
+                                        style="border-radius:20px; font-size:0.78rem;"
+                                        @onclick="() => SetTimeFilter(opt.Value)">
+                                    @opt.Label
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Show analytics panel toggle -->
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fw-semibold" style="font-size:0.85rem; color:#333;">Show analytics panel by default</div>
+                            <div class="text-muted" style="font-size:0.75rem;">When enabled, the analytics panel opens automatically on the home page</div>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="analyticsToggle"
+                                   checked="@_showAnalyticsByDefault"
+                                   @onchange="ToggleAnalytics"
+                                   style="width:2.4em; height:1.3em; cursor:pointer;" />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-muted" style="font-size:0.75rem;">
+                <i class="bi bi-info-circle me-1"></i>Preferences are saved in your browser's local storage.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _displayName = "User";
+    private string _email       = "";
+    private string? _role;
+
+    private string _selectedTimeFilter   = "30";
+    private bool   _showAnalyticsByDefault = true;
+
+    private readonly (string Label, string Value)[] _timeFilterOptions =
+    [
+        ("30 days",   "30"),
+        ("3 months",  "90"),
+        ("1 year",    "365"),
+        ("All time",  "0"),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user      = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _displayName = user.FindFirst("name")?.Value
+                        ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                        ?? user.Identity.Name
+                        ?? "User";
+
+            _email = user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                  ?? user.FindFirst("email")?.Value
+                  ?? "";
+
+            _role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                 ?? user.FindFirst("role")?.Value;
+        }
+
+        _selectedTimeFilter    = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days") ?? "30";
+        var analyticsRaw       = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
+        _showAnalyticsByDefault = analyticsRaw != "false";
+    }
+
+    private async Task SetTimeFilter(string value)
+    {
+        _selectedTimeFilter = value;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_hr_default_days", value);
+    }
+
+    private async Task ToggleAnalytics(ChangeEventArgs e)
+    {
+        _showAnalyticsByDefault = e.Value is true;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_analytics_panel",
+            _showAnalyticsByDefault ? "true" : "false");
+    }
+}
