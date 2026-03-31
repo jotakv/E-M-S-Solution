@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @using Syncfusion.Blazor.Charts
 @implements IDisposable
+@inject IJSRuntime JS
 
 <AuthorizeView>
     <Authorized>
@@ -70,17 +71,73 @@
 
                 <!-- C. Analytics Overview panel -->
                 <div class="card shadow-sm mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
                         <span class="fw-semibold" style="font-size:0.85rem;">
                             <i class="bi bi-bar-chart-fill text-primary me-1"></i>Analytics Overview
                         </span>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick='() => _analyticsOpen = !_analyticsOpen'>
-                            <i class="bi @(_analyticsOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
-                            @(_analyticsOpen ? "Collapse" : "Expand")
-                        </button>
+                        <div class="d-flex gap-1 align-items-center flex-wrap">
+                            @foreach (var (label, val) in new (string, int)[] { ("30d",30),("3m",90),("1y",365),("All",0) })
+                            {
+                                <button class="btn btn-sm @(_hrDays == val ? "btn-dark" : "btn-outline-secondary")"
+                                        style="border-radius:20px; font-size:0.75rem; padding:2px 10px;"
+                                        @onclick="() => SetHrDays(val)">@label</button>
+                            }
+                            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick='() => _analyticsOpen = !_analyticsOpen'>
+                                <i class="bi @(_analyticsOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                                @(_analyticsOpen ? "Collapse" : "Expand")
+                            </button>
+                        </div>
                     </div>
                     @if (_analyticsOpen)
                     {
+                        <!-- 6 metric summary cards -->
+                        <div class="px-2 pt-2">
+                            <div class="row g-2 mb-2">
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #0071e3 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#0071e3;">@(_employees?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Employees</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #6f42c1 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#6f42c1;">@(_departments?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Departments</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #dc3545 !important;">
+                                        <div class="fw-bold text-danger" style="font-size:1.3rem;">@(_risks.Count(r => r.RiskLevel == "High"))</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">High Risk</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #28a745 !important;">
+                                        @{
+                                            var posTotal = _trend.Sum(t => t.PositivePct + t.NeutralPct + t.NegativePct);
+                                            var posPct   = posTotal > 0
+                                                ? Math.Round(_trend.Average(t => t.PositivePct), 0)
+                                                : 0;
+                                        }
+                                        <div class="fw-bold text-success" style="font-size:1.3rem;">@posPct%</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Pos. Morale</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #fd7e14 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#fd7e14;">@(_overtimes?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Overtime</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #ffc107 !important;">
+                                        <div class="fw-bold text-warning" style="font-size:1.3rem;">@(_sanctions?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Sanctions</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card-body p-2">
                             <div class="row g-3">
 
@@ -264,7 +321,7 @@
                     }
                 </div>
 
-                <!-- E. Risk Manager indicator panel -->
+                <!-- E. Risk Manager — interactive collapsible rows -->
                 <div class="card shadow-sm mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center py-2">
                         <span class="fw-semibold" style="font-size:0.85rem;">
@@ -291,40 +348,97 @@
                             }
                             else
                             {
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr style="font-size:0.78rem;">
-                                                <th>Employee</th>
-                                                <th>Dept / Branch</th>
-                                                <th>Score</th>
-                                                <th>Level</th>
-                                                <th>Reasons</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody style="font-size:0.8rem;">
-                                            @foreach (var r in _risks)
+                                <div class="d-flex flex-column gap-2 px-1">
+                                    @foreach (var r in _risks)
+                                    {
+                                        var isExpanded = _expandedRiskRows.Contains(r.EmployeeId);
+                                        var dotColor   = r.RiskLevel == "High" ? "#dc3545" : r.RiskLevel == "Medium" ? "#fd7e14" : "#28a745";
+                                        <div class="border rounded" style="overflow:hidden; cursor:pointer;"
+                                             @onclick="() => ToggleRiskRow(r.EmployeeId)">
+                                            <!-- Row summary -->
+                                            <div class="d-flex align-items-center gap-3 px-3 py-2 @(isExpanded ? "border-bottom" : "")"
+                                                 style="background:@(isExpanded ? "#fafafa" : "white"); font-size:0.82rem;">
+                                                <span style="width:10px; height:10px; border-radius:50%; background:@dotColor; flex-shrink:0; display:inline-block;"></span>
+                                                <span class="fw-semibold" style="min-width:130px;">@r.EmployeeFullName</span>
+                                                <span class="text-muted d-none d-md-inline" style="min-width:110px; font-size:0.75rem;">@r.Department</span>
+                                                <div class="flex-grow-1 mx-2 d-none d-md-block">
+                                                    <div class="progress" style="height:6px; border-radius:3px;">
+                                                        <div class="progress-bar @RiskBarClass(r.RiskLevel)"
+                                                             style="width:@(r.RiskScore)%; transition:width 0.5s ease;"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-muted" style="font-size:0.75rem; min-width:45px; text-align:right;">@r.RiskScore / 100</span>
+                                                <span class="badge @RiskBadgeClass(r.RiskLevel)" style="font-size:0.72rem; min-width:60px; text-align:center;">@r.RiskLevel</span>
+                                                <i class="bi @(isExpanded ? "bi-chevron-up" : "bi-chevron-down") text-muted ms-1" style="font-size:0.75rem;"></i>
+                                            </div>
+                                            <!-- Expandable drawer -->
+                                            @if (isExpanded)
                                             {
-                                                <tr>
-                                                    <td class="fw-semibold">@r.EmployeeFullName</td>
-                                                    <td class="text-muted">@r.Department<br /><small>@r.Branch</small></td>
-                                                    <td>
-                                                        <div class="progress mb-1" style="height:5px; width:70px;">
-                                                            <div class="progress-bar @RiskBarClass(r.RiskLevel)" style="width:@(r.RiskScore)%"></div>
+                                                <div class="px-3 py-3" style="background:#f8f9fa; font-size:0.78rem;" @onclick:stopPropagation="true">
+                                                    <!-- Fact grid -->
+                                                    <div class="row g-2 mb-2">
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="font-size:1.1rem;">@r.OvertimeCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Overtime</div>
+                                                            </div>
                                                         </div>
-                                                        <small>@r.RiskScore / 100</small>
-                                                    </td>
-                                                    <td><span class="badge @RiskBadgeClass(r.RiskLevel)">@r.RiskLevel</span></td>
-                                                    <td>
-                                                        @foreach (var reason in r.RiskReasons)
-                                                        {
-                                                            <span class="badge bg-light text-dark border me-1 mb-1" style="font-size:0.7rem;">@reason</span>
-                                                        }
-                                                    </td>
-                                                </tr>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="font-size:1.1rem;">@r.SickLeaveCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Sick Leave</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-danger" style="font-size:1.1rem;">@r.SanctionCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Sanctions</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-danger" style="font-size:1.1rem;">@r.NegativeNoteCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Neg. Notes</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-success" style="font-size:1.1rem;">@r.PositiveNoteCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Pos. Notes</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="color:@dotColor; font-size:1.1rem;">@r.RiskScore</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Total Score</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Formula -->
+                                                    <div class="mb-2 text-muted" style="font-size:0.72rem;">
+                                                        <strong>Formula:</strong>
+                                                        OT×5 + SickLeave×4 + Sanctions×6 + NegNotes×10 − PosNotes×3
+                                                        = @r.OvertimeCount×5 + @r.SickLeaveCount×4 + @r.SanctionCount×6 + @r.NegativeNoteCount×10 − @r.PositiveNoteCount×3
+                                                        = <strong>@r.RiskScore</strong>
+                                                    </div>
+                                                    <!-- Reason tags -->
+                                                    @if (r.RiskReasons.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                                            @foreach (var reason in r.RiskReasons)
+                                                            {
+                                                                <span class="badge bg-light text-dark border" style="font-size:0.7rem;">@reason</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    <!-- View employee link -->
+                                                    <a href="/hr-notes?employeeId=@r.EmployeeId" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;">
+                                                        <i class="bi bi-arrow-right-circle me-1"></i>View HR Notes →
+                                                    </a>
+                                                </div>
                                             }
-                                        </tbody>
-                                    </table>
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>
@@ -350,9 +464,9 @@
     private List<Doctor>?      _health;
 
     // ── Panel open/close ─────────────────────────────────────────────────
-    private bool _analyticsOpen = true;
-    private bool _noteOpen      = true;
-    private bool _riskOpen      = true;
+    private bool _analyticsOpen   = true;
+    private bool _noteOpen        = true;
+    private bool _riskOpen        = true;
 
     // ── HR intelligence data ─────────────────────────────────────────────
     private List<SentimentTrendDto>   _trend      = new();
@@ -362,6 +476,7 @@
     private bool _deptLoading   = false;
     private bool _risksLoading  = false;
     private bool _hrDataLoaded  = false;
+    private int  _hrDays        = 30;  // default; overridden by localStorage preference
 
     // ── Note panel ───────────────────────────────────────────────────────
     private int                  _noteEmployeeId = 0;
@@ -369,6 +484,9 @@
     private bool                 _noteSubmitting = false;
     private NoteCreatedResponse? _noteResult     = null;
     private string               _noteError      = string.Empty;
+
+    // ── Risk Manager — per-row expanded state ─────────────────────────────
+    private HashSet<int> _expandedRiskRows = new();
 
     protected override void OnInitialized()
     {
@@ -386,7 +504,6 @@
 
     private void OnDashboardUpdate()
     {
-        // Reload core data and HR intelligence when records are added
         _hrDataLoaded = false;
         _ = LoadCoreDataAsync();
         if (allState.ShowDashboard)
@@ -395,8 +512,20 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_hrDataLoaded)
+        if (firstRender)
+        {
+            // Read HR Intelligence preferences from localStorage
+            var daysRaw      = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
+            var analyticsRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_show_analytics_panel");
+
+            if (int.TryParse(daysRaw, out var savedDays))
+                _hrDays = savedDays;
+
+            _analyticsOpen = analyticsRaw != "false";  // default true unless explicitly disabled
+
             await LoadHrIntelligenceAsync();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadCoreDataAsync()
@@ -431,10 +560,11 @@
 
         try
         {
-            var http = await HttpFactory.GetPrivateHttpClient();
-            var tTask = http.GetFromJsonAsync<List<SentimentTrendDto>>($"{ClientLibrary.Helpers.Constants.HRTrendUrl}?days=30");
-            var dTask = http.GetFromJsonAsync<List<DepartmentMoraleDto>>($"{ClientLibrary.Helpers.Constants.HRDepartmentsUrl}?days=30");
-            var rTask = http.GetFromJsonAsync<List<EmployeeRiskDto>>($"{ClientLibrary.Helpers.Constants.HRRisksUrl}?top=5&days=90");
+            var http  = await HttpFactory.GetPrivateHttpClient();
+            var days  = _hrDays > 0 ? _hrDays : 3650;
+            var tTask = http.GetFromJsonAsync<List<SentimentTrendDto>>($"{ClientLibrary.Helpers.Constants.HRTrendUrl}?days={days}");
+            var dTask = http.GetFromJsonAsync<List<DepartmentMoraleDto>>($"{ClientLibrary.Helpers.Constants.HRDepartmentsUrl}?days={days}");
+            var rTask = http.GetFromJsonAsync<List<EmployeeRiskDto>>($"{ClientLibrary.Helpers.Constants.HRRisksUrl}?top=10&days=90");
 
             await Task.WhenAll(tTask, dTask, rTask);
 
@@ -452,13 +582,33 @@
         }
     }
 
+    private async Task SetHrDays(int days)
+    {
+        if (_hrDays == days) return;
+        _hrDays       = days;
+        _hrDataLoaded = false;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_hr_default_days", days.ToString());
+        await LoadHrIntelligenceAsync();
+    }
+
     private async Task SubmitNote()
     {
-        if (_noteEmployeeId <= 0 || string.IsNullOrWhiteSpace(_noteText)) return;
+        _noteError  = string.Empty;
+        _noteResult = null;
+
+        if (_noteEmployeeId <= 0)
+        {
+            _noteError = "You need to select an employee.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_noteText))
+        {
+            _noteError = "You need to write an observation.";
+            return;
+        }
 
         _noteSubmitting = true;
-        _noteResult     = null;
-        _noteError      = string.Empty;
 
         try
         {
@@ -473,10 +623,12 @@
 
             if (resp.IsSuccessStatusCode)
             {
-                _noteResult   = await resp.Content.ReadFromJsonAsync<NoteCreatedResponse>();
-                _noteText     = string.Empty;
-                _hrDataLoaded = false; // force HR panel refresh next time
+                _noteResult      = await resp.Content.ReadFromJsonAsync<NoteCreatedResponse>();
+                _noteText        = string.Empty;
+                _noteEmployeeId  = 0;
+                _hrDataLoaded    = false;
                 toastService.ShowSuccess("Note saved and analysed.");
+                allState.UpdateDashboardAction?.Invoke();  // refresh charts in real time
             }
             else
             {
@@ -491,6 +643,12 @@
         {
             _noteSubmitting = false;
         }
+    }
+
+    private void ToggleRiskRow(int employeeId)
+    {
+        if (!_expandedRiskRows.Add(employeeId))
+            _expandedRiskRows.Remove(employeeId);
     }
 
     private static string SentimentBadgeClass(string label) => label switch

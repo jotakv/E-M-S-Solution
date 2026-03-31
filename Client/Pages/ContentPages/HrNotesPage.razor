@@ -250,6 +250,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Apply localStorage default time filter preference from HR Settings
+        var daysRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
+        if (int.TryParse(daysRaw, out var savedDays))
+            _filterDays = savedDays;
+
         _employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
         await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
     }
@@ -337,11 +342,22 @@
 
     private async Task SubmitNote()
     {
-        if (_newNoteEmployeeId <= 0 || string.IsNullOrWhiteSpace(_newNoteText)) return;
+        _noteError  = string.Empty;
+        _noteResult = null;
+
+        if (_newNoteEmployeeId <= 0)
+        {
+            _noteError = "You need to select an employee.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newNoteText))
+        {
+            _noteError = "You need to write an observation.";
+            return;
+        }
 
         _noteSubmitting = true;
-        _noteResult     = null;
-        _noteError      = string.Empty;
 
         try
         {
@@ -387,6 +403,20 @@
             sb.AppendLine($"\"{csvDate}\",\"{csvName}\",\"{csvDept}\",\"{csvBrch}\",\"{csvNote}\",\"{n.SentimentLabel}\",\"{csvScore}\"");
         }
         await JS.InvokeVoidAsync("downloadFile", $"hr-notes-{DateTime.Now:yyyyMMdd}.csv", sb.ToString(), "text/csv");
+
+        // Audit log the export
+        try
+        {
+            var http = await HttpFactory.GetPrivateHttpClient();
+            await http.PostAsJsonAsync($"{Constants.HRNotesUrl}/audit/export", new
+            {
+                RowCount        = _notes.Count,
+                EmployeeId      = _filterEmployeeId > 0 ? (int?)_filterEmployeeId : null,
+                SentimentFilter = string.IsNullOrEmpty(_filterSentiment) ? null : _filterSentiment,
+                DaysFilter      = _filterDays > 0 ? (int?)_filterDays : null
+            });
+        }
+        catch { /* audit failure must never block the export */ }
     }
 
     private static string SentimentBadgeClass(string label) => label switch

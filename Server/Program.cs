@@ -172,6 +172,16 @@ try
         await DevelopmentDataSeeder.SeedAsync(app.Services);
     }
 
+    // Seed HR analytics notes in ALL environments when EmployeeNotes is empty.
+    // Ensures Trend, Morale, and Risk charts populate on first load.
+    using (var analyticsScope = app.Services.CreateScope())
+    {
+        var analyticsDb     = analyticsScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var analyticsLogger = analyticsScope.ServiceProvider
+            .GetService<ILoggerFactory>()?.CreateLogger("AnalyticsSeed");
+        await DevelopmentDataSeeder.SeedAnalyticsNotesAsync(analyticsDb, analyticsLogger);
+    }
+
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
 

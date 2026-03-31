@@ -12,13 +12,18 @@ namespace Server.Controllers
     [Authorize]
     public class HRNotesController : ControllerBase
     {
-        private readonly IEmployeeNoteRepository _noteRepo;
-        private readonly ISentimentService       _sentiment;
+        private readonly IEmployeeNoteRepository   _noteRepo;
+        private readonly ISentimentService         _sentiment;
+        private readonly ILogger<HRNotesController> _logger;
 
-        public HRNotesController(IEmployeeNoteRepository noteRepo, ISentimentService sentiment)
+        public HRNotesController(
+            IEmployeeNoteRepository noteRepo,
+            ISentimentService sentiment,
+            ILogger<HRNotesController> logger)
         {
             _noteRepo  = noteRepo;
             _sentiment = sentiment;
+            _logger    = logger;
         }
 
         // POST /api/hrnotes
@@ -97,5 +102,34 @@ namespace Server.Controllers
                 PageSize   = pageSize
             });
         }
+
+        // POST /api/hrnotes/audit/export
+        // Called by the client after CSV export to log the audit event.
+        [HttpPost("audit/export")]
+        public IActionResult AuditExport([FromBody] ExportAuditRequest request)
+        {
+            var userId = User.FindFirst("sub")?.Value
+                      ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                      ?? "unknown";
+
+            _logger.LogInformation(
+                "CSV Export audit: UserId={UserId} ExportedAt={ExportedAt} Rows={Rows} Filters=[employee={EmployeeId} sentiment={Sentiment} days={Days}]",
+                userId,
+                DateTime.UtcNow,
+                request.RowCount,
+                request.EmployeeId,
+                request.SentimentFilter,
+                request.DaysFilter);
+
+            return Ok();
+        }
+    }
+
+    public sealed class ExportAuditRequest
+    {
+        public int     RowCount        { get; set; }
+        public int?    EmployeeId      { get; set; }
+        public string? SentimentFilter { get; set; }
+        public int?    DaysFilter      { get; set; }
     }
 }

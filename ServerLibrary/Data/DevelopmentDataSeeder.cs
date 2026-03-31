@@ -834,5 +834,149 @@ namespace ServerLibrary.Data
         }
 
         #endregion
+
+    // ── Analytics seed ────────────────────────────────────────────────────────
+    // Runs in ALL environments after migration. Seeds realistic HR notes only
+    // if the EmployeeNotes table is empty AND employees already exist.
+    // This guarantees Trend, Morale, and Risk charts are never blank on first load.
+
+    public static async Task SeedAnalyticsNotesAsync(
+        AppDbContext context,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await context.Employees.AnyAsync(cancellationToken)) return;
+        if (await context.EmployeeNotes.AnyAsync(cancellationToken)) return;
+
+        logger?.LogInformation("SeedAnalyticsNotesAsync: seeding HR notes for analytics...");
+
+        var employees = await context.Employees
+            .AsNoTracking()
+            .Include(e => e.Branch)
+                .ThenInclude(b => b!.Department)
+            .ToListAsync(cancellationToken);
+
+        if (employees.Count == 0) return;
+
+        var rng = new Random(777);
+        var now = DateTime.UtcNow;
+
+        // Pre-classified note templates — labels are set explicitly so analytics charts work
+        // even before the ML model has been trained/applied.
+        var positiveTemplates = new[]
+        {
+            "Consistently delivers high quality work ahead of schedule this period.",
+            "Received outstanding feedback from stakeholders for excellent project delivery.",
+            "Shows remarkable initiative and leadership skills that inspire the team.",
+            "Has gone above and beyond expectations on every assignment given.",
+            "Performance metrics are consistently above department benchmarks.",
+            "Proactively resolved a critical issue before it escalated, saving significant time.",
+            "Colleagues recognise this employee as a strong positive contributor.",
+            "Excellent attendance and punctuality record maintained throughout the quarter.",
+            "Strong technical skills and collaborative approach are highly valued by the team.",
+            "Has significantly improved processes leading to measurable efficiency gains.",
+            "Received formal commendation from senior management for outstanding results.",
+            "Demonstrates exceptional dedication and commitment to team success.",
+            "Client satisfaction scores are at an all-time high thanks to this employees work.",
+            "Positive attitude during a difficult period has boosted team morale significantly.",
+            "Has earned the trust and respect of colleagues across multiple departments.",
+            "Exceeded all quarterly targets by a strong margin with great attention to detail.",
+            "Team lead reports this employee as a model performer and great team player.",
+            "Delivers work with remarkable accuracy and consistently positive outcomes.",
+            "Has taken on additional responsibilities with great enthusiasm and skill.",
+            "Continuous learning efforts are clearly reflected in improved performance.",
+        };
+
+        var neutralTemplates = new[]
+        {
+            "Completed assigned tasks within the expected timeframe this period.",
+            "Attended all mandatory training sessions as required.",
+            "Work quality meets standard expectations for the role.",
+            "No notable performance incidents recorded this period.",
+            "Met the minimum required deliverables for the review period.",
+            "Participation in team meetings is adequate and appropriate.",
+            "Followed standard procedures and protocols throughout the period.",
+            "Delivered work to the expected level for this stage of employment.",
+            "Performance aligns with the average for this role and department.",
+            "Has maintained the expected output level with no major issues reported.",
+            "Completed standard compliance and documentation requirements.",
+            "Working relationships with colleagues are generally satisfactory.",
+        };
+
+        var negativeTemplates = new[]
+        {
+            "Has missed multiple project deadlines without prior communication.",
+            "Received complaints from two colleagues regarding unprofessional conduct.",
+            "Performance has been consistently below expectations this quarter.",
+            "Attendance issues have continued despite HR intervention and support.",
+            "Work quality has deteriorated significantly and requires ongoing correction.",
+            "Has been formally warned about repeated late arrivals to the office.",
+            "Team lead reports ongoing friction created by this employee in meetings.",
+            "Multiple customers have raised concerns about rude and dismissive behavior.",
+            "Has failed to complete mandatory training despite several reminders.",
+            "Negative attitude is clearly impacting team morale and productivity.",
+            "Continues to fall short of required standards after coaching and support.",
+            "Has been formally placed on a performance improvement plan this quarter.",
+            "Persistent failure to follow agreed procedures has caused avoidable delays.",
+            "Colleagues have expressed discomfort working alongside this employee.",
+            "Work output requires constant supervision and frequent corrections.",
+        };
+
+        var notes = new List<BaseLibrary.Entities.EmployeeNote>();
+
+        // Distribute notes across all employees, spread across 120 days
+        // Target ~40% positive, ~30% neutral, ~30% negative per employee
+        foreach (var emp in employees)
+        {
+            var notesPerEmployee = rng.Next(6, 14);
+
+            for (int i = 0; i < notesPerEmployee; i++)
+            {
+                var bucket = rng.Next(10);
+                string text;
+                string label;
+                float score;
+
+                if (bucket < 4)         // 40% Positive
+                {
+                    text  = positiveTemplates[rng.Next(positiveTemplates.Length)];
+                    label = "Positive";
+                    score = 0.70f + (float)rng.NextDouble() * 0.25f;
+                }
+                else if (bucket < 7)    // 30% Neutral
+                {
+                    text  = neutralTemplates[rng.Next(neutralTemplates.Length)];
+                    label = "Neutral";
+                    score = 0.38f + (float)rng.NextDouble() * 0.24f;
+                }
+                else                    // 30% Negative
+                {
+                    text  = negativeTemplates[rng.Next(negativeTemplates.Length)];
+                    label = "Negative";
+                    score = 0.05f + (float)rng.NextDouble() * 0.28f;
+                }
+
+                // Spread notes across last 120 days
+                var daysBack = rng.Next(1, 121);
+                var hoursBack = rng.Next(0, 8);
+
+                notes.Add(new BaseLibrary.Entities.EmployeeNote
+                {
+                    EmployeeId      = emp.Id,
+                    NoteText        = text,
+                    SentimentLabel  = label,
+                    SentimentScore  = score,
+                    CreatedAt       = now.AddDays(-daysBack).AddHours(-hoursBack),
+                    CreatedByUserId = "seed"
+                });
+            }
+        }
+
+        context.EmployeeNotes.AddRange(notes);
+        await context.SaveChangesAsync(cancellationToken);
+
+        logger?.LogInformation("SeedAnalyticsNotesAsync: seeded {Count} HR notes across {Employees} employees.",
+            notes.Count, employees.Count);
     }
+}
 }
