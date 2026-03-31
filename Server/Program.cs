@@ -8,6 +8,7 @@ using Server.Middleware;
 using Server.Services;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
+using ServerLibrary.Features.HRIntelligence;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
 using ServerLibrary.Services.Contracts;
@@ -125,6 +126,9 @@ try
     // Sentiment Analysis — singleton so the ML.NET model is trained once at startup
     builder.Services.AddSingleton<ISentimentService, SentimentService>();
     builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+    builder.Services.AddScoped<IEmployeeNoteRepository, EmployeeNoteRepository>();
+    builder.Services.AddScoped<IHRRiskService, HRRiskService>();
+    builder.Services.AddScoped<IHRAnalyticsService, HRAnalyticsService>();
 
     builder.Services.AddMemoryCache();
 

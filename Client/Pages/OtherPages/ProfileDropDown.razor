@@ -53,10 +53,11 @@
                 <!-- Menu items -->
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item border-0 px-3 py-2" style="cursor:pointer;">
+                        <li class="list-group-item border-0 px-3 py-2" style="cursor:pointer;"
+                            @onclick="HrSettingsClicked" @onclick:stopPropagation="true">
                             <div class="d-flex align-items-center gap-2 text-secondary" style="font-size:0.875rem;">
-                                <i class="bi bi-person-circle text-primary"></i>
-                                <span>Profile</span>
+                                <i class="bi bi-sliders text-primary"></i>
+                                <span>HR Settings</span>
                             </div>
                         </li>
                     </ul>
@@ -105,6 +106,8 @@
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant()
             : name.Length > 0 ? name[0].ToString().ToUpperInvariant() : "U";
     }
+
+    void HrSettingsClicked() => NavManager.NavigateTo("/hr-settings");
 
     async Task LogoutClicked()
     {

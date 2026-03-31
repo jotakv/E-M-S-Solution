@@ -60,6 +60,7 @@ namespace ServerLibrary.Data
                 await SeedOvertimesAsync(context, seedData, employees, overtimeTypes, logger, cancellationToken);
                 await SeedSanctionsAsync(context, seedData, employees, sanctionTypes, logger, cancellationToken);
                 await SeedVacationsAsync(context, seedData, employees, vacationTypes, logger, cancellationToken);
+                await SeedEmployeeNotesAsync(context, employees, logger, cancellationToken);
 
                 await context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -702,6 +703,134 @@ namespace ServerLibrary.Data
                 $"{initials}</text></svg>";
 
             return $"data:image/svg+xml;utf8,{Uri.EscapeDataString(svg)}";
+        }
+
+        #endregion
+
+        #region EmployeeNotes
+
+        private static async Task SeedEmployeeNotesAsync(
+            AppDbContext context,
+            Dictionary<string, Employee> employees,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            // Only re-seed if we have fewer than 200 notes (allows topping up after JSON expansion)
+            if (await context.EmployeeNotes.CountAsync(ct) >= 200)
+                return;
+
+            var empList = employees.Values.ToList();
+            if (empList.Count == 0) return;
+
+            var now = DateTime.UtcNow;
+            var rng = new Random(42);
+
+            var noteTemplates = new (string Text, string Label, float MinScore, float MaxScore)[]
+            {
+                // Positive
+                ("Employee delivered the project ahead of schedule and received strong peer feedback.", "Positive", 0.75f, 0.95f),
+                ("Consistently exceeds performance targets. A reliable team contributor.", "Positive", 0.78f, 0.92f),
+                ("Excellent communication during the client presentation this quarter.", "Positive", 0.76f, 0.94f),
+                ("Demonstrated great initiative on the new system rollout.", "Positive", 0.80f, 0.95f),
+                ("Team members have praised this employee's collaborative approach.", "Positive", 0.75f, 0.90f),
+                ("Received outstanding feedback from department review.", "Positive", 0.77f, 0.93f),
+                ("Proactively identified a process bottleneck and proposed a solution.", "Positive", 0.79f, 0.94f),
+                ("Mentored two junior staff members effectively this quarter.", "Positive", 0.76f, 0.91f),
+                ("Achieved all KPIs and received a commendation from the department head.", "Positive", 0.82f, 0.96f),
+                // Neutral
+                ("Standard performance review completed. No significant concerns raised.", "Neutral", 0.40f, 0.60f),
+                ("Attendance and punctuality are within acceptable range.", "Neutral", 0.42f, 0.58f),
+                ("Mid-year check-in completed. Goals partially met.", "Neutral", 0.43f, 0.57f),
+                ("Routine task completion observed. No notable positive or negative trends.", "Neutral", 0.41f, 0.59f),
+                ("Employee noted some difficulty adapting to recent process changes.", "Neutral", 0.44f, 0.56f),
+                ("Performance meets baseline expectations for the role.", "Neutral", 0.43f, 0.57f),
+                ("Quarterly review documented. Development plan updated.", "Neutral", 0.40f, 0.60f),
+                // Negative
+                ("Employee reported feeling overwhelmed. Attendance has been declining this month.", "Negative", 0.10f, 0.32f),
+                ("Multiple deadlines missed without prior communication to the team lead.", "Negative", 0.08f, 0.28f),
+                ("Received formal complaint from a colleague regarding communication style.", "Negative", 0.09f, 0.28f),
+                ("Performance has dropped significantly over the past quarter.", "Negative", 0.10f, 0.30f),
+                ("Repeated tardiness flagged by the department manager.", "Negative", 0.08f, 0.28f),
+                ("Escalation raised due to non-compliance with company policy.", "Negative", 0.07f, 0.26f),
+                ("Team morale impacted by this employee's attitude during meetings.", "Negative", 0.09f, 0.27f),
+                ("Second formal warning issued for conduct issues.", "Negative", 0.06f, 0.24f),
+            };
+
+            // ── Targeted high-risk notes for Kevin Walsh and Daniel Smith ──────────
+            var highRiskNegatives = new string[]
+            {
+                "Multiple deadlines missed without prior communication to the team lead.",
+                "Received formal complaint from a colleague regarding communication style.",
+                "Performance has dropped significantly over the past quarter.",
+                "Repeated tardiness flagged by the department manager.",
+                "Escalation raised due to non-compliance with company policy.",
+                "Second formal warning issued for conduct issues.",
+            };
+
+            foreach (var riskName in new[] { "Kevin Walsh", "Daniel Smith" })
+            {
+                if (!employees.TryGetValue(riskName, out var riskEmp)) continue;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    context.EmployeeNotes.Add(new BaseLibrary.Entities.EmployeeNote
+                    {
+                        EmployeeId      = riskEmp.Id,
+                        NoteText        = highRiskNegatives[i],
+                        SentimentLabel  = "Negative",
+                        SentimentScore  = 0.08f + (float)rng.NextDouble() * 0.18f,
+                        CreatedAt       = now.AddDays(-(i * 12 + rng.Next(1, 8))).AddHours(-rng.Next(0, 8)),
+                        CreatedByUserId = "seed"
+                    });
+                }
+            }
+
+            // ── General pool: ~200 notes across all employees ────────────────────
+            var schedule = new List<(int DaysAgo, string Label)>();
+
+            // Last 30 days — 50 notes
+            for (int i = 0; i < 50; i++)
+                schedule.Add((rng.Next(1, 30), PickLabel(rng)));
+
+            // 31-90 days — 60 notes
+            for (int i = 0; i < 60; i++)
+                schedule.Add((rng.Next(31, 90), PickLabel(rng)));
+
+            // 91-365 days — 55 notes
+            for (int i = 0; i < 55; i++)
+                schedule.Add((rng.Next(91, 365), PickLabel(rng)));
+
+            // Over 1 year — 35 notes
+            for (int i = 0; i < 35; i++)
+                schedule.Add((rng.Next(366, 600), PickLabel(rng)));
+
+            int empIdx = 0;
+            foreach (var (daysAgo, label) in schedule)
+            {
+                var emp       = empList[empIdx % empList.Count];
+                var templates = noteTemplates.Where(t => t.Label == label).ToArray();
+                var template  = templates[rng.Next(0, templates.Length)];
+
+                context.EmployeeNotes.Add(new BaseLibrary.Entities.EmployeeNote
+                {
+                    EmployeeId      = emp.Id,
+                    NoteText        = template.Text,
+                    SentimentLabel  = template.Label,
+                    SentimentScore  = template.MinScore + (float)rng.NextDouble() * (template.MaxScore - template.MinScore),
+                    CreatedAt       = now.AddDays(-daysAgo).AddHours(-rng.Next(0, 8)),
+                    CreatedByUserId = "seed"
+                });
+
+                empIdx++;
+            }
+
+            logger?.LogInformation("Seeded EmployeeNotes.");
+        }
+
+        private static string PickLabel(Random rng)
+        {
+            var roll = rng.NextDouble();
+            return roll < 0.55 ? "Positive" : roll < 0.80 ? "Neutral" : "Negative";
         }
 
         #endregion

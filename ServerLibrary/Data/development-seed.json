@@ -2,24 +2,9 @@
   "roles": [ "Admin", "User" ],
 
   "users": [
-    {
-      "fullname": "System Administrator",
-      "email": "admin@ems.local",
-      "password": "Admin123!",
-      "role": "Admin"
-    },
-    {
-      "fullname": "Olivia Carter",
-      "email": "hr@ems.local",
-      "password": "User123!",
-      "role": "User"
-    },
-    {
-      "fullname": "Ethan Brooks",
-      "email": "manager@ems.local",
-      "password": "User123!",
-      "role": "User"
-    }
+    { "fullname": "System Administrator", "email": "admin@ems.local",   "password": "Admin123!", "role": "Admin" },
+    { "fullname": "Olivia Carter",         "email": "hr@ems.local",      "password": "User123!",  "role": "User"  },
+    { "fullname": "Ethan Brooks",          "email": "manager@ems.local", "password": "User123!",  "role": "User"  }
   ],
 
   "generalDepartments": [
@@ -32,14 +17,14 @@
   ],
 
   "departments": [
-    { "name": "Infrastructure",      "generalDepartment": "Information Technology" },
-    { "name": "Quality Assurance",   "generalDepartment": "Information Technology" },
-    { "name": "Recruitment",         "generalDepartment": "Human Resources" },
-    { "name": "Employee Relations",  "generalDepartment": "Human Resources" },
-    { "name": "Corporate Sales",     "generalDepartment": "Sales" },
-    { "name": "Digital Marketing",   "generalDepartment": "Marketing" },
-    { "name": "Accounting",          "generalDepartment": "Finance" },
-    { "name": "Logistics",           "generalDepartment": "Operations" }
+    { "name": "Infrastructure",     "generalDepartment": "Information Technology" },
+    { "name": "Quality Assurance",  "generalDepartment": "Information Technology" },
+    { "name": "Recruitment",        "generalDepartment": "Human Resources" },
+    { "name": "Employee Relations", "generalDepartment": "Human Resources" },
+    { "name": "Corporate Sales",    "generalDepartment": "Sales" },
+    { "name": "Digital Marketing",  "generalDepartment": "Marketing" },
+    { "name": "Accounting",         "generalDepartment": "Finance" },
+    { "name": "Logistics",          "generalDepartment": "Operations" }
   ],
 
   "branches": [
@@ -63,30 +48,12 @@
   ],
 
   "cities": [
-    {
-      "name": "Dublin",
-      "country": "Ireland"
-    },
-    {
-      "name": "Madrid",
-      "country": "Spain"
-    },
-    {
-      "name": "London",
-      "country": "United Kingdom"
-    },
-    {
-      "name": "Berlin",
-      "country": "Germany"
-    },
-    {
-      "name": "Paris",
-      "country": "France"
-    },
-    {
-      "name": "Amsterdam",
-      "country": "Netherlands"
-    }
+    { "name": "Dublin",    "country": "Ireland" },
+    { "name": "Madrid",    "country": "Spain" },
+    { "name": "London",    "country": "United Kingdom" },
+    { "name": "Berlin",    "country": "Germany" },
+    { "name": "Paris",     "country": "France" },
+    { "name": "Amsterdam", "country": "Netherlands" }
   ],
 
   "towns": [
@@ -125,146 +92,329 @@
   "employees": [
     {
       "name": "Kevin Walsh",
-      "civilId": "CIV-001",
-      "fileNumber": "EMP-001",
+      "civilId": "CIV-001", "fileNumber": "EMP-001",
       "jobName": "Infrastructure Engineer",
       "address": "14 River Liffey Quay, Dublin",
       "telephoneNumber": "+353 1 555 0101",
-      "branch": "Dublin Tech Hub",
-      "town": "Dublin",
+      "branch": "Dublin Tech Hub", "town": "Dublin",
       "other": "Azure infrastructure lead for the platform squad.",
-      "backgroundColor": "#1F3C88",
-      "foregroundColor": "#F6F1E9"
+      "backgroundColor": "#1F3C88", "foregroundColor": "#F6F1E9"
     },
     {
       "name": "Laura Garcia",
-      "civilId": "CIV-002",
-      "fileNumber": "EMP-002",
+      "civilId": "CIV-002", "fileNumber": "EMP-002",
       "jobName": "Talent Acquisition Specialist",
       "address": "28 Gran Via, Madrid",
       "telephoneNumber": "+34 91 555 0102",
-      "branch": "Madrid Talent Office",
-      "town": "Madrid",
+      "branch": "Madrid Talent Office", "town": "Madrid",
       "other": "Focuses on technical recruitment across Iberia.",
-      "backgroundColor": "#8A1538",
-      "foregroundColor": "#FFF4E6"
+      "backgroundColor": "#8A1538", "foregroundColor": "#FFF4E6"
     },
     {
       "name": "Daniel Smith",
-      "civilId": "CIV-003",
-      "fileNumber": "EMP-003",
+      "civilId": "CIV-003", "fileNumber": "EMP-003",
       "jobName": "Account Executive",
       "address": "52 Bishopsgate, London",
       "telephoneNumber": "+44 20 5550 0103",
-      "branch": "London Sales Branch",
-      "town": "London",
+      "branch": "London Sales Branch", "town": "London",
       "other": "Owns enterprise accounts in the UK market.",
-      "backgroundColor": "#0B6E4F",
-      "foregroundColor": "#F4F1DE"
+      "backgroundColor": "#0B6E4F", "foregroundColor": "#F4F1DE"
     },
     {
       "name": "Sofia Martinez",
-      "civilId": "CIV-004",
-      "fileNumber": "EMP-004",
+      "civilId": "CIV-004", "fileNumber": "EMP-004",
       "jobName": "People Operations Partner",
       "address": "91 Calle de Alcala, Madrid",
       "telephoneNumber": "+34 91 555 0104",
-      "branch": "Barcelona People Office",
-      "town": "Madrid",
+      "branch": "Barcelona People Office", "town": "Madrid",
       "other": "Supports onboarding, policy updates, and employee relations.",
-      "backgroundColor": "#D35400",
-      "foregroundColor": "#FFF7ED"
+      "backgroundColor": "#D35400", "foregroundColor": "#FFF7ED"
     },
     {
       "name": "Marta Fischer",
-      "civilId": "CIV-005",
-      "fileNumber": "EMP-005",
+      "civilId": "CIV-005", "fileNumber": "EMP-005",
       "jobName": "Marketing Campaign Manager",
       "address": "18 Friedrichstrasse, Berlin",
       "telephoneNumber": "+49 30 555 0105",
-      "branch": "Berlin Marketing Studio",
-      "town": "Berlin",
+      "branch": "Berlin Marketing Studio", "town": "Berlin",
       "other": "Leads digital campaign planning for central Europe.",
-      "backgroundColor": "#6C3483",
-      "foregroundColor": "#F8F4FF"
+      "backgroundColor": "#6C3483", "foregroundColor": "#F8F4FF"
     },
     {
       "name": "Lucas Bernard",
-      "civilId": "CIV-006",
-      "fileNumber": "EMP-006",
+      "civilId": "CIV-006", "fileNumber": "EMP-006",
       "jobName": "Financial Analyst",
       "address": "7 Rue de Rivoli, Paris",
       "telephoneNumber": "+33 1 55 50 0106",
-      "branch": "Paris Finance Desk",
-      "town": "Paris",
+      "branch": "Paris Finance Desk", "town": "Paris",
       "other": "Owns monthly forecasting and budget tracking.",
-      "backgroundColor": "#2E4053",
-      "foregroundColor": "#F4F6F7"
+      "backgroundColor": "#2E4053", "foregroundColor": "#F4F6F7"
     },
     {
       "name": "Emma Johnson",
-      "civilId": "CIV-007",
-      "fileNumber": "EMP-007",
+      "civilId": "CIV-007", "fileNumber": "EMP-007",
       "jobName": "QA Analyst",
       "address": "5 Spencer Dock, Dublin",
       "telephoneNumber": "+353 1 555 0107",
-      "branch": "Dublin QA Center",
-      "town": "Dublin",
+      "branch": "Dublin QA Center", "town": "Dublin",
       "other": "Maintains regression coverage for release candidates.",
-      "backgroundColor": "#146356",
-      "foregroundColor": "#F2F7F2"
+      "backgroundColor": "#146356", "foregroundColor": "#F2F7F2"
     },
     {
       "name": "Noah de Vries",
-      "civilId": "CIV-008",
-      "fileNumber": "EMP-008",
+      "civilId": "CIV-008", "fileNumber": "EMP-008",
       "jobName": "Operations Coordinator",
       "address": "33 Singel, Amsterdam",
       "telephoneNumber": "+31 20 555 0108",
-      "branch": "Amsterdam Operations Hub",
-      "town": "Amsterdam",
+      "branch": "Amsterdam Operations Hub", "town": "Amsterdam",
       "other": "Coordinates vendors, logistics planning, and office services.",
-      "backgroundColor": "#1B4F72",
-      "foregroundColor": "#EEF6FB"
+      "backgroundColor": "#1B4F72", "foregroundColor": "#EEF6FB"
+    },
+    {
+      "name": "James O'Brien",
+      "civilId": "CIV-009", "fileNumber": "EMP-009",
+      "jobName": "DevOps Engineer",
+      "address": "22 Pearse Street, Dublin",
+      "telephoneNumber": "+353 1 555 0109",
+      "branch": "Dublin Tech Hub", "town": "Dublin",
+      "other": "Manages CI/CD pipelines and cloud deployments.",
+      "backgroundColor": "#1A5276", "foregroundColor": "#EBF5FB"
+    },
+    {
+      "name": "Riya Patel",
+      "civilId": "CIV-010", "fileNumber": "EMP-010",
+      "jobName": "Test Automation Engineer",
+      "address": "9 Hanover Quay, Dublin",
+      "telephoneNumber": "+353 1 555 0110",
+      "branch": "Dublin QA Center", "town": "Dublin",
+      "other": "Builds automated regression suites for release readiness.",
+      "backgroundColor": "#4A235A", "foregroundColor": "#F9F0FF"
+    },
+    {
+      "name": "Carlos Romero",
+      "civilId": "CIV-011", "fileNumber": "EMP-011",
+      "jobName": "Employee Relations Advisor",
+      "address": "44 Passeig de Gracia, Barcelona",
+      "telephoneNumber": "+34 93 555 0111",
+      "branch": "Barcelona People Office", "town": "Madrid",
+      "other": "Handles grievance procedures and policy compliance.",
+      "backgroundColor": "#7D6608", "foregroundColor": "#FDFEE5"
+    },
+    {
+      "name": "Rebecca Taylor",
+      "civilId": "CIV-012", "fileNumber": "EMP-012",
+      "jobName": "Senior Sales Manager",
+      "address": "18 Canary Wharf, London",
+      "telephoneNumber": "+44 20 5550 0112",
+      "branch": "London Sales Branch", "town": "London",
+      "other": "Manages key partnerships and drives UK revenue growth.",
+      "backgroundColor": "#1E8449", "foregroundColor": "#EAFAF1"
+    },
+    {
+      "name": "Lena Müller",
+      "civilId": "CIV-013", "fileNumber": "EMP-013",
+      "jobName": "Content Strategist",
+      "address": "66 Unter den Linden, Berlin",
+      "telephoneNumber": "+49 30 555 0113",
+      "branch": "Berlin Marketing Studio", "town": "Berlin",
+      "other": "Drives brand voice and content strategy for the DACH region.",
+      "backgroundColor": "#943126", "foregroundColor": "#FDFEFE"
+    },
+    {
+      "name": "Pierre Lefebvre",
+      "civilId": "CIV-014", "fileNumber": "EMP-014",
+      "jobName": "Senior Accountant",
+      "address": "12 Boulevard Haussmann, Paris",
+      "telephoneNumber": "+33 1 55 50 0114",
+      "branch": "Paris Finance Desk", "town": "Paris",
+      "other": "Oversees statutory reporting and audit liaison.",
+      "backgroundColor": "#21618C", "foregroundColor": "#EBF5FB"
+    },
+    {
+      "name": "Sanne Visser",
+      "civilId": "CIV-015", "fileNumber": "EMP-015",
+      "jobName": "Supply Chain Analyst",
+      "address": "8 Herengracht, Amsterdam",
+      "telephoneNumber": "+31 20 555 0115",
+      "branch": "Amsterdam Operations Hub", "town": "Amsterdam",
+      "other": "Optimises procurement processes and supplier relationships.",
+      "backgroundColor": "#0E6655", "foregroundColor": "#E8F8F5"
     }
   ],
 
   "doctors": [
-    {
-      "employee": "Kevin Walsh",
-      "date": "2026-01-15",
-      "medicalDiagnose": "Mild lower back strain after an extended maintenance shift.",
-      "medicalRecommendation": "Physiotherapy stretches twice daily and no heavy lifting for one week."
-    },
-    {
-      "employee": "Laura Garcia",
-      "date": "2026-01-20",
-      "medicalDiagnose": "Seasonal flu symptoms with moderate fatigue.",
-      "medicalRecommendation": "Rest for 48 hours, hydration, and remote work on recovery days."
-    }
+    { "employee": "Kevin Walsh",    "date": "2026-01-15", "medicalDiagnose": "Mild lower back strain after extended maintenance shift.", "medicalRecommendation": "Physiotherapy twice daily, no heavy lifting for one week." },
+    { "employee": "Kevin Walsh",    "date": "2026-01-28", "medicalDiagnose": "Tension headaches from sustained screen exposure.", "medicalRecommendation": "Ergonomic assessment of workstation and 20-20-20 eye rule." },
+    { "employee": "Kevin Walsh",    "date": "2026-02-10", "medicalDiagnose": "Mild gastroenteritis.", "medicalRecommendation": "24-hour rest and increased fluid intake." },
+    { "employee": "Kevin Walsh",    "date": "2026-02-25", "medicalDiagnose": "Wrist repetitive strain injury.", "medicalRecommendation": "Wrist support and reduced keyboard usage for one week." },
+    { "employee": "Kevin Walsh",    "date": "2026-03-12", "medicalDiagnose": "Fatigue and elevated stress markers.", "medicalRecommendation": "Workload review with line manager and recommended counselling." },
+    { "employee": "Laura Garcia",   "date": "2026-01-20", "medicalDiagnose": "Seasonal flu symptoms with moderate fatigue.", "medicalRecommendation": "Rest for 48 hours, hydration, and remote work on recovery days." },
+    { "employee": "Laura Garcia",   "date": "2026-02-15", "medicalDiagnose": "Mild upper respiratory infection.", "medicalRecommendation": "Antibiotics course and reduced in-office days for 3 days." },
+    { "employee": "Daniel Smith",   "date": "2026-01-14", "medicalDiagnose": "Stress-related insomnia and fatigue.", "medicalRecommendation": "Sleep hygiene programme and follow-up in two weeks." },
+    { "employee": "Daniel Smith",   "date": "2026-02-05", "medicalDiagnose": "Migraine episode linked to dehydration.", "medicalRecommendation": "Prescribed migraine relief and mandatory mid-day breaks." },
+    { "employee": "Daniel Smith",   "date": "2026-03-10", "medicalDiagnose": "Recurring chest tightness — anxiety related.", "medicalRecommendation": "Referral to occupational health specialist." },
+    { "employee": "Noah de Vries",  "date": "2026-01-18", "medicalDiagnose": "Acute back pain from logistics floor activity.", "medicalRecommendation": "Two days of light duties and anti-inflammatory medication." },
+    { "employee": "Noah de Vries",  "date": "2026-02-12", "medicalDiagnose": "Upper respiratory tract infection.", "medicalRecommendation": "Five-day antibiotic course and remote work where possible." },
+    { "employee": "Noah de Vries",  "date": "2026-03-05", "medicalDiagnose": "Elevated blood pressure, possible work stress.", "medicalRecommendation": "Monitoring programme with GP; reduce overtime intake." },
+    { "employee": "Marta Fischer",  "date": "2026-01-25", "medicalDiagnose": "Seasonal cold and mild fever.", "medicalRecommendation": "Two days sick leave and plenty of rest." },
+    { "employee": "Marta Fischer",  "date": "2026-02-18", "medicalDiagnose": "Eye strain and persistent headache.", "medicalRecommendation": "Updated prescription glasses assessment and screen breaks." },
+    { "employee": "Marta Fischer",  "date": "2026-03-14", "medicalDiagnose": "Mild burnout symptoms.", "medicalRecommendation": "Workload reduction discussion and two recovery days." },
+    { "employee": "Emma Johnson",   "date": "2026-02-20", "medicalDiagnose": "Viral illness with fever and sore throat.", "medicalRecommendation": "Three days rest and hydration; return when symptom-free." },
+    { "employee": "Lucas Bernard",  "date": "2026-03-10", "medicalDiagnose": "Dental abscess requiring minor surgical procedure.", "medicalRecommendation": "One day recovery post-procedure; soft food diet for two days." },
+    { "employee": "Sofia Martinez", "date": "2026-02-10", "medicalDiagnose": "Mild anxiety episode during performance review period.", "medicalRecommendation": "Access to EAP counselling and one day off." },
+    { "employee": "James O'Brien",  "date": "2026-02-22", "medicalDiagnose": "Pulled shoulder muscle from gym activity.", "medicalRecommendation": "Physiotherapy and no lifting for five days." },
+    { "employee": "Riya Patel",     "date": "2026-03-05", "medicalDiagnose": "Migraine with aura.", "medicalRecommendation": "One day rest in darkened room; prescribed triptans." },
+    { "employee": "Carlos Romero",  "date": "2026-02-15", "medicalDiagnose": "Severe seasonal allergies.", "medicalRecommendation": "Daily antihistamine prescription and reduced outdoor exposure." },
+    { "employee": "Rebecca Taylor", "date": "2026-01-30", "medicalDiagnose": "Knee strain from travel schedule.", "medicalRecommendation": "Physiotherapy and compression support for two weeks." },
+    { "employee": "Lena Müller",    "date": "2026-02-28", "medicalDiagnose": "Sinus infection.", "medicalRecommendation": "Five-day antibiotic course; remote work for three days." },
+    { "employee": "Pierre Lefebvre","date": "2026-01-20", "medicalDiagnose": "Lower back spasm from long commute.", "medicalRecommendation": "Two days rest and anti-inflammatory treatment." },
+    { "employee": "Sanne Visser",   "date": "2026-03-15", "medicalDiagnose": "Acute stress reaction following supplier issue.", "medicalRecommendation": "One day off and access to EAP counselling." }
   ],
 
   "overtimes": [
-    { "employee": "Kevin Walsh",  "type": "Weekend Overtime", "date": "2026-03-01" },
-    { "employee": "Laura Garcia", "type": "Regular Overtime", "date": "2026-03-02" }
+    { "employee": "Kevin Walsh",    "type": "Weekend Overtime",     "date": "2026-01-05" },
+    { "employee": "Kevin Walsh",    "type": "Night Shift Overtime",  "date": "2026-01-14" },
+    { "employee": "Kevin Walsh",    "type": "Emergency Overtime",    "date": "2026-01-22" },
+    { "employee": "Kevin Walsh",    "type": "Regular Overtime",      "date": "2026-02-03" },
+    { "employee": "Kevin Walsh",    "type": "Weekend Overtime",      "date": "2026-02-14" },
+    { "employee": "Kevin Walsh",    "type": "Holiday Overtime",      "date": "2026-02-22" },
+    { "employee": "Kevin Walsh",    "type": "Weekend Overtime",      "date": "2026-03-01" },
+    { "employee": "Kevin Walsh",    "type": "Emergency Overtime",    "date": "2026-03-08" },
+    { "employee": "Kevin Walsh",    "type": "Regular Overtime",      "date": "2026-03-18" },
+    { "employee": "Kevin Walsh",    "type": "Weekend Overtime",      "date": "2026-03-25" },
+
+    { "employee": "Laura Garcia",   "type": "Regular Overtime",      "date": "2026-01-20" },
+    { "employee": "Laura Garcia",   "type": "Regular Overtime",      "date": "2026-02-15" },
+    { "employee": "Laura Garcia",   "type": "Regular Overtime",      "date": "2026-03-02" },
+
+    { "employee": "Daniel Smith",   "type": "Regular Overtime",      "date": "2026-01-06" },
+    { "employee": "Daniel Smith",   "type": "Weekend Overtime",      "date": "2026-01-13" },
+    { "employee": "Daniel Smith",   "type": "Night Shift Overtime",  "date": "2026-01-20" },
+    { "employee": "Daniel Smith",   "type": "Emergency Overtime",    "date": "2026-01-27" },
+    { "employee": "Daniel Smith",   "type": "Regular Overtime",      "date": "2026-02-03" },
+    { "employee": "Daniel Smith",   "type": "Weekend Overtime",      "date": "2026-02-10" },
+    { "employee": "Daniel Smith",   "type": "Holiday Overtime",      "date": "2026-02-17" },
+    { "employee": "Daniel Smith",   "type": "Regular Overtime",      "date": "2026-02-24" },
+    { "employee": "Daniel Smith",   "type": "Emergency Overtime",    "date": "2026-03-03" },
+    { "employee": "Daniel Smith",   "type": "Weekend Overtime",      "date": "2026-03-10" },
+    { "employee": "Daniel Smith",   "type": "Regular Overtime",      "date": "2026-03-17" },
+    { "employee": "Daniel Smith",   "type": "Night Shift Overtime",  "date": "2026-03-24" },
+
+    { "employee": "Noah de Vries",  "type": "Regular Overtime",      "date": "2026-01-10" },
+    { "employee": "Noah de Vries",  "type": "Weekend Overtime",      "date": "2026-01-20" },
+    { "employee": "Noah de Vries",  "type": "Regular Overtime",      "date": "2026-02-05" },
+    { "employee": "Noah de Vries",  "type": "Night Shift Overtime",  "date": "2026-02-25" },
+    { "employee": "Noah de Vries",  "type": "Regular Overtime",      "date": "2026-03-12" },
+
+    { "employee": "Marta Fischer",  "type": "Regular Overtime",      "date": "2026-01-08" },
+    { "employee": "Marta Fischer",  "type": "Weekend Overtime",      "date": "2026-01-20" },
+    { "employee": "Marta Fischer",  "type": "Regular Overtime",      "date": "2026-02-12" },
+    { "employee": "Marta Fischer",  "type": "Holiday Overtime",      "date": "2026-02-24" },
+    { "employee": "Marta Fischer",  "type": "Regular Overtime",      "date": "2026-03-06" },
+
+    { "employee": "Sofia Martinez", "type": "Regular Overtime",      "date": "2026-02-10" },
+    { "employee": "Sofia Martinez", "type": "Weekend Overtime",      "date": "2026-03-05" },
+
+    { "employee": "Emma Johnson",   "type": "Regular Overtime",      "date": "2026-01-25" },
+    { "employee": "Emma Johnson",   "type": "Weekend Overtime",      "date": "2026-02-28" },
+
+    { "employee": "Lucas Bernard",  "type": "Regular Overtime",      "date": "2026-01-15" },
+    { "employee": "Lucas Bernard",  "type": "Regular Overtime",      "date": "2026-03-01" },
+
+    { "employee": "James O'Brien",  "type": "Emergency Overtime",    "date": "2026-02-20" },
+    { "employee": "James O'Brien",  "type": "Regular Overtime",      "date": "2026-03-10" },
+
+    { "employee": "Riya Patel",     "type": "Regular Overtime",      "date": "2026-01-18" },
+    { "employee": "Riya Patel",     "type": "Weekend Overtime",      "date": "2026-03-08" },
+
+    { "employee": "Carlos Romero",  "type": "Regular Overtime",      "date": "2026-02-08" },
+    { "employee": "Carlos Romero",  "type": "Regular Overtime",      "date": "2026-03-15" },
+
+    { "employee": "Rebecca Taylor", "type": "Regular Overtime",      "date": "2026-01-12" },
+    { "employee": "Rebecca Taylor", "type": "Weekend Overtime",      "date": "2026-02-05" },
+    { "employee": "Rebecca Taylor", "type": "Regular Overtime",      "date": "2026-03-20" },
+
+    { "employee": "Lena Müller",    "type": "Regular Overtime",      "date": "2026-01-28" },
+    { "employee": "Lena Müller",    "type": "Weekend Overtime",      "date": "2026-03-05" },
+
+    { "employee": "Pierre Lefebvre","type": "Regular Overtime",      "date": "2026-02-12" },
+
+    { "employee": "Sanne Visser",   "type": "Regular Overtime",      "date": "2026-01-15" },
+    { "employee": "Sanne Visser",   "type": "Weekend Overtime",      "date": "2026-02-28" }
   ],
 
   "sanctions": [
     {
-      "employee": "Daniel Smith",
-      "type": "Verbal Warning",
-      "date": "2026-01-10",
-      "punishmentDate": "2026-01-12",
+      "employee": "Kevin Walsh", "type": "Verbal Warning",
+      "date": "2026-01-20", "punishmentDate": "2026-01-22",
+      "punishment": "Coaching session scheduled to address recurring late check-ins."
+    },
+    {
+      "employee": "Kevin Walsh", "type": "Written Warning",
+      "date": "2026-02-10", "punishmentDate": "2026-02-12",
+      "punishment": "Formal performance improvement plan issued; monthly reviews required."
+    },
+    {
+      "employee": "Kevin Walsh", "type": "Final Warning",
+      "date": "2026-03-05", "punishmentDate": "2026-03-07",
+      "punishment": "Mandatory HR counselling and close monitoring for 30 days."
+    },
+    {
+      "employee": "Daniel Smith", "type": "Verbal Warning",
+      "date": "2026-01-10", "punishmentDate": "2026-01-12",
       "punishment": "Coaching session and attendance review."
+    },
+    {
+      "employee": "Daniel Smith", "type": "Written Warning",
+      "date": "2026-02-01", "punishmentDate": "2026-02-03",
+      "punishment": "Attendance monitoring programme initiated."
+    },
+    {
+      "employee": "Daniel Smith", "type": "Final Warning",
+      "date": "2026-02-20", "punishmentDate": "2026-02-22",
+      "punishment": "Formal HR meeting and last-chance agreement signed."
+    },
+    {
+      "employee": "Daniel Smith", "type": "Suspension",
+      "date": "2026-03-10", "punishmentDate": "2026-03-12",
+      "punishment": "Two-day unpaid suspension for repeated policy breach."
+    },
+    {
+      "employee": "Noah de Vries", "type": "Verbal Warning",
+      "date": "2026-02-15", "punishmentDate": "2026-02-17",
+      "punishment": "Informal discussion regarding communication conduct with colleagues."
+    },
+    {
+      "employee": "Marta Fischer", "type": "Written Warning",
+      "date": "2026-02-22", "punishmentDate": "2026-02-24",
+      "punishment": "Deadline compliance review meeting and action plan agreed."
     }
   ],
 
   "vacations": [
-    {
-      "employee": "Kevin Walsh",
-      "type": "Annual Leave",
-      "startDate": "2026-04-01",
-      "numberOfDays": 5
-    }
+    { "employee": "Kevin Walsh",    "type": "Sick Leave",    "startDate": "2026-02-17", "numberOfDays": 2  },
+    { "employee": "Kevin Walsh",    "type": "Annual Leave",  "startDate": "2026-04-01", "numberOfDays": 5  },
+    { "employee": "Kevin Walsh",    "type": "Annual Leave",  "startDate": "2026-07-01", "numberOfDays": 10 },
+    { "employee": "Laura Garcia",   "type": "Sick Leave",    "startDate": "2026-02-20", "numberOfDays": 3  },
+    { "employee": "Laura Garcia",   "type": "Annual Leave",  "startDate": "2026-05-15", "numberOfDays": 7  },
+    { "employee": "Daniel Smith",   "type": "Annual Leave",  "startDate": "2026-05-01", "numberOfDays": 5  },
+    { "employee": "Daniel Smith",   "type": "Annual Leave",  "startDate": "2026-08-15", "numberOfDays": 10 },
+    { "employee": "Sofia Martinez", "type": "Sick Leave",    "startDate": "2026-02-25", "numberOfDays": 2  },
+    { "employee": "Sofia Martinez", "type": "Annual Leave",  "startDate": "2026-06-01", "numberOfDays": 8  },
+    { "employee": "Marta Fischer",  "type": "Annual Leave",  "startDate": "2026-04-20", "numberOfDays": 3  },
+    { "employee": "Marta Fischer",  "type": "Annual Leave",  "startDate": "2026-07-15", "numberOfDays": 12 },
+    { "employee": "Lucas Bernard",  "type": "Sick Leave",    "startDate": "2026-03-01", "numberOfDays": 2  },
+    { "employee": "Lucas Bernard",  "type": "Annual Leave",  "startDate": "2026-08-01", "numberOfDays": 10 },
+    { "employee": "Emma Johnson",   "type": "Sick Leave",    "startDate": "2026-03-20", "numberOfDays": 1  },
+    { "employee": "Emma Johnson",   "type": "Annual Leave",  "startDate": "2026-04-15", "numberOfDays": 7  },
+    { "employee": "Noah de Vries",  "type": "Sick Leave",    "startDate": "2026-03-25", "numberOfDays": 1  },
+    { "employee": "Noah de Vries",  "type": "Annual Leave",  "startDate": "2026-06-15", "numberOfDays": 8  },
+    { "employee": "James O'Brien",  "type": "Annual Leave",  "startDate": "2026-05-20", "numberOfDays": 5  },
+    { "employee": "Riya Patel",     "type": "Annual Leave",  "startDate": "2026-07-10", "numberOfDays": 7  },
+    { "employee": "Carlos Romero",  "type": "Annual Leave",  "startDate": "2026-06-20", "numberOfDays": 5  },
+    { "employee": "Rebecca Taylor", "type": "Annual Leave",  "startDate": "2026-08-05", "numberOfDays": 8  },
+    { "employee": "Lena Müller",    "type": "Annual Leave",  "startDate": "2026-07-01", "numberOfDays": 10 },
+    { "employee": "Pierre Lefebvre","type": "Annual Leave",  "startDate": "2026-09-15", "numberOfDays": 7  },
+    { "employee": "Sanne Visser",   "type": "Annual Leave",  "startDate": "2026-10-01", "numberOfDays": 5  }
   ]
 }

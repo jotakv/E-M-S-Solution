@@ -15,23 +15,23 @@ public class DevelopmentDataSeederTests
 
         await DevelopmentDataSeeder.SeedAsync(context, NullLogger.Instance);
 
-        Assert.Equal(6, await context.GeneralDepartments.CountAsync());
-        Assert.Equal(8, await context.Departments.CountAsync());
-        Assert.Equal(8, await context.Branches.CountAsync());
-        Assert.Equal(6, await context.Countries.CountAsync());
-        Assert.Equal(6, await context.Cities.CountAsync());
-        Assert.Equal(6, await context.Towns.CountAsync());
-        Assert.Equal(3, await context.ApplicationUsers.CountAsync());
-        Assert.Equal(2, await context.SystemRoles.CountAsync());
-        Assert.Equal(3, await context.UserRoles.CountAsync());
-        Assert.Equal(5, await context.OvertimeTypes.CountAsync());
-        Assert.Equal(5, await context.SanctionTypes.CountAsync());
-        Assert.Equal(5, await context.VacationTypes.CountAsync());
-        Assert.Equal(8, await context.Employees.CountAsync());
-        Assert.Equal(2, await context.Doctors.CountAsync());
-        Assert.Equal(2, await context.Overtimes.CountAsync());
-        Assert.Equal(1, await context.Sanctions.CountAsync());
-        Assert.Equal(1, await context.Vacations.CountAsync());
+        Assert.Equal(6,  await context.GeneralDepartments.CountAsync());
+        Assert.Equal(8,  await context.Departments.CountAsync());
+        Assert.Equal(8,  await context.Branches.CountAsync());
+        Assert.Equal(6,  await context.Countries.CountAsync());
+        Assert.Equal(6,  await context.Cities.CountAsync());
+        Assert.Equal(6,  await context.Towns.CountAsync());
+        Assert.Equal(3,  await context.ApplicationUsers.CountAsync());
+        Assert.Equal(2,  await context.SystemRoles.CountAsync());
+        Assert.Equal(3,  await context.UserRoles.CountAsync());
+        Assert.Equal(5,  await context.OvertimeTypes.CountAsync());
+        Assert.Equal(5,  await context.SanctionTypes.CountAsync());
+        Assert.Equal(5,  await context.VacationTypes.CountAsync());
+        Assert.Equal(15, await context.Employees.CountAsync());
+        Assert.Equal(26, await context.Doctors.CountAsync());
+        Assert.Equal(55, await context.Overtimes.CountAsync());
+        Assert.Equal(9,  await context.Sanctions.CountAsync());
+        Assert.Equal(24, await context.Vacations.CountAsync());
     }
 
     [Fact]
@@ -143,14 +143,14 @@ public class DevelopmentDataSeederTests
         Assert.Equal(6, await context.Countries.CountAsync());
         Assert.Equal(6, await context.Cities.CountAsync());
         Assert.Equal(6, await context.Towns.CountAsync());
-        Assert.Equal(5, await context.OvertimeTypes.CountAsync());
-        Assert.Equal(5, await context.SanctionTypes.CountAsync());
-        Assert.Equal(5, await context.VacationTypes.CountAsync());
-        Assert.Equal(8, await context.Employees.CountAsync());
-        Assert.Equal(2, await context.Doctors.CountAsync());
-        Assert.Equal(2, await context.Overtimes.CountAsync());
-        Assert.Equal(1, await context.Sanctions.CountAsync());
-        Assert.Equal(1, await context.Vacations.CountAsync());
+        Assert.Equal(5,  await context.OvertimeTypes.CountAsync());
+        Assert.Equal(5,  await context.SanctionTypes.CountAsync());
+        Assert.Equal(5,  await context.VacationTypes.CountAsync());
+        Assert.Equal(15, await context.Employees.CountAsync());
+        Assert.Equal(26, await context.Doctors.CountAsync());
+        Assert.Equal(55, await context.Overtimes.CountAsync());
+        Assert.Equal(9,  await context.Sanctions.CountAsync());
+        Assert.Equal(24, await context.Vacations.CountAsync());
 
         var admin = await context.ApplicationUsers.SingleAsync(user => user.Email == "admin@ems.local");
         Assert.True(BCrypt.Net.BCrypt.Verify("Admin123!", admin.Password));
@@ -188,21 +188,30 @@ public class DevelopmentDataSeederTests
         Assert.Equal("Dublin", kevin.Town!.Name);
         Assert.Equal("Ireland", kevin.Town.City!.Country!.Name);
 
-        var kevinOvertime = await context.Overtimes
+        // Kevin has 10 overtime records — verify at least one is "Weekend Overtime"
+        var kevinOvertimes = await context.Overtimes
             .Include(overtime => overtime.OvertimeType)
-            .SingleAsync(overtime => overtime.EmployeeId == kevin.Id);
+            .Where(overtime => overtime.EmployeeId == kevin.Id)
+            .ToListAsync();
 
-        Assert.Equal("Weekend Overtime", kevinOvertime.OvertimeType!.Name);
-        Assert.Equal(1, kevinOvertime.NumberOfDays);
+        Assert.True(kevinOvertimes.Count >= 1);
+        Assert.Contains(kevinOvertimes, o => o.OvertimeType!.Name == "Weekend Overtime");
 
-        var kevinVacation = await context.Vacations
+        // Kevin has multiple vacations — verify the Annual Leave (5 days) one exists
+        var kevinAnnualLeave = await context.Vacations
             .Include(vacation => vacation.VacationType)
-            .SingleAsync(vacation => vacation.EmployeeId == kevin.Id);
+            .FirstAsync(vacation =>
+                vacation.EmployeeId == kevin.Id &&
+                vacation.VacationType!.Name == "Annual Leave" &&
+                vacation.NumberOfDays == 5);
 
-        Assert.Equal("Annual Leave", kevinVacation.VacationType!.Name);
-        Assert.Equal(5, kevinVacation.NumberOfDays);
+        Assert.Equal("Annual Leave", kevinAnnualLeave.VacationType!.Name);
+        Assert.Equal(5, kevinAnnualLeave.NumberOfDays);
 
-        var kevinDoctor = await context.Doctors.SingleAsync(doctor => doctor.EmployeeId == kevin.Id);
+        // Kevin has multiple doctor records — verify the 2026-01-15 one exists
+        var kevinDoctor = await context.Doctors.FirstAsync(doctor =>
+            doctor.EmployeeId == kevin.Id &&
+            doctor.Date == new DateTime(2026, 1, 15));
         Assert.Equal(new DateTime(2026, 1, 15), kevinDoctor.Date);
     }
 
