@@ -114,7 +114,7 @@ If you clone into a different local folder name, use that folder instead of `E-M
   - All projects target `net8.0`.
   - The CI workflow in `.github/workflows/ci.yml` also uses `.NET 8.0.x`.
 ```bash
- winget install Microsoft.DotNet.SDK.8
+ winget install --id Microsoft.DotNet.SDK.8 --exact --source winget
 ```
 - ASP.NET Core HTTPS development certificate
   - The API and Blazor app run on HTTPS localhost URLs.
