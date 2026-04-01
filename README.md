@@ -1,7 +1,9 @@
 # Employee Management System Solution
 
 ## Demo
-
+### Short Demo
+https://youtu.be/rHJ0xWZPPQE
+### Long Demo
 https://youtu.be/5tISXX-S3DM
 
 ## Overview
