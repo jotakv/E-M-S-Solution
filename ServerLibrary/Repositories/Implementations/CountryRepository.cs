@@ -125,6 +125,31 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            var cityIds = await appDbContext.Cities
+                .Where(c => c.CountryId == id)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            if (cityIds.Any())
+            {
+                var townIds = await appDbContext.Towns
+                    .Where(t => cityIds.Contains(t.CityId))
+                    .Select(t => t.Id)
+                    .ToListAsync();
+
+                if (townIds.Any())
+                {
+                    var hasEmployees = await appDbContext.Employees.AnyAsync(e => townIds.Contains(e.TownId));
+                    if (hasEmployees)
+                    {
+                        logger.LogWarning(
+                            "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                            "CountryDelete", "Delete", "Country", id, dep.Name, "Failure:InUseByEmployees");
+                        return new GeneralResponse(false, "This location is in use. Reassign employees before deleting.");
+                    }
+                }
+            }
+
             appDbContext.Countries.Remove(dep);
             await Commit();
 

@@ -82,8 +82,7 @@
 
     protected async override Task OnInitializedAsync()
     {
-        await GetCities();
-        await GetTowns();
+        await Task.WhenAll(GetCities(), GetTowns());
         allState.Action += HandleStateChanged;
     }
 
@@ -92,10 +91,7 @@
         _ = InvokeAsync(async () =>
         {
             if (allState.ShowTown)
-            {
-                await GetCities();
-                await GetTowns();
-            }
+                await Task.WhenAll(GetCities(), GetTowns());
 
             StateHasChanged();
         });

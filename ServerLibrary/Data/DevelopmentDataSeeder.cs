@@ -224,10 +224,13 @@ namespace ServerLibrary.Data
             CancellationToken ct)
         {
             var existingInDb = await context.UserRoles
-                .Select(x => new { x.UserId, x.RoleId })
+                .Include(ur => ur.User)
+                .Include(ur => ur.Role)
+                .Select(x => new { UserEmail = x.User!.Email!, RoleName = x.Role!.Name! })
                 .ToListAsync(ct);
 
-            var addedInMemory = new HashSet<(int UserId, int RoleId)>();
+            // Use email|roleName as key — avoids (Id=0, Id=0) collision for unsaved EF entities
+            var addedInMemory = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Users)
             {
@@ -237,13 +240,16 @@ namespace ServerLibrary.Data
                 if (!users.TryGetValue(dto.Email, out var user))
                     throw new Exception($"User not found: {dto.Email}");
 
-                var alreadyInDb = existingInDb.Any(x => x.UserId == user.Id && x.RoleId == role.Id);
-                var alreadyInMemory = addedInMemory.Contains((user.Id, role.Id));
+                var memKey = $"{dto.Email}|{dto.Role}";
+                var alreadyInDb     = existingInDb.Any(x =>
+                    x.UserEmail.Equals(dto.Email, StringComparison.OrdinalIgnoreCase) &&
+                    x.RoleName.Equals(dto.Role,   StringComparison.OrdinalIgnoreCase));
+                var alreadyInMemory = addedInMemory.Contains(memKey);
 
                 if (!alreadyInDb && !alreadyInMemory)
                 {
                     context.UserRoles.Add(new UserRole { User = user, Role = role });
-                    addedInMemory.Add((user.Id, role.Id));
+                    addedInMemory.Add(memKey);
                     logger?.LogInformation("Assigned role {Role} to user {Email}", dto.Role, dto.Email);
                 }
             }

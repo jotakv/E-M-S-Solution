@@ -66,6 +66,30 @@ namespace ServerLibrary.Data
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ── Location hierarchy ────────────────────────────────────────────────
+            // Cascade within the geography hierarchy so deleting a Country or City
+            // automatically removes child Cities / Towns.
+            // BUT: deleting a Town (or City/Country) must NOT delete Employees —
+            // the application layer blocks deletion when employees are assigned.
+
+            modelBuilder.Entity<Country>()
+                .HasMany(c => c.Cities)
+                .WithOne(ci => ci.Country)
+                .HasForeignKey(ci => ci.CountryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<City>()
+                .HasMany(ci => ci.Towns)
+                .WithOne(t => t.City)
+                .HasForeignKey(t => t.CityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Town>()
+                .HasMany(t => t.Employees)
+                .WithOne(e => e.Town)
+                .HasForeignKey(e => e.TownId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ── Employee cascade delete ───────────────────────────────────────────
             // When an Employee row is deleted, all related child rows are removed
             // automatically by the database engine (no manual loop required).

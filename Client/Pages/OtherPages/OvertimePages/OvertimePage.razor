@@ -41,7 +41,9 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.StartDate)
-                                                HeaderText="Start Date">
+                                                HeaderText="Start Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.NumberOfDays)
@@ -49,7 +51,18 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.EndDate)
-                                                HeaderText="End Date">
+                                                HeaderText="End Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
+                                    </GridColumn>
+
+                                    <GridColumn HeaderText="Overtime Type">
+                                        <Template>
+                                            @{
+                                                var ot = context as Overtime;
+                                            }
+                                            @(ot?.OvertimeType?.Name ?? "—")
+                                        </Template>
                                     </GridColumn>
 
                                     <GridColumn HeaderText="Action">
@@ -121,7 +134,9 @@
 
     private async Task HandleSaveOperationEvent(Overtime item)
     {
-        var result = await overtimeService.Update(item, Constants.OvertimeBaseUrl);
+        var result = item.Id == 0
+            ? await overtimeService.Insert(item, Constants.OvertimeBaseUrl)
+            : await overtimeService.Update(item, Constants.OvertimeBaseUrl);
         bool successCheck = await DisplayMessage(result.Flag, result.Message);
         if (successCheck)
             await GetOvertime();

@@ -362,6 +362,12 @@ h4, h5 {
 }
 
 /* ── Dialogs / modals ────────────────────────────────────────────────────── */
+/* .top-row is sticky at z-index:1050; raise the Syncfusion dialog container
+   just above it so modals appear on top without blocking dialog interaction. */
+.e-dlg-container {
+    z-index: 1060 !important;
+}
+
 .e-dialog {
     border-radius: var(--ems-radius-lg) !important;
     box-shadow: var(--ems-shadow-md) !important;

@@ -92,6 +92,15 @@ namespace ServerLibrary.Repositories.Implementations
                 return NotFound();
             }
 
+            var hasEmployees = await appDbContext.Employees.AnyAsync(e => e.TownId == id);
+            if (hasEmployees)
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | EntityId: {EntityId} | Name: {Name} | Result: {Result}",
+                    "TownDelete", "Delete", "Town", id, dep.Name, "Failure:InUseByEmployees");
+                return new GeneralResponse(false, "This location is in use. Reassign employees before deleting.");
+            }
+
             appDbContext.Towns.Remove(dep);
             await Commit();
 

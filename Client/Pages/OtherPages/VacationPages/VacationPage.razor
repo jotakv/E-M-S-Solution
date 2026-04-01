@@ -50,7 +50,9 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Vacation.StartDate)
-                                                HeaderText="Start Date">
+                                                HeaderText="Start Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Vacation.NumberOfDays)
@@ -58,7 +60,9 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Vacation.EndDate)
-                                                HeaderText="End Date">
+                                                HeaderText="End Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
                                     </GridColumn>
 
                                     <GridColumn HeaderText="Action">
