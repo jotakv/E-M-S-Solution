@@ -22,6 +22,7 @@ namespace Server.Controllers
     {
 
         private const string CountryCacheKey = "CountryListCache";
+        private const string CityCacheKey = "CityListCache";
 
         [Authorize(Roles = "Admin")]
         [HttpPost("sync")]
@@ -37,7 +38,7 @@ namespace Server.Controllers
         public async Task<ActionResult<CapitalSyncResultDto>> SyncCapitals()
         {
             var result = await capitalSyncService.SyncCapitalsFromRestCountriesAsync();
-            cache.Remove(CountryCacheKey);   // invalidate after bulk sync
+            cache.Remove(CityCacheKey);   // invalidate after bulk sync
             return Ok(result);
         }
 
