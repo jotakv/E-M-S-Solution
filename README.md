@@ -1,403 +1,492 @@
-# Employee Management System (EMS)
+# Employee Management System Solution
 
-> A full-stack, production-grade HR platform built with **Blazor WebAssembly**, **ASP.NET Core 8**, **ML.NET**, and a structured **Clean Architecture** design.
+## Overview
 
----
+This repository contains a multi-project .NET 8 employee management system. It is not a distributed order-processing platform. What actually exists here is:
 
-## Table of Contents
+- a Blazor WebAssembly frontend (`Client`)
+- an ASP.NET Core Web API backend (`Server`)
+- shared DTO/entity libraries (`BaseLibrary`, `ClientLibrary`, `ServerLibrary`)
+- SQL Server persistence through Entity Framework Core
+- optional RabbitMQ-based audit/event messaging
+- unit tests for seeding, employee repository behavior, and country/capital sync services
 
-1. [Overview](#1-overview)
-2. [Architecture](#2-architecture)
-   - [Layer Map](#layer-map)
-   - [Dependency Rule](#dependency-rule)
-   - [Project Responsibilities](#project-responsibilities)
-3. [Feature Set](#3-feature-set)
-4. [Technology Stack](#4-technology-stack)
-5. [Getting Started](#5-getting-started)
-6. [Ports & Services](#6-ports--services)
-7. [Default Credentials](#7-default-credentials)
-8. [Configuration Reference](#8-configuration-reference)
-9. [API Endpoints](#9-api-endpoints)
-10. [Testing](#10-testing)
-11. [Design Decisions & Patterns](#11-design-decisions--patterns)
-12. [Troubleshooting](#12-troubleshooting)
+The application covers:
 
----
+- authentication with JWT + refresh token
+- admin/user role management
+- CRUD screens for organization structure, location data, employees, overtime, sanctions, vacations, and doctor records
+- an employee feedback screen backed by an ML.NET sentiment model
+- optional admin-triggered country/capital sync from the public REST Countries API
 
-## 1. Overview
+There is only one frontend in this repository: the Blazor WebAssembly app. There is no React admin UI, no `package.json`, and no Node.js-based application to run.
 
-EMS is a complete employee-lifecycle management system. Beyond standard CRUD, it incorporates an **AI-powered HR Intelligence layer** that classifies HR notes with ML.NET sentiment analysis, surfaces real-time morale trends, and scores employee risk from five independent signals (overtime frequency, sick leave, sanctions, negative and positive notes).
+## Architecture Summary
 
-**Key differentiators:**
-- Every HR note is automatically labelled Positive / Neutral / Negative by a trained ML.NET binary classifier with a 50-keyword fallback.
-- The Risk Manager calculates composite scores across the entire employee roster in **five batched SQL queries** (not N+1).
-- All significant actions produce **structured Serilog audit events** and are published to a **RabbitMQ** exchange for downstream consumption.
-- The ML.NET model is pre-warmed at startup by a hosted service so the first note submission is instant.
+### What exists in this repository
 
----
+| Component | Present? | Notes |
+| --- | --- | --- |
+| Order API | No | The backend is an employee management API in `Server`, not an order API. |
+| RabbitMQ | Yes | Optional. Used for audit events and employee created/updated events. |
+| Database | Yes | SQL Server via EF Core. Default local setup targets Windows LocalDB. |
+| Inventory Service | No | Not present in this repository. |
+| Payment Service | No | Not present in this repository. |
+| Shipping Service | No | Not present in this repository. |
+| Blazor UI | Yes | `Client` is a Blazor WebAssembly frontend. |
+| React Admin UI | No | Not present in this repository. |
 
-## 2. Architecture
+### Project responsibilities
 
-### Layer Map
+| Path | Responsibility |
+| --- | --- |
+| `BaseLibrary/` | Shared entities, DTOs, and response models used by both client and server. |
+| `Client/` | Blazor WebAssembly UI, login/register screens, dashboards, CRUD pages, feedback UI. |
+| `ClientLibrary/` | Client-side HTTP/auth helpers and service abstractions used by the Blazor app. |
+| `Server/` | ASP.NET Core API host, Swagger, JWT auth, CORS, logging, feedback sentiment service, RabbitMQ audit consumer. |
+| `ServerLibrary/` | EF Core `AppDbContext`, migrations, development seeder, repositories, auth implementation, RabbitMQ publisher, country sync services. |
+| `Tests/ServerLibrary.UnitTests/` | Unit tests for seeding, employee repository behavior/logging, and country/capital sync services. |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Presentation                                               │
-│  ┌─────────────────────────┐  ┌──────────────────────────┐ │
-│  │  Client (Blazor WASM)   │  │  Server (ASP.NET Core)   │ │
-│  │  Blazor pages/layouts   │  │  REST controllers        │ │
-│  │  AllState SPA routing   │  │  Middleware pipeline     │ │
-│  │  Syncfusion UI          │  │  Serilog + RabbitMQ      │ │
-│  └────────────┬────────────┘  └────────────┬─────────────┘ │
-│               │  HTTP/JWT                  │               │
-└───────────────┼────────────────────────────┼───────────────┘
-                │                            │
-┌───────────────┼────────────────────────────┼───────────────┐
-│  Application  │                            │               │
-│  ┌────────────▼────────────────────────────▼─────────────┐ │
-│  │  ClientLibrary            ServerLibrary/Features       │ │
-│  │  IGenericServiceInterface IHRRiskService               │ │
-│  │  IUserAccountService      IHRAnalyticsService          │ │
-│  │  GetHttpClient helper     IHRIntelligenceCacheService  │ │
-│  │                           IEmployeeNoteRepository      │ │
-│  └────────────────────────────────┬──────────────────────┘ │
-└───────────────────────────────────┼───────────────────────┘
-                                    │
-┌───────────────────────────────────┼───────────────────────┐
-│  Infrastructure                   │                       │
-│  ┌────────────────────────────────▼──────────────────────┐│
-│  │  ServerLibrary/Data          AppDbContext (EF Core)   ││
-│  │  ServerLibrary/Repositories  Concrete repositories    ││
-│  │  ServerLibrary/Services      RabbitMqEventBus         ││
-│  │  Server/Services             SentimentService (ML.NET)││
-│  │  Server/BackgroundServices   EmsAuditConsumer         ││
-│  └───────────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────────────┘
-                                    │
-┌───────────────────────────────────┼───────────────────────┐
-│  Domain                           │                       │
-│  ┌────────────────────────────────▼──────────────────────┐│
-│  │  BaseLibrary/Entities    Employee, EmployeeNote,       ││
-│  │                          Branch, Department,           ││
-│  │                          Country, City, Town,          ││
-│  │                          Overtime, Vacation, Sanction, ││
-│  │                          Doctor, ApplicationUser       ││
-│  │  BaseLibrary/DTOs        All transfer objects          ││
-│  │  BaseLibrary/Responses   GeneralResponse, etc.         ││
-│  └───────────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────────────┘
+### Diagram
+
+```mermaid
+flowchart LR
+    Browser["Blazor WebAssembly Client<br/>Client"] -->|HTTPS + JWT| Api["ASP.NET Core API<br/>Server"]
+    Api --> Db[("SQL Server / LocalDB")]
+    Api --> Logs["Serilog file logs<br/>Optional Seq sink"]
+    Api -->|Publish ems.audit.* and ems.employee.*| Rabbit["RabbitMQ (optional)"]
+    Rabbit -->|Consume ems.audit.#| Api
+    Api -->|Admin sync only| Rest["REST Countries API (optional)"]
 ```
 
-### Dependency Rule
+## Event Flow
 
-> **Inner layers know nothing about outer layers.** `BaseLibrary` references no other project. `ServerLibrary` references only `BaseLibrary`. `Server` references `ServerLibrary` and `BaseLibrary`. `Client` depends on `ClientLibrary` and `BaseLibrary` only.
+### 1. Authentication and normal CRUD flow
 
-```
-BaseLibrary
-    ▲
-ServerLibrary ──────► BaseLibrary
-    ▲
-Server ──────────────► ServerLibrary, BaseLibrary
-Client ──────────────► ClientLibrary, BaseLibrary
-ClientLibrary ───────► BaseLibrary
-```
+1. The user opens the Blazor app and signs in at `/identity/account/login`.
+2. The client posts credentials to `POST /api/Authentication/login`.
+3. The API validates the user, loads the assigned role, issues a JWT + refresh token, and the client stores them in local storage.
+4. The Blazor app calls the API for departments, branches, countries, cities, towns, employees, overtime, sanctions, vacations, doctor records, and user management.
+5. The API persists data through EF Core into SQL Server.
+6. On startup, the API automatically applies pending EF Core migrations.
 
-No circular dependencies exist. This is verified by the .NET SDK project references.
+### 2. Employee event publishing
 
-### Project Responsibilities
+1. Creating an employee publishes `ems.employee.created`.
+2. Updating an employee publishes `ems.employee.updated`.
+3. Those messages go to RabbitMQ if the broker is available.
+4. No consumer for `ems.employee.*` exists in this repository, so those events are published only. They are not processed further inside this codebase.
 
-| Project | Layer | Responsibility |
-|---------|-------|----------------|
-| `BaseLibrary` | **Domain** | Core entities (14), all DTOs, shared response types. Zero framework dependencies. |
-| `ServerLibrary` | **Application + Infrastructure** | EF Core DbContext, all repository implementations, HR Intelligence feature services (`HRRiskService`, `HRAnalyticsService`), repository contracts (`IEmployeeNoteRepository`), RabbitMQ event bus, REST-Countries sync services. |
-| `Server` | **Presentation (API)** | ASP.NET Core controllers, ML.NET `SentimentService` (singleton), `SentimentWarmupService` (startup pre-warming), `EmsAuditConsumer` (RabbitMQ background consumer), Serilog structured logging, JWT middleware, Swagger. |
-| `Client` | **Presentation (UI)** | Blazor WASM pages, `AllState` SPA navigation state, Syncfusion chart/grid/dialog components, `localStorage` preference persistence. |
-| `ClientLibrary` | **Application (Client-side)** | HTTP service abstractions (`IGenericServiceInterface<T>`), `GetHttpClient` (JWT-aware), `UserAccountService`, `CountrySyncClientService`, route constants. |
-| `Tests` | **Quality** | xUnit tests with EF InMemory provider, 23 tests covering seeder, repositories, and services. |
+### 3. Audit flow
 
----
+1. Export, print, and employee image-upload actions in the Blazor UI call:
+   - `POST /api/audit/export`
+   - `POST /api/audit/print`
+   - `POST /api/audit/image-upload`
+2. `AuditController` logs the action and publishes an `AuditEvent` to RabbitMQ using routing keys under `ems.audit.*`.
+3. `EmsAuditConsumer` listens on the `ems.audit` queue with binding key `ems.audit.#`.
+4. When RabbitMQ is available, the consumer writes those audit events into the `AuditLogs` table.
+5. If RabbitMQ is unavailable, the application still runs, but audit events are not persisted through the queue.
 
-## 3. Feature Set
+### 4. Feedback flow
 
-### Core HR Modules
+1. A user submits feedback from the Blazor feedback page.
+2. The client posts the comment to `POST /api/feedback`.
+3. The API runs an ML.NET sentiment prediction using `Server/Data/sentiment_data.tsv`.
+4. The feedback record and sentiment result are stored in SQL Server.
+5. The client can fetch the summary at `GET /api/feedback/summary`.
 
-| Module | Description |
-|--------|-------------|
-| **Employee Management** | Full CRUD with photo upload, civil ID, file number, Syncfusion grid with Excel/PDF export, audit trail |
-| **Organizational Structure** | General Departments → Departments → Branches — three-level hierarchy, full CRUD |
-| **Location Cascade** | Countries (250+ from REST Countries API) → Cities → Towns — server-side cascade with client filtering |
-| **Overtime** | Record and categorize overtime by type; integrated into risk scoring |
-| **Vacations** | Vacation requests with type tracking (Annual, Medical, etc.) |
-| **Sanctions** | Formal warning and disciplinary records; weighted heavily in risk score |
-| **Health / Doctor** | Employee medical / sick-leave records |
-| **User Management** | Admin / User roles, JWT-secured registration and login |
+### 5. Country/capital sync flow
 
-### HR Intelligence (AI Layer)
+1. An admin user opens the Country page and clicks `Sync Countries` or `Sync Capitals`.
+2. The API calls the REST Countries API through a named `HttpClient`.
+3. Country, city, and town data are inserted/updated in SQL Server.
+4. This feature requires outbound internet access.
 
-| Feature | Implementation |
-|---------|---------------|
-| **Sentiment Analysis** | ML.NET binary classifier (SDCA Logistic Regression) trained on a curated HR TSV dataset; keyword fallback for ambiguous mid-range scores |
-| **HR Notes** | Authorized HR users create timestamped observations per employee; author resolved from JWT server-side |
-| **Risk Manager** | Composite score (overtime×5 + sick leave×4 + sanctions×6 + neg. notes×10 − pos. notes×3, clamped 0–100); all employees scored in 5 batch DB queries |
-| **Risk Levels** | High ≥ 61 · Medium 31–60 · Low ≤ 30; expandable per-row breakdown with formula display |
-| **Sentiment Trend** | Time-series chart grouped by week (≤30 d), month (≤365 d), or year (all-time) |
-| **Department Morale** | 100% stacked bar chart showing Positive/Neutral/Negative distribution per department |
-| **Analytics Panel** | Dashboard overlay with 6 KPI cards; open/closed state persisted to `localStorage` |
-| **Time Window** | Configurable 7 / 30 / 90 / 180 / 365 days; preference saved to `localStorage` |
-
-### Security & Audit
-
-| Feature | Detail |
-|---------|--------|
-| **JWT Bearer Auth** | Access + refresh token pair; `[Authorize]` on every sensitive endpoint |
-| **Role-based access** | `Admin` role required for country sync, user management |
-| **Author spoofing prevention** | `CreatedByUserId` on HR notes resolved from `ClaimTypes.Name` JWT claim, not client-supplied field |
-| **Strong password** | Validated on registration: min 8 chars, uppercase, digit, special char |
-| **Structured audit log** | Every export, print, image upload, and HR note creation emits a `logger.LogInformation(...)` with structured fields queryable in Seq |
-| **RabbitMQ audit events** | Same events published to `ems.audit.*` queues; `EmsAuditConsumer` persists them to the `AuditLogs` table |
-| **CORS** | Locked to the Blazor WASM origin (`https://localhost:7201`) |
-
-### Performance & Reliability
-
-| Concern | Solution |
-|---------|---------|
-| **Dashboard first-load latency** | All 4 HR Intelligence endpoints cache their results for 3 minutes in `IMemoryCache`; cache is busted immediately when a new HR note is created |
-| **Country list cache** | `CountryController.GetAll()` uses a 5-min sliding / 1-hour absolute `IMemoryCache` entry; invalidated on add/update/delete/sync |
-| **ML.NET model startup** | `SentimentWarmupService` (IHostedService) fires a background prediction call at startup; the `Lazy<T>` singleton is warmed before the first real request |
-| **N+1 query elimination** | `HRRiskService` loads all employees once, then makes 4 additional batch-aggregation queries (GroupBy → ToDictionary), processing entirely in-memory |
-| **SfDialog lifecycle** | All Syncfusion dialog components are mounted inside their parent `@if (allState.ShowXxx)` guards so they fully unmount on navigation, preventing `ObjectDisposedException` |
-| **Error boundaries** | `ErrorBoundary` wraps `@Body` in `MainLayout.razor`; `OnAfterRenderAsync` is wrapped in try/catch throughout |
-
----
-
-## 4. Technology Stack
-
-| Concern | Technology | Notes |
-|---------|-----------|-------|
-| Frontend | **Blazor WebAssembly** (.NET 8) | SPA, no server-side rendering required |
-| Backend | **ASP.NET Core 8 Web API** | REST, JWT, Serilog, Swagger |
-| Database | **SQL Server** (LocalDB in dev) | EF Core 8, Code-First migrations |
-| ORM | **Entity Framework Core 8** | Repository pattern over DbContext |
-| AI / ML | **ML.NET** | Binary sentiment classifier; SDCA Logistic Regression |
-| Messaging | **RabbitMQ** | Audit event bus; app starts normally if broker is offline |
-| Logging | **Serilog** | Console + rolling file + Seq sinks; structured properties |
-| UI Components | **Syncfusion Blazor** | Grid, Charts (accumulation, line, stacked bar), Dialog |
-| Toast notifications | **Blazored.Toast** | Success/error toasts with slide animation |
-| Auth | **JWT Bearer** + **BCrypt.Net** | Access + refresh tokens; bcrypt password hashing |
-| Testing | **xUnit** + **EF InMemory** | 23 unit tests; zero external dependencies |
-| External API | **REST Countries** | Country + capital sync (admin-only) |
-
----
-
-## 5. Getting Started
-
-### Prerequisites
-
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8)
-- **SQL Server LocalDB** — included with Visual Studio 2022 (any edition)
-  Or full SQL Server; update `DefaultConnection` in `Server/appsettings.json`
-- **RabbitMQ** — optional. Audit events fall back to Serilog-only if the broker is unreachable.
-
-### Fresh clone → running in 3 steps
+## Repository Cloning
 
 ```bash
-# 1. Clone
-git clone <repo-url>
-cd E-M-S-Solution-Try3
-
-# 2. Start the API (applies migrations + seeds demo data automatically)
-dotnet run --project Server
-
-# 3. Start the Blazor client (separate terminal)
-dotnet run --project Client
+git clone https://github.com/jotakv/E-M-S-Solution
+cd E-M-S-Solution
 ```
 
-Open `http://localhost:5049` in your browser.
+If you clone into a different local folder name, use that folder instead of `E-M-S-Solution`.
 
-> **No port editing required.** `Client/wwwroot/appsettings.json` points to `https://localhost:7012` which matches the Server's HTTPS launch profile. The dev seeder runs automatically on first start if `SeedDemoDataOnStartup: true` is set (default in Development).
+## Prerequisites
 
-### Manual migration (optional)
+- .NET SDK 8.0.x
+  - All projects target `net8.0`.
+  - The CI workflow in `.github/workflows/ci.yml` also uses `.NET 8.0.x`.
+- ASP.NET Core HTTPS development certificate
+  - The API and Blazor app run on HTTPS localhost URLs.
+  - If your machine does not already trust the dev certificate, run:
 
-If you prefer to run migrations before starting the server:
-
-```bash
-dotnet ef database update --project ServerLibrary --startup-project Server
+```powershell
+dotnet dev-certs https --trust
 ```
 
----
+- SQL Server LocalDB or another SQL Server instance
+  - The default connection string in `Server/appsettings.json` points to `Server=(localdb)\MSSQLLocalDB`.
+  - This is the easiest path on Windows.
+  - On non-Windows machines, or if LocalDB is not installed, you must override the connection string to a reachable SQL Server instance.
+- Docker Desktop + Docker Compose v2 (optional)
+  - Only needed if you want the RabbitMQ broker defined in `docker-compose.yml`.
+  - Docker is not required to run the API or the Blazor app.
+- Entity Framework Core CLI tools (optional)
+  - Only needed if you want to run EF commands manually instead of relying on the API's startup migration behavior.
 
-## 6. Ports & Services
-
-| Service | URL | Notes |
-|---------|-----|-------|
-| Blazor WASM client | `http://localhost:5049` | Dev profile |
-| ASP.NET Core API (HTTP) | `http://localhost:5094` | |
-| ASP.NET Core API (HTTPS) | `https://localhost:7012` | Client connects here |
-| Swagger UI | `https://localhost:7012/swagger` | JWT Authorize button in top-right |
-| RabbitMQ Management | `http://localhost:15672` | guest / guest |
-| Seq log viewer | `http://localhost:5341` | Optional; configure in `appsettings.json` |
-
----
-
-## 7. Default Credentials
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@ems.local | Admin123! |
-| HR Manager | hrmanager@ems.local | HRManager123! |
-| Employee | employee@ems.local | Employee123! |
-
----
-
-## 8. Configuration Reference
-
-**`Server/appsettings.json`** (key sections):
-
-```jsonc
-{
-  "ConnectionStrings": {
-    // LocalDB default — change to your SQL Server instance
-    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=EmployeeDB;..."
-  },
-  "JwtSection": {
-    "Key": "<256-bit secret>",
-    "Issuer": "https://localhost:7012",
-    "Audience": "https://localhost:5049"
-  },
-  "RabbitMQ": {
-    "HostName": "localhost",
-    "UserName": "guest",
-    "Password": "guest",
-    "VirtualHost": "/",
-    "Port": 5672
-  },
-  "SeedDemoDataOnStartup": true   // set false in production
-}
+```powershell
+dotnet tool install --global dotnet-ef
 ```
 
-**`Client/wwwroot/appsettings.json`**:
+- Node.js is not required
+  - There is no React app, no `package.json`, and no frontend Node toolchain in this repository.
 
-```jsonc
-{
-  "BackendApiUrl": "https://localhost:7012"   // must match Server HTTPS port
-}
+## Environment Configuration
+
+This repository does not contain `.env`, `.env.example`, or user-secrets configuration. Runtime configuration comes from:
+
+- `Server/appsettings.json`
+- `Server/appsettings.Development.json`
+- `Server/appsettings.Production.json`
+- environment variables
+- hard-coded client/server localhost URLs in source
+
+### Recommended local settings
+
+Use `Development` when running locally if you want:
+
+- local RabbitMQ defaults from `Server/appsettings.Development.json`
+- automatic demo seeding (`SeedDemoDataOnStartup=true`)
+
+Use these environment variables in the server terminal before `dotnet run`:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:DOTNET_ENVIRONMENT='Development'
 ```
 
----
+### Important configuration values
 
-## 9. API Endpoints
+| Setting | Required? | Purpose | Notes |
+| --- | --- | --- | --- |
+| `ASPNETCORE_ENVIRONMENT` / `DOTNET_ENVIRONMENT` | Yes for the seeded local demo | Loads the Development settings and enables demo seed behavior | The checked-in server launch profiles default to `Production`, so the README uses `--no-launch-profile` on purpose. |
+| `ConnectionStrings__DefaultConnection` | Required if you are not using the default LocalDB connection | SQL Server connection string | Default appsettings target `(localdb)\MSSQLLocalDB` and database `EmployeeDB`. |
+| `SeedDemoDataOnStartup` | Optional | Controls whether the development seed runs on startup | Set to `true` in `Server/appsettings.Development.json`. |
+| `RabbitMQ__HostName`, `RabbitMQ__Port`, `RabbitMQ__UserName`, `RabbitMQ__Password`, `RabbitMQ__VirtualHost`, `RabbitMQ__ExchangeName`, `RabbitMQ__ExchangeType`, `RabbitMQ__QueueName`, `RabbitMQ__RoutingKeyPrefix` | Optional | RabbitMQ broker settings | For local development, `appsettings.Development.json` expects `localhost:5672` with `guest/guest`. |
+| `JwtSection__Key`, `JwtSection__Issuer`, `JwtSection__Audience` | Optional for local evaluation, recommended for any real deployment | JWT signing/validation | Values are currently checked into appsettings. Replace them outside source control for any non-demo use. |
 
-### Authentication
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/authentication/register` | — | Register new user |
-| POST | `/api/authentication/login` | — | Login, returns JWT + refresh |
-| POST | `/api/authentication/refresh-token` | — | Refresh access token |
+### Fixed local URLs in code
 
-### HR Intelligence
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| GET | `/api/hrintelligence/summary?days=30` | Bearer | Sentiment summary (cached 3 min) |
-| GET | `/api/hrintelligence/trend?days=30` | Bearer | Sentiment trend by period (cached 3 min) |
-| GET | `/api/hrintelligence/departments?days=30` | Bearer | Department morale (cached 3 min) |
-| GET | `/api/hrintelligence/risks?top=10&days=90&includeAll=false` | Bearer | Risk scores (cached 3 min); `includeAll=true` returns all employees |
+Two local URLs are effectively part of the current implementation:
 
-### HR Notes
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/hrnotes` | Bearer | Create note; returns sentiment label + score |
-| GET | `/api/hrnotes?employeeId=&sentiment=&days=30&page=1&pageSize=20` | Bearer | Paginated notes with filters |
+- `Client/Program.cs` hard-codes the API base URL to `https://localhost:7012/`
+- `Server/Program.cs` allows CORS only from `https://localhost:7201`
 
-### Employees
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| GET | `/api/employee/all` | Bearer | All employees with full navigation |
-| GET | `/api/employee/single/{id}` | Bearer | Single employee |
-| POST | `/api/employee/add` | Bearer | Create employee |
-| PUT | `/api/employee/update` | Bearer | Update employee |
-| DELETE | `/api/employee/delete/{id}` | Bearer | Delete employee (cascades) |
+For the Blazor app to talk to the API without changing source code, keep these exact local HTTPS ports:
 
-### Countries / Cities / Towns
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| GET | `/api/country/all` | Bearer | All countries (5-min sliding cache) |
-| POST | `/api/country/sync` | Admin | Sync from REST Countries API; busts cache |
-| GET | `/api/city/all` | — | All cities (CountryId for client-side cascade) |
-| GET | `/api/town/all` | — | All towns (CityId for client-side cascade) |
+- API: `https://localhost:7012`
+- Blazor app: `https://localhost:7201`
 
-### Audit
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/audit/export` | Bearer | Log client-side Excel/PDF export |
-| POST | `/api/audit/print` | Bearer | Log client-side print |
-| POST | `/api/audit/image-upload` | Bearer | Log employee photo upload |
+If you change either port, update both source files together.
 
----
+### RabbitMQ local defaults
 
-## 10. Testing
+If you use the provided compose file, the expected local broker settings are:
 
-```bash
-dotnet test Tests/ServerLibrary.UnitTests
+| Setting | Value |
+| --- | --- |
+| AMQP host | `localhost` |
+| AMQP port | `5672` |
+| Username | `guest` |
+| Password | `guest` |
+| Management UI | `http://localhost:15672` |
+
+### Seq
+
+Serilog is configured to send logs to `http://localhost:5341`, but this repository does not provide a Seq container or setup script. File logging still works without Seq. Log files are written under `Server/Logs/`.
+
+## Database Setup
+
+### Default local database path (Windows)
+
+The simplest path is:
+
+1. Install SQL Server LocalDB.
+2. Use the default connection string from `Server/appsettings.json`, or override it with a fresh database name.
+3. Start the API in `Development`.
+4. The API will:
+   - apply EF Core migrations automatically
+   - create the database if needed
+   - seed demo data if `SeedDemoDataOnStartup=true`
+
+Example override to force a clean database name:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection='Server=(localdb)\MSSQLLocalDB;Database=EmployeeDB_ReadmeDemo;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True'
 ```
 
-**23 tests** — all passing, zero warnings:
+### Manual EF Core migration command
 
-| Test Class | Count | What it covers |
-|-----------|-------|---------------|
-| `DevelopmentDataSeederTests` | 5 | Seed counts (including 212 EmployeeNotes), idempotency, FK relationships, demo users, employee–branch–country graph |
-| `EmployeeRepositoryTests` | 6 | Insert, update, delete, get-by-id, duplicate-name guard |
-| `EmployeeRepositoryLoggingTests` | 3 | Structured Serilog output on insert and update operations |
-| `EmployeeNoteRepositoryTests` | 5 | AddAsync, GetByEmployeeId filtering, date-range filter, top-N, descending-order sort |
-| `CapitalSyncServiceTests` | 2 | Capital city sync matching and partial-sync idempotency |
-| `CountrySyncServiceTests` | 2 | Country upsert logic and sync result reporting |
+You do not need this for normal local startup, because `Server/Program.cs` calls `Database.MigrateAsync()` automatically. If you want to run migrations manually, use:
 
-**Test infrastructure:** EF Core InMemory provider with `Guid.NewGuid()` database names (full isolation per test). `InMemoryEventId.TransactionIgnoredWarning` suppressed so tests match production transaction-aware seeder.
+```powershell
+dotnet ef database update --project .\ServerLibrary\ServerLibrary.csproj --startup-project .\Server\Server.csproj
+```
 
----
+### Seed data
 
-## 11. Design Decisions & Patterns
+Development seed data lives in `ServerLibrary/Data/development-seed.json` and includes:
 
-### Repository Pattern
-Every entity has a concrete repository implementing `IGenericRepositoryInterface<T>`. Domain-specific operations (e.g., `ICountryRepository.GetByCode2Async`) extend the generic interface. The Application layer depends only on interfaces — infrastructure implementations are injected by the DI container.
+- roles: `Admin`, `User`
+- 3 seeded users
+- departments, branches, countries, cities, towns
+- overtime/sanction/vacation types
+- employees
+- doctor, overtime, sanction, and vacation records
 
-### Feature Folders (HR Intelligence)
-The `HRRiskService` and `HRAnalyticsService` live in `ServerLibrary/Features/HRIntelligence/` alongside their interfaces. This is the Vertical Slice / Feature Folder pattern applied within a Clean Architecture shell — each feature owns its use-case logic, avoiding "service bloat" in a flat `Services/` directory.
+### Important seed limitation
 
-### Singleton ML.NET Model
-`SentimentService` is registered as `AddSingleton` because `PredictionEngine<T>` is not thread-safe but `MLContext` and the trained model **are**. The service holds a `Lazy<PredictionEngine<...>?>` with `LazyThreadSafetyMode.ExecutionAndPublication` to guarantee exactly-once training. `SentimentWarmupService` fires a dummy prediction at startup via `Task.Run` so the `Lazy<T>` is forced before the first real HTTP request.
+The development seeder works on a clean database, but it is not safe to replay against arbitrary existing data. If you start the server in `Development` against a reused/partially seeded database, startup can fail with duplicate employee keys such as `IX_Employees_CivilId` or `IX_Employees_FileNumber`.
 
-### Structured Audit Logging
-All audit events use Serilog's **message template** syntax — e.g., `"Audit — EventName: {EventName} | Action: {Action} | ..."` — so every field is individually queryable in Seq without parsing strings. The same event is published to RabbitMQ for `EmsAuditConsumer` to persist to the `AuditLogs` table.
+If that happens, use one of these fixes:
 
-### Blazor SPA State
-`AllState` is a scoped service injected into every page. It exposes boolean flags (`ShowEmployee`, `ShowDashboard`, …) and an `Action` event that pages subscribe to in `OnInitializedAsync` and unsubscribe from in `Dispose`. Navigation is purely state-driven — no Blazor router URL changes for in-app moves.
+- point `ConnectionStrings__DefaultConnection` to a new database name
+- drop the existing database and start again
+- disable the seed by setting `SeedDemoDataOnStartup=false`
 
-### HR Intelligence Caching
-`HRIntelligenceController` caches all four endpoint responses in `IMemoryCache` with a 3-minute TTL. When a new HR note is created in `HRNotesController`, it explicitly removes 12 pre-defined cache keys (covering all permutations of top/days/includeAll). This is consistent with the existing `CountryController` caching pattern and avoids introducing a separate cache-service abstraction that would complicate the DI graph.
+## Running the Project Locally
 
-### N+1 Elimination in Risk Scoring
-The original implementation issued **4 DB round-trips per employee** inside a `foreach`. The current implementation issues exactly **5 queries total** regardless of employee count:
-1. Employees + Branch + Department (eager load)
-2. Overtime counts — `GroupBy(o.EmployeeId) → ToDictionary`
-3. Sick leave counts — same pattern
-4. Sanction counts — same pattern
-5. Recent notes (EmployeeId + SentimentLabel only) — grouped in-memory
+### 1. Restore, build, and test from the repository root
 
-### Country Cascade (Client-Side)
-The client loads all cities and all towns in `LoadDefaults()` (parallel HTTP calls). Cascade filtering (`Where(c => c.CountryId == selected)`) happens entirely in-memory in the browser. Server-side: `CityRepository.GetAll()` returns cities **without** `.Include(c => c.Country)` to avoid circular-reference serialization issues and unnecessary payload weight.
+```powershell
+dotnet restore .\EmployeeManagmentSystemSolution.sln
+dotnet build .\EmployeeManagmentSystemSolution.sln
+dotnet test .\Tests\ServerLibrary.UnitTests\ServerLibrary.UnitTests.csproj
+```
 
----
+### 2. Optional: start RabbitMQ
 
-## 12. Troubleshooting
+If you want audit queue persistence and message publishing to a live broker, start RabbitMQ first. See [Running with Docker](#running-with-docker).
 
-| Symptom | Likely cause | Fix |
-|---------|-------------|-----|
-| `FK_EmployeeNotes_Employees_EmployeeId` error on startup | Seeder ran before employees were committed | Delete the DB and restart — the fixed seeder flushes employees with `SaveChangesAsync` before seeding dependent records |
-| `An unhandled error has occurred` on home page | Syncfusion donut chart received all-zero data | Ensure the API is reachable and at least one employee with non-zero data is seeded. Guard: `!_chartData.Any(d => d.Count > 0)` |
-| `ObjectDisposedException` from `SfDialog.OnAfterRenderAsync` | Dialog component was outside `@if` guard and got re-rendered after disposal | Fixed: all dialogs now live inside `@if (allState.ShowXxx)` so they unmount with their page |
-| Risk Manager shows only 5–10 employees | By design — only top N by risk score | Click **"Top risks only"** toggle in the Risk Manager header to switch to **"All employees"** |
-| Country dropdown shows stale list after sync | Cache not invalidated | Fixed: `CountryController.SyncCountries/SyncCapitals` now calls `cache.Remove(CountryCacheKey)` |
-| City dropdown empty after country selection | Post-sync country has no seeded cities | Only the 6 seeded countries have matching cities/towns. Additional countries can be linked after adding cities via the City management page |
-| Build fails with DLL locked | Server process is running | Stop `dotnet run --project Server` before rebuilding |
-| RabbitMQ connection refused at startup | Broker not running | Non-fatal — audit events are Serilog-only; the app continues normally |
-| Slow first HR note submission | ML.NET model lazy-loading | `SentimentWarmupService` pre-warms the model in the background at startup; the slowness only occurs if the warmup hasn't completed yet (first ~3 s after startup) |
+If you skip RabbitMQ, the API still runs. You will see warnings, and audit/employee events are dropped instead of being processed by a broker.
+
+### 3. Start the API in its own terminal
+
+Open a new PowerShell terminal at the repository root and run:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:DOTNET_ENVIRONMENT='Development'
+# Optional but useful when you want a guaranteed clean demo DB:
+# $env:ConnectionStrings__DefaultConnection='Server=(localdb)\MSSQLLocalDB;Database=EmployeeDB_ReadmeDemo;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True'
+dotnet run --no-launch-profile --project .\Server\Server.csproj --urls "https://localhost:7012;http://localhost:5094"
+```
+
+Why `--no-launch-profile` matters:
+
+- the checked-in server launch profiles set `ASPNETCORE_ENVIRONMENT=Production`
+- the demo seed and local RabbitMQ settings are under `Development`
+
+Expected API URL:
+
+- Swagger UI: `https://localhost:7012/swagger`
+
+### 4. Start the Blazor client in a second terminal
+
+Open another PowerShell terminal at the repository root and run:
+
+```powershell
+dotnet run --no-launch-profile --project .\Client\Client.csproj --urls "https://localhost:7201;http://localhost:5049"
+```
+
+Expected client URLs:
+
+- root: `https://localhost:7201/`
+- login: `https://localhost:7201/identity/account/login`
+- dashboard after login: `https://localhost:7201/home/dashboard`
+
+### 5. Verify the system
+
+Once both processes are running:
+
+1. Open `https://localhost:7201/identity/account/login`
+2. Sign in with one of the seeded users listed below
+3. Browse the management sections from the left navigation
+4. Open Swagger at `https://localhost:7012/swagger` if you want to inspect the API directly
+
+## Running with Docker
+
+Docker support is partial. The repository's `docker-compose.yml` starts only RabbitMQ. It does not start:
+
+- SQL Server
+- the ASP.NET Core API
+- the Blazor WebAssembly app
+
+### Start RabbitMQ
+
+```powershell
+docker compose up -d
+```
+
+Services started by this compose file:
+
+| Service | Purpose | Port |
+| --- | --- | --- |
+| `rabbitmq` | AMQP broker | `5672` |
+| `rabbitmq` management plugin | Browser admin UI | `15672` |
+
+RabbitMQ management UI:
+
+- `http://localhost:15672`
+- username: `guest`
+- password: `guest`
+
+Useful commands:
+
+```powershell
+docker compose logs -f rabbitmq
+docker compose down
+docker compose down -v
+```
+
+Notes:
+
+- `docker compose up --build` is not needed here because the compose file only references the published `rabbitmq:3.13-management` image.
+- If `docker compose up -d` fails with a Docker pipe/daemon error, start Docker Desktop first and wait until the engine is ready.
+
+## Test Users and Roles
+
+These users are seeded from `ServerLibrary/Data/development-seed.json` when the API starts in `Development` with `SeedDemoDataOnStartup=true`.
+
+| Email | Password | Role | What it can do |
+| --- | --- | --- | --- |
+| `admin@ems.local` | `Admin123!` | `Admin` | Full authenticated UI access, user management UI, country/capital sync buttons, server-side access to the admin-only country sync endpoints. |
+| `hr@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
+| `manager@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
+
+Additional auth notes:
+
+- Registering a new account from `/identity/account/register` automatically assigns the `User` role.
+- The UI shows admin-only actions through `AuthorizeView`.
+- On the server side, the explicit role-based restrictions currently present are on the country sync endpoints and the authenticated audit endpoints.
+
+## End-to-End Smoke Test
+
+If you want to show the system working to an evaluator:
+
+1. Start the API in `Development` and the Blazor app on the default ports.
+2. Sign in as `admin@ems.local` / `Admin123!`.
+3. Open the dashboard and confirm that seeded data appears in the management sections.
+4. Open `Administration -> Users` and confirm the seeded roles/users are visible.
+5. Open `Management -> Employees` and create or update an employee.
+6. Open `Feedback` and submit a comment to see the sentiment result and summary refresh.
+7. If RabbitMQ is running, use export/print/image-upload actions from the UI and then inspect the `AuditLogs` table to confirm async audit persistence.
+8. If internet access is available, open the Country page and run `Sync Countries` / `Sync Capitals` as the admin user.
+
+## Running Tests
+
+### Local test command
+
+```powershell
+dotnet test .\Tests\ServerLibrary.UnitTests\ServerLibrary.UnitTests.csproj
+```
+
+At the time this README was written, the repository test project covered:
+
+- `DevelopmentDataSeeder`
+- `EmployeeRepository`
+- `CountrySyncService`
+- `CapitalSyncService`
+
+There are no frontend unit tests, Playwright tests, or Node-based test suites in this repository.
+
+### CI workflow
+
+`.github/workflows/ci.yml` currently does the following on pushes and pull requests to `master`:
+
+1. restores `EmployeeManagmentSystemSolution.sln`
+2. builds the solution in `Release`
+3. runs `Tests/ServerLibrary.UnitTests/ServerLibrary.UnitTests.csproj`
+4. collects coverage
+5. publishes test and coverage artifacts
+
+## Troubleshooting
+
+- Symptom: the server starts without demo users or local RabbitMQ settings.
+  Cause: the checked-in server launch profiles set `ASPNETCORE_ENVIRONMENT=Production`.
+  Fix: use the README command with `--no-launch-profile` and set `ASPNETCORE_ENVIRONMENT` / `DOTNET_ENVIRONMENT` to `Development`.
+
+- Symptom: startup fails with duplicate key errors such as `IX_Employees_CivilId` or `IX_Employees_FileNumber`.
+  Cause: the development seed is running against an existing or partially seeded database.
+  Fix: point `ConnectionStrings__DefaultConnection` to a fresh database name, drop the old database, or disable `SeedDemoDataOnStartup`.
+
+- Symptom: `RabbitMQ unavailable` or `EmsAuditConsumer could not connect to RabbitMQ`.
+  Cause: the broker is not running on `localhost:5672`.
+  Fix: start Docker Desktop, run `docker compose up -d`, or continue without RabbitMQ if you do not need the queue-backed audit flow.
+
+- Symptom: `docker compose up -d` fails with an error about `dockerDesktopLinuxEngine` or the Docker API pipe.
+  Cause: Docker Desktop is installed but the daemon is not running.
+  Fix: launch Docker Desktop and retry after the engine is healthy.
+
+- Symptom: browser HTTPS warnings, HTTPS bind failures, or localhost certificate errors.
+  Cause: the ASP.NET Core development certificate is missing or untrusted.
+  Fix: run `dotnet dev-certs https --trust`.
+
+- Symptom: the client loads but API calls fail due to CORS or the UI cannot reach the backend.
+  Cause: the API is not on `https://localhost:7012` or the client is not on `https://localhost:7201`.
+  Fix: keep the default ports, or update both `Client/Program.cs` and the CORS policy in `Server/Program.cs`.
+
+- Symptom: the API cannot connect to SQL Server at startup.
+  Cause: LocalDB is not installed, or you are not on Windows, or the connection string is wrong.
+  Fix: install SQL Server LocalDB or set `ConnectionStrings__DefaultConnection` to a reachable SQL Server instance.
+
+- Symptom: `address already in use` on ports `7012`, `5094`, `7201`, or `5049`.
+  Cause: another process is already listening on that port.
+  Fix: stop the other process, free the port, or change ports and then update the matching client/CORS settings in source.
+
+- Symptom: `Sync Countries` or `Sync Capitals` fails.
+  Cause: no outbound internet access or the REST Countries service is unavailable.
+  Fix: check connectivity and retry. Core employee-management features do not depend on this external API.
+
+## Assumptions and Limitations
+
+- This repository is an employee management system. It does not contain order, inventory, payment, or shipping services.
+- There is one frontend, and it is Blazor WebAssembly. There is no React admin UI.
+- Docker support is limited to RabbitMQ. There is no Dockerfile or compose service for SQL Server, the API, or the Blazor client.
+- The simplest local path is Windows-centric because the default connection string uses SQL Server LocalDB.
+- Demo seeding is a Development-only behavior and is not safe to replay against arbitrary existing data.
+- RabbitMQ is optional at runtime. When it is unavailable, the app continues, but queue-backed audit persistence and event delivery do not happen.
+- `ems.employee.created` and `ems.employee.updated` are published, but no consumer for those events exists in this repository.
+- Seq is configured as a Serilog sink, but the repository does not provide Seq infrastructure.
+- Most CRUD controllers are not decorated with `[Authorize]`. Access control is only partially enforced server-side and is more complete in the Blazor UI than in the API surface itself.
+
+## Quick Start
+
+1. Install .NET 8 SDK, SQL Server LocalDB (or another SQL Server instance), and optionally Docker Desktop.
+2. Clone the repository.
+3. Run:
+
+```powershell
+dotnet restore .\EmployeeManagmentSystemSolution.sln
+dotnet build .\EmployeeManagmentSystemSolution.sln
+dotnet test .\Tests\ServerLibrary.UnitTests\ServerLibrary.UnitTests.csproj
+```
+
+4. Optional: start RabbitMQ with `docker compose up -d`.
+5. In a new PowerShell terminal, run the API in `Development`:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:DOTNET_ENVIRONMENT='Development'
+dotnet run --no-launch-profile --project .\Server\Server.csproj --urls "https://localhost:7012;http://localhost:5094"
+```
+
+6. In another terminal, run the Blazor app:
+
+```powershell
+dotnet run --no-launch-profile --project .\Client\Client.csproj --urls "https://localhost:7201;http://localhost:5049"
+```
+
+7. Open `https://localhost:7201/identity/account/login`.
+8. Sign in with `admin@ems.local` / `Admin123!`.
