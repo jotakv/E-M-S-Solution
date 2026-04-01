@@ -114,7 +114,13 @@
         var customAuthStateProvider =
             (CustomAuthenticationStateProvider)AuthStateProvider;
 
-        await customAuthStateProvider.UpdateAuthenticationState(new UserSession());
+        // SilentLogout: clears token WITHOUT triggering NotifyAuthenticationStateChanged.
+        // If we called UpdateAuthenticationState() here it would fire a re-render that
+        // disposes Syncfusion components while their JSInterop DotNetObjectReferences are
+        // still live → "Cannot access a disposed object" error.
+        // The forceLoad navigation below causes a full browser reload, which re-evaluates
+        // auth state from (now empty) localStorage — no manual notification needed.
+        await customAuthStateProvider.SilentLogout();
 
         NavManager.NavigateTo("/identity/account/login",
             replace: true,

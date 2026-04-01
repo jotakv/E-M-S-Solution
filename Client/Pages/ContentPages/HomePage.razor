@@ -141,9 +141,12 @@
 
                                 <!-- 1. Donut: HR Module Overview -->
                                 <div class="col-md-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-header py-2 fw-semibold" style="font-size:0.82rem;">
-                                            <i class="bi bi-pie-chart-fill text-primary me-1"></i>HR Module Overview
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "donut"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-pie-chart-fill text-primary me-1"></i>HR Module Overview</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
                                         </div>
                                         <DashboardCharts Employees="_employees"
                                                          Departments="_departments"
@@ -157,9 +160,12 @@
 
                                 <!-- 2. Bar: Module Record Counts -->
                                 <div class="col-md-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-header py-2 fw-semibold" style="font-size:0.82rem;">
-                                            <i class="bi bi-bar-chart-fill text-success me-1"></i>Module Record Counts
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "bar"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-bar-chart-fill text-success me-1"></i>Module Record Counts</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
                                         </div>
                                         <DashboardCharts Employees="_employees"
                                                          Departments="_departments"
@@ -173,9 +179,12 @@
 
                                 <!-- 3. Line: Sentiment Trend -->
                                 <div class="col-md-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-header py-2 fw-semibold" style="font-size:0.82rem;">
-                                            <i class="bi bi-graph-up text-info me-1"></i>Sentiment Trend
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "trend"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-graph-up text-info me-1"></i>Sentiment Trend</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
                                         </div>
                                         <div class="card-body">
                                             @if (_trendLoading)
@@ -218,9 +227,12 @@
 
                                 <!-- 4. Stacked bar: Department Morale -->
                                 <div class="col-md-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-header py-2 fw-semibold" style="font-size:0.82rem;">
-                                            <i class="bi bi-building text-warning me-1"></i>Department Morale
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "dept"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-building text-warning me-1"></i>Department Morale</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
                                         </div>
                                         <div class="card-body">
                                             @if (_deptLoading)
@@ -262,6 +274,66 @@
                         </div>
                     }
                 </div>
+
+                <!-- ── Chart Zoom Modals ─────────────────────────────────────────── -->
+                <ChartZoomModal Title="HR Module Overview" IsOpen='_zoomedChart == "donut"' OnClose='() => _zoomedChart = null'>
+                    <DashboardCharts Employees="_employees" Departments="_departments" Overtimes="_overtimes"
+                                     Sanctions="_sanctions" Vacations="_vacations" Health="_health" ShowDonutOnly="true" />
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Module Record Counts" IsOpen='_zoomedChart == "bar"' OnClose='() => _zoomedChart = null'>
+                    <DashboardCharts Employees="_employees" Departments="_departments" Overtimes="_overtimes"
+                                     Sanctions="_sanctions" Vacations="_vacations" Health="_health" ShowBarOnly="true" />
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Sentiment Trend" IsOpen='_zoomedChart == "trend"' OnClose='() => _zoomedChart = null'>
+                    @if (_trend.Count > 0)
+                    {
+                        <SfChart Background="transparent" Height="420px">
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="PositivePct"
+                                    Name="Positive" Type="ChartSeriesType.Line" Fill="#28a745" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NeutralPct"
+                                    Name="Neutral" Type="ChartSeriesType.Line" Fill="#6c757d" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NegativePct"
+                                    Name="Negative" Type="ChartSeriesType.Line" Fill="#dc3545" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                        </SfChart>
+                    }
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Department Morale" IsOpen='_zoomedChart == "dept"' OnClose='() => _zoomedChart = null'>
+                    @if (_deptMorale.Count > 0)
+                    {
+                        <SfChart Background="transparent" Height="420px">
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" LabelRotation="-20"></ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="PositivePct"
+                                    Name="Positive" Type="ChartSeriesType.StackingColumn100" Fill="#28a745">
+                                </ChartSeries>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NeutralPct"
+                                    Name="Neutral" Type="ChartSeriesType.StackingColumn100" Fill="#6c757d">
+                                </ChartSeries>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NegativePct"
+                                    Name="Negative" Type="ChartSeriesType.StackingColumn100" Fill="#dc3545">
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                        </SfChart>
+                    }
+                </ChartZoomModal>
 
                 <!-- D. HR Observation Note panel -->
                 <div class="card shadow-sm mb-3">
@@ -452,6 +524,11 @@
     </NotAuthorized>
 </AuthorizeView>
 
+<style>
+    .ems-zoomable { cursor: zoom-in; }
+    .ems-zoomable:hover { box-shadow: 0 0 0 2px rgba(0,113,227,.35) !important; }
+</style>
+
 @code {
     // ── Core data (parallel background load) ─────────────────────────────
     private List<Employee>?    _employees;
@@ -462,9 +539,12 @@
     private List<Doctor>?      _health;
 
     // ── Panel open/close ─────────────────────────────────────────────────
-    private bool _analyticsOpen   = true;
-    private bool _noteOpen        = true;
-    private bool _riskOpen        = true;
+    private bool    _analyticsOpen  = true;
+    private bool    _noteOpen       = true;
+    private bool    _riskOpen       = true;
+
+    // ── Chart zoom — null = none zoomed; values: "donut"|"bar"|"trend"|"dept"
+    private string? _zoomedChart    = null;
 
     // ── HR intelligence data ─────────────────────────────────────────────
     private List<SentimentTrendDto>   _trend      = new();
@@ -514,7 +594,7 @@
         {
             // Read HR Intelligence preferences from localStorage
             var daysRaw      = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
-            var analyticsRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_show_analytics_panel");
+            var analyticsRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
 
             if (int.TryParse(daysRaw, out var savedDays))
                 _hrDays = savedDays;

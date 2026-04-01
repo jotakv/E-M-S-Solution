@@ -178,6 +178,7 @@
                                 <th>Employee</th>
                                 <th>Department</th>
                                 <th>Observation</th>
+                                <th>Written by</th>
                                 <th>Sentiment</th>
                                 <th>Score</th>
                             </tr>
@@ -195,7 +196,10 @@
                                             <br /><small>@note.Branch</small>
                                         }
                                     </td>
-                                    <td style="max-width:320px; white-space:normal; word-wrap:break-word;">@note.NoteText</td>
+                                    <td style="max-width:300px; white-space:normal; word-wrap:break-word;">@note.NoteText</td>
+                                    <td class="text-muted text-nowrap" style="font-size:0.75rem;">
+                                        @(string.IsNullOrEmpty(note.CreatedByUserId) ? "—" : note.CreatedByUserId)
+                                    </td>
                                     <td>
                                         <span class="badge @SentimentBadgeClass(note.SentimentLabel)">@note.SentimentLabel</span>
                                     </td>
@@ -404,17 +408,12 @@
         }
         await JS.InvokeVoidAsync("downloadFile", $"hr-notes-{DateTime.Now:yyyyMMdd}.csv", sb.ToString(), "text/csv");
 
-        // Audit log the export
+        // Audit log via the shared AuditController — same structured format as Excel/PDF exports.
         try
         {
             var http = await HttpFactory.GetPrivateHttpClient();
-            await http.PostAsJsonAsync($"{Constants.HRNotesUrl}/audit/export", new
-            {
-                RowCount        = _notes.Count,
-                EmployeeId      = _filterEmployeeId > 0 ? (int?)_filterEmployeeId : null,
-                SentimentFilter = string.IsNullOrEmpty(_filterSentiment) ? null : _filterSentiment,
-                DaysFilter      = _filterDays > 0 ? (int?)_filterDays : null
-            });
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Employee", "CSV", _notes.Count));
         }
         catch { /* audit failure must never block the export */ }
     }

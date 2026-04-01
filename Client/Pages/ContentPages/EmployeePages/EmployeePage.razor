@@ -11,30 +11,6 @@
     }
     else if (ShowMainPage)
     {
-        <!-- ── Analytics Charts (collapsible) ──────────────────────────────── -->
-        <div class="container-fluid mt-3 px-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-semibold text-muted" style="font-size:0.85rem;">
-                    <i class="bi bi-bar-chart-fill text-primary me-1"></i>Analytics Overview
-                </span>
-                <button class="btn btn-sm btn-outline-secondary"
-                        @onclick="ToggleCharts"
-                        title="@(_chartsVisible ? "Collapse charts" : "Expand charts")">
-                    <i class="bi @(_chartsVisible ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
-                    @(_chartsVisible ? "Collapse" : "Expand")
-                </button>
-            </div>
-            @if (_chartsVisible)
-            {
-                <DashboardCharts Employees="Employees"
-                                 Departments="InitialDepartments"
-                                 Overtimes="InitialOvertimes"
-                                 Sanctions="InitialSanctions"
-                                 Vacations="InitialVacations"
-                                 Health="InitialHealth" />
-            }
-        </div>
-
         <!-- ── Employee Grid ───────────────────────────────────────────────── -->
         <div class="container-fluid mt-3">
             <div class="row">
@@ -128,9 +104,6 @@
     [Parameter] public List<Sanction>?    InitialSanctions    { get; set; }
     [Parameter] public List<Vacation>?    InitialVacations    { get; set; }
     [Parameter] public List<Doctor>?      InitialHealth       { get; set; }
-
-    private bool _chartsVisible = true;
-    private void ToggleCharts() => _chartsVisible = !_chartsVisible;
 
     private bool _previousShowEmployeeState = false;
     private bool isLoading = true;

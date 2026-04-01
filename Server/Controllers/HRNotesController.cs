@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Services;
 using ServerLibrary.Repositories.Contracts;
+using System.Security.Claims;
 
 namespace Server.Controllers
 {
@@ -12,8 +13,8 @@ namespace Server.Controllers
     [Authorize]
     public class HRNotesController : ControllerBase
     {
-        private readonly IEmployeeNoteRepository   _noteRepo;
-        private readonly ISentimentService         _sentiment;
+        private readonly IEmployeeNoteRepository    _noteRepo;
+        private readonly ISentimentService          _sentiment;
         private readonly ILogger<HRNotesController> _logger;
 
         public HRNotesController(
@@ -26,6 +27,17 @@ namespace Server.Controllers
             _logger    = logger;
         }
 
+        private string CurrentUserId =>
+            User.FindFirstValue("sub")
+         ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+         ?? "unknown";
+
+        private string CurrentUserName =>
+            User.FindFirstValue("name")
+         ?? User.FindFirstValue(ClaimTypes.Name)
+         ?? User.FindFirstValue(ClaimTypes.Email)
+         ?? CurrentUserId;
+
         // POST /api/hrnotes
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateNoteRequest request)
@@ -33,9 +45,12 @@ namespace Server.Controllers
             if (request.EmployeeId <= 0 || string.IsNullOrWhiteSpace(request.NoteText))
                 return BadRequest("EmployeeId and NoteText are required.");
 
-            var result       = _sentiment.Predict(request.NoteText);
-            var sentLabel    = result.Score >= 0.65f ? "Positive" : result.Score <= 0.35f ? "Negative" : "Neutral";
+            var result    = _sentiment.Predict(request.NoteText);
+            var sentLabel = result.Score >= 0.65f ? "Positive" : result.Score <= 0.35f ? "Negative" : "Neutral";
 
+            // Always resolve the author from the JWT — the client-supplied field is ignored
+            // to prevent spoofing and to satisfy the requirement that notes are linked to
+            // the authenticated user account.
             var note = new EmployeeNote
             {
                 EmployeeId      = request.EmployeeId,
@@ -43,7 +58,7 @@ namespace Server.Controllers
                 SentimentScore  = result.Score,
                 SentimentLabel  = sentLabel,
                 CreatedAt       = DateTime.UtcNow,
-                CreatedByUserId = request.CreatedByUserId ?? string.Empty
+                CreatedByUserId = CurrentUserName   // server-resolved, not client-supplied
             };
 
             await _noteRepo.AddAsync(note);
@@ -77,16 +92,16 @@ namespace Server.Controllers
             if (!string.IsNullOrEmpty(sentiment))
                 notes = notes.Where(n => n.SentimentLabel == sentiment).ToList();
 
-            var total   = notes.Count;
-            var paged   = notes.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = notes.Count;
+            var paged = notes.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             var dtos = paged.Select(n => new EmployeeNoteDto
             {
                 Id              = n.Id,
                 EmployeeId      = n.EmployeeId,
-                EmployeeName    = n.Employee?.Name                            ?? string.Empty,
-                Department      = n.Employee?.Branch?.Department?.Name        ?? string.Empty,
-                Branch          = n.Employee?.Branch?.Name                    ?? string.Empty,
+                EmployeeName    = n.Employee?.Name                     ?? string.Empty,
+                Department      = n.Employee?.Branch?.Department?.Name ?? string.Empty,
+                Branch          = n.Employee?.Branch?.Name             ?? string.Empty,
                 NoteText        = n.NoteText,
                 SentimentScore  = n.SentimentScore,
                 SentimentLabel  = n.SentimentLabel,
@@ -102,34 +117,7 @@ namespace Server.Controllers
                 PageSize   = pageSize
             });
         }
-
-        // POST /api/hrnotes/audit/export
-        // Called by the client after CSV export to log the audit event.
-        [HttpPost("audit/export")]
-        public IActionResult AuditExport([FromBody] ExportAuditRequest request)
-        {
-            var userId = User.FindFirst("sub")?.Value
-                      ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                      ?? "unknown";
-
-            _logger.LogInformation(
-                "CSV Export audit: UserId={UserId} ExportedAt={ExportedAt} Rows={Rows} Filters=[employee={EmployeeId} sentiment={Sentiment} days={Days}]",
-                userId,
-                DateTime.UtcNow,
-                request.RowCount,
-                request.EmployeeId,
-                request.SentimentFilter,
-                request.DaysFilter);
-
-            return Ok();
-        }
-    }
-
-    public sealed class ExportAuditRequest
-    {
-        public int     RowCount        { get; set; }
-        public int?    EmployeeId      { get; set; }
-        public string? SentimentFilter { get; set; }
-        public int?    DaysFilter      { get; set; }
+        // NOTE: CSV export audit is handled by POST /api/audit/export (AuditController)
+        // using ExportAuditDto("Employee", "CSV", rowCount) — no duplicate endpoint here.
     }
 }
