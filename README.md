@@ -138,7 +138,7 @@ Since we are using VS Code as our primary IDE, we need to install the editor and
 
 Once Git is installed, open your terminal or command prompt, navigate to the directory where you want to store your projects, and run:
 
-    git clone https://github.com/your-username/E-M-S-Solution.git
+    https://github.com/jotakv/E-M-S-Solution.git
     cd E-M-S-Solution
 
 *Note: If you clone into a different local folder name, use that folder instead of `E-M-S-Solution`.*
