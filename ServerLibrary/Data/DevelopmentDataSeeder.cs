@@ -42,6 +42,13 @@ namespace ServerLibrary.Data
                 var users = await SeedUsersOnlyAsync(context, seedData, logger, cancellationToken);
                 await SeedUserRolesAsync(context, seedData, users, roles, logger, cancellationToken);
 
+                // Resolve the admin display name to use as the author of system-seeded notes
+                // so HR pages show "Written by: System Administrator" instead of "seed".
+                var seederIdentity = users.Values
+                    .FirstOrDefault(u => string.Equals(u.Email, "admin@ems.local",
+                        StringComparison.OrdinalIgnoreCase))
+                    ?.Fullname ?? "System Administrator";
+
                 var generalDepartments = await SeedGeneralDepartmentsAsync(context, seedData, logger, cancellationToken);
                 var departments = await SeedDepartmentsAsync(context, seedData, generalDepartments, logger, cancellationToken);
                 var branches = await SeedBranchesAsync(context, seedData, departments, logger, cancellationToken);
@@ -64,7 +71,7 @@ namespace ServerLibrary.Data
                 await SeedOvertimesAsync(context, seedData, employees, overtimeTypes, logger, cancellationToken);
                 await SeedSanctionsAsync(context, seedData, employees, sanctionTypes, logger, cancellationToken);
                 await SeedVacationsAsync(context, seedData, employees, vacationTypes, logger, cancellationToken);
-                await SeedEmployeeNotesAsync(context, employees, logger, cancellationToken);
+                await SeedEmployeeNotesAsync(context, employees, seederIdentity, logger, cancellationToken);
 
                 await context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -720,6 +727,7 @@ namespace ServerLibrary.Data
         private static async Task SeedEmployeeNotesAsync(
             AppDbContext context,
             Dictionary<string, Employee> employees,
+            string seederIdentity,
             ILogger? logger,
             CancellationToken ct)
         {
@@ -788,7 +796,7 @@ namespace ServerLibrary.Data
                         SentimentLabel  = "Negative",
                         SentimentScore  = 0.08f + (float)rng.NextDouble() * 0.18f,
                         CreatedAt       = now.AddDays(-(i * 12 + rng.Next(1, 8))).AddHours(-rng.Next(0, 8)),
-                        CreatedByUserId = "seed"
+                        CreatedByUserId = seederIdentity
                     });
                 }
             }
@@ -826,7 +834,7 @@ namespace ServerLibrary.Data
                     SentimentLabel  = template.Label,
                     SentimentScore  = template.MinScore + (float)rng.NextDouble() * (template.MaxScore - template.MinScore),
                     CreatedAt       = now.AddDays(-daysAgo).AddHours(-rng.Next(0, 8)),
-                    CreatedByUserId = "seed"
+                    CreatedByUserId = seederIdentity
                 });
 
                 empIdx++;
@@ -857,6 +865,12 @@ namespace ServerLibrary.Data
         if (await context.EmployeeNotes.AnyAsync(cancellationToken)) return;
 
         logger?.LogInformation("SeedAnalyticsNotesAsync: seeding HR notes for analytics...");
+
+        // Resolve the admin display name so seeded notes show a real author.
+        var adminUser = await context.ApplicationUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == "admin@ems.local", cancellationToken);
+        var seederIdentity = adminUser?.Fullname ?? "System Administrator";
 
         var employees = await context.Employees
             .AsNoTracking()
@@ -975,7 +989,7 @@ namespace ServerLibrary.Data
                     SentimentLabel  = label,
                     SentimentScore  = score,
                     CreatedAt       = now.AddDays(-daysBack).AddHours(-hoursBack),
-                    CreatedByUserId = "seed"
+                    CreatedByUserId = seederIdentity
                 });
             }
         }
@@ -985,6 +999,32 @@ namespace ServerLibrary.Data
 
         logger?.LogInformation("SeedAnalyticsNotesAsync: seeded {Count} HR notes across {Employees} employees.",
             notes.Count, employees.Count);
+    }
+
+    // ── One-time data fixup ───────────────────────────────────────────────────
+    // Runs on every startup and updates any EmployeeNote rows that still carry
+    // the legacy "seed" placeholder (created before this fix was applied).
+    // The operation is idempotent — if no rows match, it completes instantly.
+    public static async Task FixSeederIdentityAsync(
+        AppDbContext context,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default)
+    {
+        var adminUser = await context.ApplicationUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == "admin@ems.local", cancellationToken);
+        var seederIdentity = adminUser?.Fullname ?? "System Administrator";
+
+        var affected = await context.EmployeeNotes
+            .Where(n => n.CreatedByUserId == "seed")
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(n => n.CreatedByUserId, seederIdentity),
+                cancellationToken);
+
+        if (affected > 0)
+            logger?.LogInformation(
+                "FixSeederIdentityAsync: updated {Count} notes — 'seed' → '{Identity}'.",
+                affected, seederIdentity);
     }
 }
 }
