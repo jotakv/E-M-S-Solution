@@ -105,10 +105,6 @@ flowchart LR
 
 ## Repository Cloning
 
-```bash
-git clone https://github.com/jotakv/E-M-S-Solution
-cd E-M-S-Solution
-```
 
 If you clone into a different local folder name, use that folder instead of `E-M-S-Solution`.
 
@@ -117,6 +113,9 @@ If you clone into a different local folder name, use that folder instead of `E-M
 - .NET SDK 8.0.x
   - All projects target `net8.0`.
   - The CI workflow in `.github/workflows/ci.yml` also uses `.NET 8.0.x`.
+```bash
+ winget install Microsoft.DotNet.SDK.8
+```
 - ASP.NET Core HTTPS development certificate
   - The API and Blazor app run on HTTPS localhost URLs.
   - If your machine does not already trust the dev certificate, run:
