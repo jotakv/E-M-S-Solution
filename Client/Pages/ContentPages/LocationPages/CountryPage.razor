@@ -46,28 +46,6 @@
                     </div>
 
                     <div class="card-body" style="max-height: 580px; overflow-x:hidden; overflow-y:scroll;">
-                        @if (lastCountrySyncResult is not null)
-                        {
-                            <div class="alert alert-success" role="alert">
-                                Country sync completed.
-                                Processed: @lastCountrySyncResult.TotalProcessed |
-                                Inserted: @lastCountrySyncResult.Inserted |
-                                Updated: @lastCountrySyncResult.Updated |
-                                Skipped: @lastCountrySyncResult.Skipped
-                            </div>
-                        }
-
-                        @if (lastCapitalSyncResult is not null)
-                        {
-                            <div class="alert alert-success" role="alert">
-                                Capital sync completed.
-                                Matched: @lastCapitalSyncResult.CountriesMatched |
-                                Skipped: @lastCapitalSyncResult.CountriesSkipped |
-                                Cities inserted/updated: @lastCapitalSyncResult.CitiesInserted/@lastCapitalSyncResult.CitiesUpdated |
-                                Towns inserted/updated: @lastCapitalSyncResult.TownsInserted/@lastCapitalSyncResult.TownsUpdated
-                            </div>
-                        }
-
                         <table class="table table-striped">
                             <thead>
                                 <tr>
@@ -145,8 +123,6 @@
     Country Country = new();
     public List<Country> Countries { get; set; } = new();
     private bool _isLoading = false;
-    private CountrySyncResultDto? lastCountrySyncResult;
-    private CapitalSyncResultDto? lastCapitalSyncResult;
     private bool isSyncingCountries;
     private bool isSyncingCapitals;
 
@@ -182,16 +158,6 @@
         _isLoading = false;
     }
 
-    private void AutoDismissSyncBanner(int ms, bool isCountry)
-    {
-        _ = Task.Delay(ms).ContinueWith(_ => InvokeAsync(() =>
-        {
-            if (isCountry) lastCountrySyncResult  = null;
-            else           lastCapitalSyncResult  = null;
-            StateHasChanged();
-        }));
-    }
-
     private async Task SyncCountriesClicked()
     {
         if (isSyncingCountries) return;
@@ -199,13 +165,12 @@
         try
         {
             isSyncingCountries = true;
-            lastCountrySyncResult = await countrySyncService.SyncCountriesAsync();
+            var result = await countrySyncService.SyncCountriesAsync();
 
-            if (lastCountrySyncResult is not null)
+            if (result is not null)
             {
                 await GetCountries();
-                toastService.ShowSuccess($"Inserted: {lastCountrySyncResult.Inserted}, Updated: {lastCountrySyncResult.Updated}, Skipped: {lastCountrySyncResult.Skipped}.");
-                AutoDismissSyncBanner(5000, isCountry: true);
+                toastService.ShowSuccess($"Countries synced — Inserted: {result.Inserted}, Updated: {result.Updated}, Skipped: {result.Skipped}.");
             }
         }
         catch (Exception ex)
@@ -225,13 +190,12 @@
         try
         {
             isSyncingCapitals = true;
-            lastCapitalSyncResult = await countrySyncService.SyncCapitalsAsync();
+            var result = await countrySyncService.SyncCapitalsAsync();
 
-            if (lastCapitalSyncResult is not null)
+            if (result is not null)
             {
                 await GetCountries();
-                toastService.ShowSuccess($"Matched: {lastCapitalSyncResult.CountriesMatched}, Skipped: {lastCapitalSyncResult.CountriesSkipped}, Cities inserted/updated: {lastCapitalSyncResult.CitiesInserted}/{lastCapitalSyncResult.CitiesUpdated}, Towns inserted/updated: {lastCapitalSyncResult.TownsInserted}/{lastCapitalSyncResult.TownsUpdated}.");
-                AutoDismissSyncBanner(5000, isCountry: false);
+                toastService.ShowSuccess($"Capitals synced — Matched: {result.CountriesMatched}, Cities: {result.CitiesInserted}/{result.CitiesUpdated}, Towns: {result.TownsInserted}/{result.TownsUpdated}.");
             }
         }
         catch (Exception ex)
