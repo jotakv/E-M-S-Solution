@@ -88,6 +88,10 @@
             </div>
         </div>
     </div>
+
+    <VacationDialog @ref="vacationDialog"
+                    VacationTypes="VacationTypes"
+                    HandleSaveOperationEvent="HandleSaveOperationEvent" />
 }
 
 <style>
@@ -95,10 +99,6 @@
         cursor: pointer;
     }
 </style>
-
-<VacationDialog @ref="vacationDialog"
-                VacationTypes="VacationTypes"
-                HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
     private SfGrid<Vacation>? DefaultGrid;

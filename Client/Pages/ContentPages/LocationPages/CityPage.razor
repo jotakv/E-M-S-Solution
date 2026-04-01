@@ -73,6 +73,11 @@
             </div>
         </div>
     </div>
+
+    <CityDialog @ref="cityDialog"
+                HandleSaveOperationEvent="HandleSaveOperationEvent"
+                City="City"
+                Countries="Countries"/>
 }
 
 
@@ -82,11 +87,6 @@
         cursor: pointer;
     }
 </style>
-
-<CityDialog @ref="cityDialog"
-               HandleSaveOperationEvent="HandleSaveOperationEvent"
-               City="City"
-               Countries="Countries"/>
 
 @code {
 

@@ -80,7 +80,7 @@
                                         style="border-radius:20px; font-size:0.75rem; padding:2px 10px;"
                                         @onclick="() => SetHrDays(val)">@label</button>
                             }
-                            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick='() => _analyticsOpen = !_analyticsOpen'>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="ToggleAnalyticsPanel">
                                 <i class="bi @(_analyticsOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
                                 @(_analyticsOpen ? "Collapse" : "Expand")
                             </button>
@@ -676,6 +676,12 @@
         _hrDataLoaded = false;
         await JS.InvokeVoidAsync("localStorage.setItem", "ems_hr_default_days", days.ToString());
         await LoadHrIntelligenceAsync();
+    }
+
+    private async Task ToggleAnalyticsPanel()
+    {
+        _analyticsOpen = !_analyticsOpen;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_analytics_panel", _analyticsOpen ? "true" : "false");
     }
 
     private async Task SubmitNote()

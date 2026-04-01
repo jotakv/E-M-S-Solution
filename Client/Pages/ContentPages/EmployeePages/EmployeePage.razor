@@ -64,38 +64,39 @@
             </div>
         </div>
     }
+
+    @* Dialogs inside the guard so SfDialog unmounts when this page is inactive (prevents ObjectDisposedException) *@
+    <AddOrUpdateEmployeePage @ref="addOrUpdateEmployee"
+                             ShowAddOrUpdateEmployee="ShowAddOrUpdatePage"
+                             NotifyParentFormCloseClicked="NotifyParentFormCloseClicked"
+                             Countries="DefaultCountries"
+                             Cities="SelectedCities"
+                             Towns="SelectedTowns"
+                             GeneralDepartments="DefaultGeneralDepartments"
+                             Departments="SelectedDepartments"
+                             Branches="SelectedBranches"
+                             AllEmployees="Employees"
+                             HandleCountrySelectedEvent="HandleCountrySelectedEvent"
+                             HandleCitySelectedEvent="HandleCitySelectedEvent"
+                             HandleGeneralDepartmentSelectedEvent="HandleGeneralDepartmentSelectedEvent"
+                             HandleDepartmentSelectedEvent="HandleDepartmentSelectedEvent"
+                             HandleSaveEmployeeClickedEvent="HandleSaveEmployeeClickedEvent" />
+
+    <ContextMenu @ref="contextMenu"
+                 HandleDeleteClicked="DeleteClicked"
+                 HandleEditClicked="EditClicked"
+                 HandleViewClicked="ViewClicked"
+                 HandleAddHealthClicked="AddHealthClicked"
+                 HandleAddOvertimeClicked="AddOvertimeClicked"
+                 HandleAddSanctionClicked="AddSanctionClicked"
+                 HandleAddVacationClicked="AddVacationClicked" />
+
+    <DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
+    <OvertimeDialog @ref="overtimeDialog" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent" />
+    <SanctionDialog @ref="sanctionDialog" SanctionTypes="SanctionTypes" HandleSaveOperationEvent="SaveSanctionEvent" />
+    <VacationDialog @ref="vacationDialog" VacationTypes="VacationTypes" HandleSaveOperationEvent="SaveVacationEvent" />
+    <EmployeeDetailPage EmployeeDetails="Employee" ShowDetailsPage="ShowDetailsPage" HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 }
-
-<AddOrUpdateEmployeePage @ref="addOrUpdateEmployee"
-                         ShowAddOrUpdateEmployee="ShowAddOrUpdatePage"
-                         NotifyParentFormCloseClicked="NotifyParentFormCloseClicked"
-                         Countries="DefaultCountries"
-                         Cities="SelectedCities"
-                         Towns="SelectedTowns"
-                         GeneralDepartments="DefaultGeneralDepartments"
-                         Departments="SelectedDepartments"
-                         Branches="SelectedBranches"
-                         AllEmployees="Employees"
-                         HandleCountrySelectedEvent="HandleCountrySelectedEvent"
-                         HandleCitySelectedEvent="HandleCitySelectedEvent"
-                         HandleGeneralDepartmentSelectedEvent="HandleGeneralDepartmentSelectedEvent"
-                         HandleDepartmentSelectedEvent="HandleDepartmentSelectedEvent"
-                         HandleSaveEmployeeClickedEvent="HandleSaveEmployeeClickedEvent" />
-
-<ContextMenu @ref="contextMenu"
-             HandleDeleteClicked="DeleteClicked"
-             HandleEditClicked="EditClicked"
-             HandleViewClicked="ViewClicked"
-             HandleAddHealthClicked="AddHealthClicked"
-             HandleAddOvertimeClicked="AddOvertimeClicked"
-             HandleAddSanctionClicked="AddSanctionClicked"
-             HandleAddVacationClicked="AddVacationClicked" />
-
-<DoctorDialog @ref="doctorDialog" HandleSaveOperationEvent="SaveHealthEvent" />
-<OvertimeDialog @ref="overtimeDialog" OvertimeTypes="OvertimeTypes" HandleSaveOperationEvent="SaveOvertimeEvent" />
-<SanctionDialog @ref="sanctionDialog" SanctionTypes="SanctionTypes" HandleSaveOperationEvent="SaveSanctionEvent" />
-<VacationDialog @ref="vacationDialog" VacationTypes="VacationTypes" HandleSaveOperationEvent="SaveVacationEvent" />
-<EmployeeDetailPage EmployeeDetails="Employee" ShowDetailsPage="ShowDetailsPage" HandleDetailsPageCloseBtnClicked="HandleDetailsPageCloseBtnClicked" />
 
 @code {
     [Parameter] public List<Employee>?    InitialEmployees    { get; set; }
@@ -159,6 +160,12 @@
                 addOrUpdateEmployee.FirstLayer = true;
                 addOrUpdateEmployee.SecondLayer = false;
             }
+        }
+        else if (!allState.ShowEmployee && _previousShowEmployeeState)
+        {
+            // User navigated away — collapse detail view so it doesn't bleed onto other pages
+            ShowDetailsPage = false;
+            ShowMainPage    = true;
         }
 
         _previousShowEmployeeState = allState.ShowEmployee;

@@ -88,6 +88,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Dialog Component -->
+    <SanctionDialog @ref="sanctionDialog"
+                    SanctionTypes="SanctionTypes"
+                    HandleSaveOperationEvent="HandleSaveOperationEvent" />
 }
 
 <style>
@@ -95,11 +100,6 @@
         cursor: pointer;
     }
 </style>
-
-<!-- Dialog Component -->
-<SanctionDialog @ref="sanctionDialog"
-                SanctionTypes="SanctionTypes"
-                HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
     private SfGrid<Sanction>? DefaultGrid;

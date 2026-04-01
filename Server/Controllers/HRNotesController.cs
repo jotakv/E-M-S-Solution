@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Services;
 using ServerLibrary.Repositories.Contracts;
+using ServerLibrary.Services.Contracts;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Server.Controllers
 {
@@ -15,15 +17,18 @@ namespace Server.Controllers
     {
         private readonly IEmployeeNoteRepository    _noteRepo;
         private readonly ISentimentService          _sentiment;
+        private readonly IEventBus                  _eventBus;
         private readonly ILogger<HRNotesController> _logger;
 
         public HRNotesController(
             IEmployeeNoteRepository noteRepo,
             ISentimentService sentiment,
+            IEventBus eventBus,
             ILogger<HRNotesController> logger)
         {
             _noteRepo  = noteRepo;
             _sentiment = sentiment;
+            _eventBus  = eventBus;
             _logger    = logger;
         }
 
@@ -62,6 +67,24 @@ namespace Server.Controllers
             };
 
             await _noteRepo.AddAsync(note);
+
+            _logger.LogInformation(
+                "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | " +
+                "UserId: {UserId} | EmployeeId: {EmployeeId} | SentimentLabel: {SentimentLabel} | " +
+                "SentimentScore: {SentimentScore} | Result: {Result} | Timestamp: {Timestamp}",
+                "HRNoteCreated", "Create", "EmployeeNote", CurrentUserName,
+                note.EmployeeId, sentLabel, result.Score, "Success", DateTime.UtcNow);
+
+            _eventBus.Publish("ems.audit.note-create", JsonSerializer.Serialize(new
+            {
+                Action         = "Create",
+                Entity         = "EmployeeNote",
+                UserId         = CurrentUserName,
+                EmployeeId     = note.EmployeeId,
+                SentimentLabel = sentLabel,
+                SentimentScore = result.Score,
+                Timestamp      = DateTime.UtcNow
+            }));
 
             return Ok(new NoteCreatedResponse
             {

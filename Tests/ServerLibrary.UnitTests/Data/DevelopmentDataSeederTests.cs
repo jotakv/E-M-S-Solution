@@ -27,11 +27,12 @@ public class DevelopmentDataSeederTests
         Assert.Equal(5,  await context.OvertimeTypes.CountAsync());
         Assert.Equal(5,  await context.SanctionTypes.CountAsync());
         Assert.Equal(5,  await context.VacationTypes.CountAsync());
-        Assert.Equal(15, await context.Employees.CountAsync());
-        Assert.Equal(26, await context.Doctors.CountAsync());
-        Assert.Equal(55, await context.Overtimes.CountAsync());
-        Assert.Equal(9,  await context.Sanctions.CountAsync());
-        Assert.Equal(24, await context.Vacations.CountAsync());
+        Assert.Equal(15,  await context.Employees.CountAsync());
+        Assert.Equal(26,  await context.Doctors.CountAsync());
+        Assert.Equal(55,  await context.Overtimes.CountAsync());
+        Assert.Equal(9,   await context.Sanctions.CountAsync());
+        Assert.Equal(24,  await context.Vacations.CountAsync());
+        Assert.Equal(212, await context.EmployeeNotes.CountAsync());
     }
 
     [Fact]
@@ -44,43 +45,45 @@ public class DevelopmentDataSeederTests
         var before = new
         {
             GeneralDepartments = await context.GeneralDepartments.CountAsync(),
-            Departments = await context.Departments.CountAsync(),
-            Branches = await context.Branches.CountAsync(),
-            Countries = await context.Countries.CountAsync(),
-            Cities = await context.Cities.CountAsync(),
-            Towns = await context.Towns.CountAsync(),
-            Users = await context.ApplicationUsers.CountAsync(),
-            Roles = await context.SystemRoles.CountAsync(),
-            UserRoles = await context.UserRoles.CountAsync(),
-            OvertimeTypes = await context.OvertimeTypes.CountAsync(),
-            SanctionTypes = await context.SanctionTypes.CountAsync(),
-            VacationTypes = await context.VacationTypes.CountAsync(),
-            Employees = await context.Employees.CountAsync(),
-            Doctors = await context.Doctors.CountAsync(),
-            Overtimes = await context.Overtimes.CountAsync(),
-            Sanctions = await context.Sanctions.CountAsync(),
-            Vacations = await context.Vacations.CountAsync(),
+            Departments        = await context.Departments.CountAsync(),
+            Branches           = await context.Branches.CountAsync(),
+            Countries          = await context.Countries.CountAsync(),
+            Cities             = await context.Cities.CountAsync(),
+            Towns              = await context.Towns.CountAsync(),
+            Users              = await context.ApplicationUsers.CountAsync(),
+            Roles              = await context.SystemRoles.CountAsync(),
+            UserRoles          = await context.UserRoles.CountAsync(),
+            OvertimeTypes      = await context.OvertimeTypes.CountAsync(),
+            SanctionTypes      = await context.SanctionTypes.CountAsync(),
+            VacationTypes      = await context.VacationTypes.CountAsync(),
+            Employees          = await context.Employees.CountAsync(),
+            Doctors            = await context.Doctors.CountAsync(),
+            Overtimes          = await context.Overtimes.CountAsync(),
+            Sanctions          = await context.Sanctions.CountAsync(),
+            Vacations          = await context.Vacations.CountAsync(),
+            EmployeeNotes      = await context.EmployeeNotes.CountAsync(),
         };
 
         await DevelopmentDataSeeder.SeedAsync(context, NullLogger.Instance);
 
         Assert.Equal(before.GeneralDepartments, await context.GeneralDepartments.CountAsync());
-        Assert.Equal(before.Departments, await context.Departments.CountAsync());
-        Assert.Equal(before.Branches, await context.Branches.CountAsync());
-        Assert.Equal(before.Countries, await context.Countries.CountAsync());
-        Assert.Equal(before.Cities, await context.Cities.CountAsync());
-        Assert.Equal(before.Towns, await context.Towns.CountAsync());
-        Assert.Equal(before.Users, await context.ApplicationUsers.CountAsync());
-        Assert.Equal(before.Roles, await context.SystemRoles.CountAsync());
-        Assert.Equal(before.UserRoles, await context.UserRoles.CountAsync());
-        Assert.Equal(before.OvertimeTypes, await context.OvertimeTypes.CountAsync());
-        Assert.Equal(before.SanctionTypes, await context.SanctionTypes.CountAsync());
-        Assert.Equal(before.VacationTypes, await context.VacationTypes.CountAsync());
-        Assert.Equal(before.Employees, await context.Employees.CountAsync());
-        Assert.Equal(before.Doctors, await context.Doctors.CountAsync());
-        Assert.Equal(before.Overtimes, await context.Overtimes.CountAsync());
-        Assert.Equal(before.Sanctions, await context.Sanctions.CountAsync());
-        Assert.Equal(before.Vacations, await context.Vacations.CountAsync());
+        Assert.Equal(before.Departments,        await context.Departments.CountAsync());
+        Assert.Equal(before.Branches,           await context.Branches.CountAsync());
+        Assert.Equal(before.Countries,          await context.Countries.CountAsync());
+        Assert.Equal(before.Cities,             await context.Cities.CountAsync());
+        Assert.Equal(before.Towns,              await context.Towns.CountAsync());
+        Assert.Equal(before.Users,              await context.ApplicationUsers.CountAsync());
+        Assert.Equal(before.Roles,              await context.SystemRoles.CountAsync());
+        Assert.Equal(before.UserRoles,          await context.UserRoles.CountAsync());
+        Assert.Equal(before.OvertimeTypes,      await context.OvertimeTypes.CountAsync());
+        Assert.Equal(before.SanctionTypes,      await context.SanctionTypes.CountAsync());
+        Assert.Equal(before.VacationTypes,      await context.VacationTypes.CountAsync());
+        Assert.Equal(before.Employees,          await context.Employees.CountAsync());
+        Assert.Equal(before.Doctors,            await context.Doctors.CountAsync());
+        Assert.Equal(before.Overtimes,          await context.Overtimes.CountAsync());
+        Assert.Equal(before.Sanctions,          await context.Sanctions.CountAsync());
+        Assert.Equal(before.Vacations,          await context.Vacations.CountAsync());
+        Assert.Equal(before.EmployeeNotes,      await context.EmployeeNotes.CountAsync());
     }
 
     [Fact]
@@ -146,11 +149,12 @@ public class DevelopmentDataSeederTests
         Assert.Equal(5,  await context.OvertimeTypes.CountAsync());
         Assert.Equal(5,  await context.SanctionTypes.CountAsync());
         Assert.Equal(5,  await context.VacationTypes.CountAsync());
-        Assert.Equal(15, await context.Employees.CountAsync());
-        Assert.Equal(26, await context.Doctors.CountAsync());
-        Assert.Equal(55, await context.Overtimes.CountAsync());
-        Assert.Equal(9,  await context.Sanctions.CountAsync());
-        Assert.Equal(24, await context.Vacations.CountAsync());
+        Assert.Equal(15,  await context.Employees.CountAsync());
+        Assert.Equal(26,  await context.Doctors.CountAsync());
+        Assert.Equal(55,  await context.Overtimes.CountAsync());
+        Assert.Equal(9,   await context.Sanctions.CountAsync());
+        Assert.Equal(24,  await context.Vacations.CountAsync());
+        Assert.Equal(212, await context.EmployeeNotes.CountAsync());
 
         var admin = await context.ApplicationUsers.SingleAsync(user => user.Email == "admin@ems.local");
         Assert.True(BCrypt.Net.BCrypt.Verify("Admin123!", admin.Password));

@@ -124,6 +124,10 @@
             </div>
         </div>
     </div>
+
+    <CountryDialog @ref="countryDialog"
+                   HandleSaveOperationEvent="HandleSaveOperationEvent"
+                   Country="Country" />
 }
 
 
@@ -133,10 +137,6 @@
         cursor: pointer;
     }
 </style>
-
-<CountryDialog @ref="countryDialog"
-               HandleSaveOperationEvent="HandleSaveOperationEvent"
-               Country="Country" />
 
 @code {
 
