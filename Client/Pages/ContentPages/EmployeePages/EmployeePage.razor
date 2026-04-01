@@ -270,6 +270,8 @@
             ShowAddOrUpdatePage = false;
             ShowMainPage = true;
             await LoadEmployees();
+
+            allState.UpdateDashboardAction?.Invoke();
         }
     }
 
