@@ -1,5 +1,9 @@
 # Employee Management System Solution
 
+## Demo
+
+https://youtu.be/5tISXX-S3DM
+
 ## Overview
 
 This repository contains a multi-project .NET 8 employee management system. It is not a distributed order-processing platform. What actually exists here is:
