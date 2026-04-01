@@ -57,7 +57,43 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title   = "EMS API",
+            Version = "v1"
+        });
+
+        // Add JWT Bearer auth to Swagger UI — click the padlock to paste your token
+        const string bearerScheme = "Bearer";
+        var jwtScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            BearerFormat = "JWT",
+            Name         = "Authorization",
+            In           = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Type         = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme       = "bearer",
+            Description  = "Paste your JWT token here (without 'Bearer ' prefix)."
+        };
+        var jwtRef = new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Id   = bearerScheme,
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme
+                    }
+                },
+                Array.Empty<string>()
+            }
+        };
+
+        options.AddSecurityDefinition(bearerScheme, jwtScheme);
+        options.AddSecurityRequirement(jwtRef);
+    });
 
     builder.Services.Configure<JwtSection>(builder.Configuration.GetSection("JwtSection"));
     var jwtSection = builder.Configuration.GetSection(nameof(JwtSection)).Get<JwtSection>();
