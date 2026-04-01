@@ -8,7 +8,7 @@
 
             <!-- Logo + title -->
             <div class="text-center mb-4">
-                <img src="../images/companylogos/netcode.jpg"
+                <img src="../images/companylogos/EMSfavicon.png"
                      class="auth-logo mb-3" alt="EMS Logo" />
                 <h5 class="fw-semibold mb-1" style="color:#fff; letter-spacing:-0.01em;">
                     Create your account
@@ -44,7 +44,12 @@
 
             <!-- Password -->
             <div class="mb-3">
-                <label class="auth-label">Password</label>
+                <label class="auth-label">
+                    Password
+                    <span class="pw-hint-icon ms-1" title="See requirements below">
+                        <i class="bi bi-info-circle text-muted" style="font-size:0.8rem;"></i>
+                    </span>
+                </label>
                 <div class="input-group auth-input-group">
                     <input type="@_passwordType"
                            value="@User.Password"
@@ -57,6 +62,27 @@
                         <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
                     </button>
                 </div>
+
+                <!-- Strength meter — shown after the user starts typing -->
+                @if (_showRequirements)
+                {
+                    <div class="pw-strength-track mt-2">
+                        <div class="pw-strength-fill" style="width:@(_strengthPct)%; background:@_strengthColor; transition:width .3s,background .3s;"></div>
+                    </div>
+                    <div class="pw-strength-label" style="color:@_strengthColor;">
+                        @_strengthLabel
+                    </div>
+
+                    <!-- Requirements checklist -->
+                    <div class="pw-requirements mt-2">
+                        <div class="pw-req @(_lenOk    ? "met" : "unmet")"><i class="bi @(_lenOk    ? "bi-check-circle-fill" : "bi-circle")"></i> At least 8 characters</div>
+                        <div class="pw-req @(_hasUpper ? "met" : "unmet")"><i class="bi @(_hasUpper ? "bi-check-circle-fill" : "bi-circle")"></i> Uppercase letter (A–Z)</div>
+                        <div class="pw-req @(_hasLower ? "met" : "unmet")"><i class="bi @(_hasLower ? "bi-check-circle-fill" : "bi-circle")"></i> Lowercase letter (a–z)</div>
+                        <div class="pw-req @(_hasDigit ? "met" : "unmet")"><i class="bi @(_hasDigit ? "bi-check-circle-fill" : "bi-circle")"></i> Number (0–9)</div>
+                        <div class="pw-req @(_hasSpecial ? "met" : "unmet")"><i class="bi @(_hasSpecial ? "bi-check-circle-fill" : "bi-circle")"></i> Special character (!@@#$%&hellip;)</div>
+                    </div>
+                }
+
                 <ValidationMessage For="() => User.Password" class="auth-validation" />
             </div>
 
@@ -115,15 +141,65 @@
     </div>
 </div>
 
+<style>
+    /* ── Strength bar ──────────────────────────────────── */
+    .pw-strength-track {
+        height: 5px;
+        background: rgba(255,255,255,0.12);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .pw-strength-fill {
+        height: 100%;
+        border-radius: 3px;
+    }
+    .pw-strength-label {
+        font-size: 0.73rem;
+        font-weight: 600;
+        margin-top: 3px;
+        letter-spacing: 0.02em;
+    }
+
+    /* ── Requirements checklist ───────────────────────── */
+    .pw-requirements {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .pw-req {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color .2s;
+    }
+    .pw-req.met   { color: #20c997; }
+    .pw-req.unmet { color: rgba(255,255,255,0.45); }
+    .pw-req i     { font-size: 0.72rem; flex-shrink: 0; }
+</style>
+
 @code {
     public bool ShowLoadingButton { get; set; } = false;
     private string _registerError  = string.Empty;
+
+    // ── confirm-field state ─────────────────────────────
     private bool   _confirmTouched = false;
     private bool   _passwordsMatch = false;
     private bool   _showPassword   = false;
     private bool   _showConfirm    = false;
     private string _passwordType   => _showPassword ? "text" : "password";
     private string _confirmType    => _showConfirm  ? "text" : "password";
+
+    // ── strength-meter state ────────────────────────────
+    private bool   _showRequirements = false;
+    private bool   _lenOk     = false;
+    private bool   _hasUpper  = false;
+    private bool   _hasLower  = false;
+    private bool   _hasDigit  = false;
+    private bool   _hasSpecial = false;
+    private int    _strengthPct   = 0;
+    private string _strengthLabel = string.Empty;
+    private string _strengthColor = "#e0e0e0";
 
     Register User = new();
 
@@ -139,7 +215,9 @@
 
     void OnPasswordInput(ChangeEventArgs e)
     {
-        User.Password = e.Value?.ToString() ?? string.Empty;
+        User.Password     = e.Value?.ToString() ?? string.Empty;
+        _showRequirements = true;
+        EvaluateStrength(User.Password);
         CheckPasswordMatch();
     }
 
@@ -153,6 +231,29 @@
     void CheckPasswordMatch() =>
         _passwordsMatch = !string.IsNullOrEmpty(User.Password)
                        && User.Password == User.ConfirmPassword;
+
+    void EvaluateStrength(string pwd)
+    {
+        _lenOk      = pwd.Length >= 8;
+        _hasUpper   = pwd.Any(char.IsUpper);
+        _hasLower   = pwd.Any(char.IsLower);
+        _hasDigit   = pwd.Any(char.IsDigit);
+        _hasSpecial = pwd.Any(c => !char.IsLetterOrDigit(c));
+
+        int score = (_lenOk ? 1 : 0) + (_hasUpper ? 1 : 0) + (_hasLower ? 1 : 0)
+                  + (_hasDigit ? 1 : 0) + (_hasSpecial ? 1 : 0);
+
+        _strengthPct = score * 20; // 0 → 100 in steps of 20
+
+        (_strengthLabel, _strengthColor) = score switch
+        {
+            0 or 1 => ("Very Weak", "#dc3545"),
+            2      => ("Weak",      "#fd7e14"),
+            3      => ("Fair",      "#ffc107"),
+            4      => ("Good",      "#20c997"),
+            _      => ("Strong",    "#198754"),
+        };
+    }
 
     protected async override Task OnInitializedAsync()
     {

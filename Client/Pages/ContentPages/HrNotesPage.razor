@@ -1,0 +1,437 @@
+@page "/hr-notes"
+@attribute [Authorize]
+@inject IJSRuntime JS
+
+<div class="container-fluid px-3 pt-3 pb-4">
+
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <h5 class="mb-0 fw-bold">HR Notes</h5>
+            <span class="text-muted" style="font-size:0.8rem;">Employee observation notes with AI sentiment analysis</span>
+        </div>
+        <button class="btn btn-sm btn-outline-success" @onclick="ExportCsv">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </button>
+    </div>
+
+    <!-- Add Note panel -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold" style="font-size:0.85rem;">
+                <i class="bi bi-pencil-square text-success me-1"></i>Add Observation Note
+            </span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick='() => _addOpen = !_addOpen'>
+                <i class="bi @(_addOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                @(_addOpen ? "Collapse" : "Expand")
+            </button>
+        </div>
+        @if (_addOpen)
+        {
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label mb-1" style="font-size:0.82rem;">Employee</label>
+                        <select class="form-select form-select-sm" @bind="_newNoteEmployeeId">
+                            <option value="0">-- Select employee --</option>
+                            @foreach (var emp in _employees)
+                            {
+                                <option value="@emp.Id">
+                                    @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label mb-1" style="font-size:0.82rem;">Observation</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                                  placeholder="Describe performance, attitude, or any notable observation..."
+                                  @bind="_newNoteText"></textarea>
+                    </div>
+                    <div class="col-12 d-flex align-items-center gap-3 flex-wrap">
+                        <button class="btn btn-sm btn-success" @onclick="SubmitNote" disabled="@_noteSubmitting">
+                            @if (_noteSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            <i class="bi bi-send me-1"></i>Analyze &amp; Save
+                        </button>
+                        @if (_noteResult is not null)
+                        {
+                            <span class="badge @SentimentBadgeClass(_noteResult.SentimentLabel) px-3 py-2">
+                                @_noteResult.SentimentLabel &mdash; @(_noteResult.SentimentScore.ToString("P0"))
+                            </span>
+                            <small class="text-muted">Note saved successfully</small>
+                        }
+                        @if (!string.IsNullOrEmpty(_noteError))
+                        {
+                            <small class="text-danger">@_noteError</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size:0.78rem;">Employee</label>
+                    <select class="form-select form-select-sm" value="@_filterEmployeeId"
+                            @onchange="OnEmployeeFilterChanged">
+                        <option value="0">All employees</option>
+                        @foreach (var emp in _employees)
+                        {
+                            <option value="@emp.Id">
+                                @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size:0.78rem;">Sentiment</label>
+                    <select class="form-select form-select-sm" value="@_filterSentiment"
+                            @onchange="OnSentimentFilterChanged">
+                        <option value="">All</option>
+                        <option value="Positive">Positive</option>
+                        <option value="Neutral">Neutral</option>
+                        <option value="Negative">Negative</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size:0.78rem;">Period</label>
+                    <select class="form-select form-select-sm" value="@_filterDays"
+                            @onchange="OnDaysFilterChanged">
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 3 months</option>
+                        <option value="365">Last year</option>
+                        <option value="0">All time</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100" @onclick="ClearFilters">
+                        <i class="bi bi-x-circle me-1"></i>Clear filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    @if (_summary is not null)
+    {
+        <div class="row g-2 mb-3">
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="fw-bold" style="font-size:1.4rem;">@_summary.TotalNotes</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Total Notes</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #28a745 !important;">
+                    <div class="fw-bold text-success" style="font-size:1.4rem;">@_summary.PositiveCount</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Positive (@(_summary.PositivePct.ToString("F0"))%)</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #6c757d !important;">
+                    <div class="fw-bold text-secondary" style="font-size:1.4rem;">@_summary.NeutralCount</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Neutral (@(_summary.NeutralPct.ToString("F0"))%)</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #dc3545 !important;">
+                    <div class="fw-bold text-danger" style="font-size:1.4rem;">@_summary.NegativeCount</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Negative (@(_summary.NegativePct.ToString("F0"))%)</div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Notes list -->
+    <div class="card shadow-sm">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold" style="font-size:0.85rem;">
+                <i class="bi bi-journal-text text-primary me-1"></i>
+                Notes (@_totalCount total)
+            </span>
+        </div>
+        <div class="card-body p-0">
+            @if (_loading)
+            {
+                <div class="d-flex align-items-center justify-content-center py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    <small class="text-muted">Loading notes...</small>
+                </div>
+            }
+            else if (_notes.Count == 0)
+            {
+                <div class="text-center text-muted py-5" style="font-size:0.85rem;">
+                    No notes found matching your filters
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr style="font-size:0.78rem;">
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Observation</th>
+                                <th>Written by</th>
+                                <th>Sentiment</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size:0.8rem;">
+                            @foreach (var note in _notes)
+                            {
+                                <tr>
+                                    <td class="text-muted text-nowrap">@note.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td class="fw-semibold text-nowrap">
+                                        @note.EmployeeName
+                                        @if (!string.IsNullOrEmpty(note.CivilId))
+                                        {
+                                            <br /><small class="text-muted fw-normal" style="font-size:0.73rem;">ID: @note.CivilId</small>
+                                        }
+                                    </td>
+                                    <td class="text-muted">
+                                        @note.Department
+                                        @if (!string.IsNullOrEmpty(note.Branch))
+                                        {
+                                            <br /><small>@note.Branch</small>
+                                        }
+                                    </td>
+                                    <td style="max-width:300px; white-space:normal; word-wrap:break-word;">@note.NoteText</td>
+                                    <td class="text-muted text-nowrap" style="font-size:0.75rem;">
+                                        @(string.IsNullOrEmpty(note.CreatedByUserId) ? "—" : note.CreatedByUserId)
+                                    </td>
+                                    <td>
+                                        <span class="badge @SentimentBadgeClass(note.SentimentLabel)">@note.SentimentLabel</span>
+                                    </td>
+                                    <td class="text-nowrap">@note.SentimentScore.ToString("P0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (_totalPages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+                        <small class="text-muted">Page @_page of @_totalPages &nbsp;(@_totalCount notes)</small>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="PrevPage" disabled="@(_page <= 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= _totalPages)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private List<Employee>       _employees = new();
+    private List<EmployeeNoteDto> _notes    = new();
+    private SentimentSummaryDto?  _summary  = null;
+    private int  _totalCount = 0;
+    private int  _page       = 1;
+    private int  _pageSize   = 20;
+    private int  _totalPages = 1;
+    private bool _loading    = true;
+
+    private int    _filterEmployeeId = 0;
+    private string _filterSentiment  = "";
+    private int    _filterDays       = 30;
+
+    // Add Note panel
+    private bool              _addOpen           = true;
+    private int               _newNoteEmployeeId = 0;
+    private string            _newNoteText       = string.Empty;
+    private bool              _noteSubmitting    = false;
+    private NoteCreatedResponse? _noteResult     = null;
+    private string            _noteError         = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Apply localStorage default time filter preference from HR Settings
+        var daysRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
+        if (int.TryParse(daysRaw, out var savedDays))
+            _filterDays = savedDays;
+
+        _employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
+    }
+
+    private async Task LoadNotesAsync()
+    {
+        _loading = true;
+        try
+        {
+            var http   = await HttpFactory.GetPrivateHttpClient();
+            var result = await http.GetFromJsonAsync<PagedNotesResponse>(BuildNotesUrl());
+            if (result is not null)
+            {
+                _notes      = result.Notes;
+                _totalCount = result.TotalCount;
+                _totalPages = (int)Math.Ceiling((double)result.TotalCount / _pageSize);
+            }
+        }
+        catch { _notes = new(); }
+        finally { _loading = false; }
+    }
+
+    private async Task LoadSummaryAsync()
+    {
+        try
+        {
+            var http    = await HttpFactory.GetPrivateHttpClient();
+            var days    = _filterDays == 0 ? 3650 : _filterDays;
+            _summary    = await http.GetFromJsonAsync<SentimentSummaryDto>($"{Constants.HRSummaryUrl}?days={days}");
+        }
+        catch { _summary = null; }
+    }
+
+    private string BuildNotesUrl()
+    {
+        var sb = new System.Text.StringBuilder($"{Constants.HRNotesUrl}?page={_page}&pageSize={_pageSize}");
+        if (_filterEmployeeId > 0)            sb.Append($"&employeeId={_filterEmployeeId}");
+        if (!string.IsNullOrEmpty(_filterSentiment)) sb.Append($"&sentiment={_filterSentiment}");
+        if (_filterDays > 0)                  sb.Append($"&days={_filterDays}");
+        return sb.ToString();
+    }
+
+    private async Task OnEmployeeFilterChanged(ChangeEventArgs e)
+    {
+        _filterEmployeeId = int.Parse(e.Value?.ToString() ?? "0");
+        await ApplyFilters();
+    }
+
+    private async Task OnSentimentFilterChanged(ChangeEventArgs e)
+    {
+        _filterSentiment = e.Value?.ToString() ?? "";
+        await ApplyFilters();
+    }
+
+    private async Task OnDaysFilterChanged(ChangeEventArgs e)
+    {
+        _filterDays = int.Parse(e.Value?.ToString() ?? "30");
+        await ApplyFilters();
+    }
+
+    private async Task ApplyFilters()
+    {
+        _page = 1;
+        await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
+    }
+
+    private async Task ClearFilters()
+    {
+        _filterEmployeeId = 0;
+        _filterSentiment  = "";
+        _filterDays       = 30;
+        _page             = 1;
+        await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
+    }
+
+    private async Task PrevPage()
+    {
+        if (_page > 1) { _page--; await LoadNotesAsync(); }
+    }
+
+    private async Task NextPage()
+    {
+        if (_page < _totalPages) { _page++; await LoadNotesAsync(); }
+    }
+
+    private async Task SubmitNote()
+    {
+        _noteError  = string.Empty;
+        _noteResult = null;
+
+        if (_newNoteEmployeeId <= 0)
+        {
+            _noteError = "You need to select an employee.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newNoteText))
+        {
+            _noteError = "You need to write an observation.";
+            return;
+        }
+
+        _noteSubmitting = true;
+
+        try
+        {
+            var http = await HttpFactory.GetPrivateHttpClient();
+            var req  = new CreateNoteRequest { EmployeeId = _newNoteEmployeeId, NoteText = _newNoteText };
+            var resp = await http.PostAsJsonAsync(Constants.HRNotesUrl, req);
+
+            if (resp.IsSuccessStatusCode)
+            {
+                _noteResult       = await resp.Content.ReadFromJsonAsync<NoteCreatedResponse>();
+                _newNoteText      = string.Empty;
+                _newNoteEmployeeId = 0;
+                _page             = 1;
+                await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
+            }
+            else
+            {
+                _noteError = "Failed to save note. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _noteError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _noteSubmitting = false;
+        }
+    }
+
+    private async Task ExportCsv()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Date,Employee,Department,Branch,Note,Sentiment,Score");
+        foreach (var n in _notes)
+        {
+            var csvDate  = n.CreatedAt.ToString("yyyy-MM-dd");
+            var csvName  = n.EmployeeName.Replace('"', '\'');
+            var csvDept  = n.Department.Replace('"', '\'');
+            var csvBrch  = n.Branch.Replace('"', '\'');
+            var csvNote  = n.NoteText.Replace('"', '\'');
+            var csvScore = n.SentimentScore.ToString("P0");
+            sb.AppendLine($"\"{csvDate}\",\"{csvName}\",\"{csvDept}\",\"{csvBrch}\",\"{csvNote}\",\"{n.SentimentLabel}\",\"{csvScore}\"");
+        }
+        await JS.InvokeVoidAsync("downloadFile", $"hr-notes-{DateTime.Now:yyyyMMdd}.csv", sb.ToString(), "text/csv");
+
+        // Audit log via the shared AuditController — same structured format as Excel/PDF exports.
+        try
+        {
+            var http = await HttpFactory.GetPrivateHttpClient();
+            await http.PostAsJsonAsync("api/audit/export",
+                new ExportAuditDto("Employee", "CSV", _notes.Count));
+        }
+        catch { /* audit failure must never block the export */ }
+    }
+
+    private static string SentimentBadgeClass(string label) => label switch
+    {
+        "Positive" => "bg-success",
+        "Negative" => "bg-danger",
+        _          => "bg-secondary"
+    };
+}

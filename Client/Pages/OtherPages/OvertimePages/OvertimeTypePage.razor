@@ -57,6 +57,10 @@
             </div>
         </div>
     </div>
+
+    <OvertimeTypeDialog @ref="overtimeTypeDialog"
+                        HandleSaveOperationEvent="HandleSaveOperationEvent"
+                        OvertimeType="OvertimeType" />
 }
 
 <style>
@@ -64,10 +68,6 @@
     cursor: pointer;
     }
 </style>
-
-<OvertimeTypeDialog @ref="overtimeTypeDialog"
-                    HandleSaveOperationEvent="HandleSaveOperationEvent"
-                    OvertimeType="OvertimeType" />
 
 @code {
     OvertimeTypeDialog? overtimeTypeDialog;

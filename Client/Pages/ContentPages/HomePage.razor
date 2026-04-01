@@ -1,134 +1,797 @@
-﻿@page "/home/dashboard"
-
+@page "/home/dashboard"
 @attribute [Authorize]
-@* @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize] *@
+@using Syncfusion.Blazor.Charts
+@implements IDisposable
+@inject IJSRuntime JS
 
 <AuthorizeView>
     <Authorized>
-        @if (isInitializing)
+
+        <!-- ── Always-visible stat cards ──────────────────────────────────── -->
+        @if (_employees is null)
         {
-            <div class="d-flex flex-column align-items-center justify-content-center py-5" role="status" aria-live="polite">
-                <div class="spinner-border text-primary" aria-hidden="true"></div>
-                <span class="mt-3">Loading dashboard...</span>
+            <div class="container-fluid py-2 px-3">
+                <div class="row g-2">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        <div class="col-lg-2 col-4">
+                            <div class="card placeholder-glow">
+                                <div class="card-header"><span class="placeholder col-8"></span></div>
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
         }
         else
         {
-            <TableBanner InitialEmployees="dashboardEmployees"
-                         InitialDepartments="dashboardDepartments"
-                         InitialOvertimes="dashboardOvertimes"
-                         InitialSanctions="dashboardSanctions"
-                         InitialVacations="dashboardVacations"
-                         InitialHealth="dashboardHealth" />
-            <GeneralDepartmentPage />
-            <DepartmentPage />
-            <BranchPage />
-            <CountryPage />
-            <CityPage />
-            <TownPage />
-            <UserPage />
-            <DoctorPage />
-            <OvertimePage />
-            <SanctionPage />
-            <VacationPage />
-            <VacationTypePage />
-            <OvertimeTypePage />
-            <SanctionTypePage />
-            <EmployeePage InitialEmployees="dashboardEmployees"
-                         InitialDepartments="dashboardDepartments"
-                         InitialOvertimes="dashboardOvertimes"
-                         InitialSanctions="dashboardSanctions"
-                         InitialVacations="dashboardVacations"
-                         InitialHealth="dashboardHealth" />
-            <FeedbackPage />
+            <TableBanner InitialEmployees="_employees"
+                         InitialDepartments="_departments"
+                         InitialOvertimes="_overtimes"
+                         InitialSanctions="_sanctions"
+                         InitialVacations="_vacations"
+                         InitialHealth="_health" />
         }
-    </Authorized>
 
+        <!-- ── Sub-pages (self-manage visibility via allState.ShowXxx) ─────── -->
+        <GeneralDepartmentPage />
+        <DepartmentPage />
+        <BranchPage />
+        <CountryPage />
+        <CityPage />
+        <TownPage />
+        <UserPage />
+        <DoctorPage />
+        <OvertimePage />
+        <SanctionPage />
+        <VacationPage />
+        <VacationTypePage />
+        <OvertimeTypePage />
+        <SanctionTypePage />
+        <EmployeePage InitialEmployees="_employees"
+                      InitialDepartments="_departments"
+                      InitialOvertimes="_overtimes"
+                      InitialSanctions="_sanctions"
+                      InitialVacations="_vacations"
+                      InitialHealth="_health" />
+        <!-- ── Home dashboard panels (visible when ShowDashboard) ────────── -->
+        @if (allState.ShowDashboard)
+        {
+            <div class="container-fluid px-3 pt-3 pb-4">
+
+                <!-- A. Page header -->
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <div>
+                        <h5 class="mb-0 fw-bold">HR Intelligence Dashboard</h5>
+                        <span class="text-muted" style="font-size:0.8rem;">@DateTime.Now.ToString("dddd, MMMM d, yyyy")</span>
+                    </div>
+                </div>
+
+                <!-- C. Analytics Overview panel -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
+                        <span class="fw-semibold" style="font-size:0.85rem;">
+                            <i class="bi bi-bar-chart-fill text-primary me-1"></i>Analytics Overview
+                        </span>
+                        <div class="d-flex gap-1 align-items-center flex-wrap">
+                            @foreach (var (label, val) in new (string, int)[] { ("30d",30),("3m",90),("1y",365),("All",0) })
+                            {
+                                <button class="btn btn-sm @(_hrDays == val ? "btn-dark" : "btn-outline-secondary")"
+                                        style="border-radius:20px; font-size:0.75rem; padding:2px 10px;"
+                                        @onclick="() => SetHrDays(val)">@label</button>
+                            }
+                            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="ToggleAnalyticsPanel">
+                                <i class="bi @(_analyticsOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                                @(_analyticsOpen ? "Collapse" : "Expand")
+                            </button>
+                        </div>
+                    </div>
+                    @if (_analyticsOpen)
+                    {
+                        <!-- 6 metric summary cards -->
+                        <div class="px-2 pt-2">
+                            <div class="row g-2 mb-2">
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #0071e3 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#0071e3;">@(_employees?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Employees</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #6f42c1 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#6f42c1;">@(_departments?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Departments</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #dc3545 !important;">
+                                        <div class="fw-bold text-danger" style="font-size:1.3rem;">@(_risks.Count(r => r.RiskLevel == "High"))</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">High Risk</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #28a745 !important;">
+                                        @{
+                                            var posTotal = _trend.Sum(t => t.PositivePct + t.NeutralPct + t.NegativePct);
+                                            var posPct   = posTotal > 0
+                                                ? Math.Round(_trend.Average(t => t.PositivePct), 0)
+                                                : 0;
+                                        }
+                                        <div class="fw-bold text-success" style="font-size:1.3rem;">@posPct%</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Pos. Morale</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #fd7e14 !important;">
+                                        <div class="fw-bold" style="font-size:1.3rem; color:#fd7e14;">@(_overtimes?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Overtime</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <div class="card border-0 shadow-sm text-center py-2" style="border-left:3px solid #ffc107 !important;">
+                                        <div class="fw-bold text-warning" style="font-size:1.3rem;">@(_sanctions?.Count ?? 0)</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">Sanctions</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-2">
+                            <div class="row g-3">
+
+                                <!-- 1. Donut: HR Module Overview -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "donut"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-pie-chart-fill text-primary me-1"></i>HR Module Overview</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
+                                        </div>
+                                        <DashboardCharts Employees="_employees"
+                                                         Departments="_departments"
+                                                         Overtimes="_overtimes"
+                                                         Sanctions="_sanctions"
+                                                         Vacations="_vacations"
+                                                         Health="_health"
+                                                         ShowDonutOnly="true" />
+                                    </div>
+                                </div>
+
+                                <!-- 2. Bar: Module Record Counts -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "bar"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-bar-chart-fill text-success me-1"></i>Module Record Counts</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
+                                        </div>
+                                        <DashboardCharts Employees="_employees"
+                                                         Departments="_departments"
+                                                         Overtimes="_overtimes"
+                                                         Sanctions="_sanctions"
+                                                         Vacations="_vacations"
+                                                         Health="_health"
+                                                         ShowBarOnly="true" />
+                                    </div>
+                                </div>
+
+                                <!-- 3. Line: Sentiment Trend -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "trend"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-graph-up text-info me-1"></i>Sentiment Trend</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
+                                        </div>
+                                        <div class="card-body">
+                                            @if (_trendLoading)
+                                            {
+                                                <div class="d-flex align-items-center justify-content-center py-4">
+                                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                                    <small class="text-muted">Loading trend...</small>
+                                                </div>
+                                            }
+                                            else if (_trend.Count == 0)
+                                            {
+                                                <div class="text-center text-muted py-4" style="font-size:0.82rem;">No trend data available</div>
+                                            }
+                                            else
+                                            {
+                                                <SfChart Background="transparent" Height="220px">
+                                                    <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+                                                    <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                                                    <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                                                    <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                                                    <ChartSeriesCollection>
+                                                        <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="PositivePct"
+                                                            Name="Positive" Type="ChartSeriesType.Line" Fill="#28a745" Width="2">
+                                                            <ChartMarker Visible="true"></ChartMarker>
+                                                        </ChartSeries>
+                                                        <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NeutralPct"
+                                                            Name="Neutral" Type="ChartSeriesType.Line" Fill="#6c757d" Width="2">
+                                                            <ChartMarker Visible="true"></ChartMarker>
+                                                        </ChartSeries>
+                                                        <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NegativePct"
+                                                            Name="Negative" Type="ChartSeriesType.Line" Fill="#dc3545" Width="2">
+                                                            <ChartMarker Visible="true"></ChartMarker>
+                                                        </ChartSeries>
+                                                    </ChartSeriesCollection>
+                                                </SfChart>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Stacked bar: Department Morale -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 ems-zoomable"
+                                         @ondblclick='() => _zoomedChart = "dept"'
+                                         title="Double-click to enlarge">
+                                        <div class="card-header py-2 fw-semibold d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                                            <span><i class="bi bi-building text-warning me-1"></i>Department Morale</span>
+                                            <span class="text-muted" style="font-size:0.7rem; font-weight:400;"><i class="bi bi-zoom-in me-1"></i>double-click to zoom</span>
+                                        </div>
+                                        <div class="card-body">
+                                            @if (_deptLoading)
+                                            {
+                                                <div class="d-flex align-items-center justify-content-center py-4">
+                                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                                    <small class="text-muted">Loading...</small>
+                                                </div>
+                                            }
+                                            else if (_deptMorale.Count == 0)
+                                            {
+                                                <div class="text-center text-muted py-4" style="font-size:0.82rem;">No department data available</div>
+                                            }
+                                            else
+                                            {
+                                                <SfChart Background="transparent" Height="220px">
+                                                    <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" LabelRotation="-20"></ChartPrimaryXAxis>
+                                                    <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                                                    <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                                                    <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                                                    <ChartSeriesCollection>
+                                                        <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="PositivePct"
+                                                            Name="Positive" Type="ChartSeriesType.StackingColumn100" Fill="#28a745">
+                                                        </ChartSeries>
+                                                        <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NeutralPct"
+                                                            Name="Neutral" Type="ChartSeriesType.StackingColumn100" Fill="#6c757d">
+                                                        </ChartSeries>
+                                                        <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NegativePct"
+                                                            Name="Negative" Type="ChartSeriesType.StackingColumn100" Fill="#dc3545">
+                                                        </ChartSeries>
+                                                    </ChartSeriesCollection>
+                                                </SfChart>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- ── Chart Zoom Modals ─────────────────────────────────────────── -->
+                <ChartZoomModal Title="HR Module Overview" IsOpen='_zoomedChart == "donut"' OnClose='() => _zoomedChart = null'>
+                    <DashboardCharts Employees="_employees" Departments="_departments" Overtimes="_overtimes"
+                                     Sanctions="_sanctions" Vacations="_vacations" Health="_health" ShowDonutOnly="true" />
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Module Record Counts" IsOpen='_zoomedChart == "bar"' OnClose='() => _zoomedChart = null'>
+                    <DashboardCharts Employees="_employees" Departments="_departments" Overtimes="_overtimes"
+                                     Sanctions="_sanctions" Vacations="_vacations" Health="_health" ShowBarOnly="true" />
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Sentiment Trend" IsOpen='_zoomedChart == "trend"' OnClose='() => _zoomedChart = null'>
+                    @if (_trend.Count > 0)
+                    {
+                        <SfChart Background="transparent" Height="420px">
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="PositivePct"
+                                    Name="Positive" Type="ChartSeriesType.Line" Fill="#28a745" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NeutralPct"
+                                    Name="Neutral" Type="ChartSeriesType.Line" Fill="#6c757d" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="_trend" XName="PeriodLabel" YName="NegativePct"
+                                    Name="Negative" Type="ChartSeriesType.Line" Fill="#dc3545" Width="2">
+                                    <ChartMarker Visible="true"></ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                        </SfChart>
+                    }
+                </ChartZoomModal>
+
+                <ChartZoomModal Title="Department Morale" IsOpen='_zoomedChart == "dept"' OnClose='() => _zoomedChart = null'>
+                    @if (_deptMorale.Count > 0)
+                    {
+                        <SfChart Background="transparent" Height="420px">
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" LabelRotation="-20"></ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="100" Title="%"></ChartPrimaryYAxis>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Bottom"></ChartLegendSettings>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="PositivePct"
+                                    Name="Positive" Type="ChartSeriesType.StackingColumn100" Fill="#28a745">
+                                </ChartSeries>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NeutralPct"
+                                    Name="Neutral" Type="ChartSeriesType.StackingColumn100" Fill="#6c757d">
+                                </ChartSeries>
+                                <ChartSeries DataSource="_deptMorale" XName="DepartmentName" YName="NegativePct"
+                                    Name="Negative" Type="ChartSeriesType.StackingColumn100" Fill="#dc3545">
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                        </SfChart>
+                    }
+                </ChartZoomModal>
+
+                <!-- D. HR Observation Note panel -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-semibold" style="font-size:0.85rem;">
+                            <i class="bi bi-pencil-square text-success me-1"></i>HR Observation Note
+                        </span>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick='() => _noteOpen = !_noteOpen'>
+                            <i class="bi @(_noteOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                            @(_noteOpen ? "Collapse" : "Expand")
+                        </button>
+                    </div>
+                    @if (_noteOpen)
+                    {
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold mb-1" style="font-size:0.82rem;">Employee</label>
+                                    <select class="form-select form-select-sm" @bind="_noteEmployeeId">
+                                        <option value="0">-- Select employee --</option>
+                                        @foreach (var emp in (_employees ?? []))
+                                        {
+                                            <option value="@emp.Id">
+                                                @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold mb-1" style="font-size:0.82rem;">Observation</label>
+                                    <textarea class="form-control form-control-sm" rows="3"
+                                              placeholder="Describe performance, attitude, or any notable observation..."
+                                              @bind="_noteText"></textarea>
+                                </div>
+                                <div class="col-12 d-flex align-items-center gap-3 flex-wrap">
+                                    <button class="btn btn-sm btn-success" @onclick="SubmitNote" disabled="@_noteSubmitting">
+                                        @if (_noteSubmitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                        }
+                                        <i class="bi bi-send me-1"></i>Analyze &amp; Save
+                                    </button>
+                                    @if (_noteResult is not null)
+                                    {
+                                        <span class="badge @SentimentBadgeClass(_noteResult.SentimentLabel) px-3 py-2">
+                                            @_noteResult.SentimentLabel &mdash; @(_noteResult.SentimentScore.ToString("P0"))
+                                        </span>
+                                        <small class="text-muted">Note saved successfully</small>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_noteError))
+                                    {
+                                        <small class="text-danger">@_noteError</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- E. Risk Manager — interactive collapsible rows -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
+                        <span class="fw-semibold" style="font-size:0.85rem;">
+                            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Risk Manager
+                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm @(_showAllRisks ? "btn-warning" : "btn-outline-secondary")"
+                                    @onclick="ToggleShowAllRisks"
+                                    title="@(_showAllRisks ? "Showing all employees — click to show top risks only" : "Click to include employees with zero risk")">
+                                <i class="bi bi-people me-1"></i>
+                                @(_showAllRisks ? "All employees" : "Top risks only")
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick='() => _riskOpen = !_riskOpen'>
+                                <i class="bi @(_riskOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                                @(_riskOpen ? "Collapse" : "Expand")
+                            </button>
+                        </div>
+                    </div>
+                    @if (_riskOpen)
+                    {
+                        <div class="card-body p-2">
+                            @if (_risksLoading)
+                            {
+                                <div class="d-flex align-items-center justify-content-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-danger me-2"></div>
+                                    <small class="text-muted">Calculating risk scores...</small>
+                                </div>
+                            }
+                            else if (_risks.Count == 0)
+                            {
+                                <div class="text-center text-muted py-3" style="font-size:0.82rem;">No risk data available</div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column gap-2 px-1">
+                                    @foreach (var r in _risks)
+                                    {
+                                        var isExpanded = _expandedRiskRows.Contains(r.EmployeeId);
+                                        var dotColor   = r.RiskLevel == "High" ? "#dc3545" : r.RiskLevel == "Medium" ? "#fd7e14" : "#28a745";
+                                        <div class="border rounded" style="overflow:hidden; cursor:pointer;"
+                                             @onclick="() => ToggleRiskRow(r.EmployeeId)">
+                                            <!-- Row summary -->
+                                            <div class="d-flex align-items-center gap-3 px-3 py-2 @(isExpanded ? "border-bottom" : "")"
+                                                 style="background:@(isExpanded ? "#fafafa" : "white"); font-size:0.82rem;">
+                                                <span style="width:10px; height:10px; border-radius:50%; background:@dotColor; flex-shrink:0; display:inline-block;"></span>
+                                                <div style="min-width:160px; line-height:1.2;">
+                                                    <span class="fw-semibold">@r.EmployeeFullName</span>
+                                                    @if (!string.IsNullOrEmpty(r.CivilId))
+                                                    {
+                                                        <br /><small class="text-muted fw-normal" style="font-size:0.7rem;">ID: @r.CivilId</small>
+                                                    }
+                                                </div>
+                                                <span class="text-muted d-none d-md-inline" style="min-width:110px; font-size:0.75rem;">@r.Department</span>
+                                                <div class="flex-grow-1 mx-2 d-none d-md-block">
+                                                    <div class="progress" style="height:6px; border-radius:3px;">
+                                                        <div class="progress-bar @RiskBarClass(r.RiskLevel)"
+                                                             style="width:@(r.RiskScore)%; transition:width 0.5s ease;"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-muted" style="font-size:0.75rem; min-width:45px; text-align:right;">@r.RiskScore / 100</span>
+                                                <span class="badge @RiskBadgeClass(r.RiskLevel)" style="font-size:0.72rem; min-width:60px; text-align:center;">@r.RiskLevel</span>
+                                                <i class="bi @(isExpanded ? "bi-chevron-up" : "bi-chevron-down") text-muted ms-1" style="font-size:0.75rem;"></i>
+                                            </div>
+                                            <!-- Expandable drawer -->
+                                            @if (isExpanded)
+                                            {
+                                                <div class="px-3 py-3" style="background:#f8f9fa; font-size:0.78rem;" @onclick:stopPropagation="true">
+                                                    <!-- Fact grid -->
+                                                    <div class="row g-2 mb-2">
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="font-size:1.1rem;">@r.OvertimeCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Overtime</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="font-size:1.1rem;">@r.SickLeaveCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Sick Leave</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-danger" style="font-size:1.1rem;">@r.SanctionCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Sanctions</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-danger" style="font-size:1.1rem;">@r.NegativeNoteCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Neg. Notes</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold text-success" style="font-size:1.1rem;">@r.PositiveNoteCount</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Pos. Notes</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-md-2">
+                                                            <div class="text-center p-2 bg-white rounded border">
+                                                                <div class="fw-bold" style="color:@dotColor; font-size:1.1rem;">@r.RiskScore</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">Total Score</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Formula -->
+                                                    <div class="mb-2 text-muted" style="font-size:0.72rem;">
+                                                        <strong>Formula:</strong>
+                                                        OT×5 + SickLeave×4 + Sanctions×6 + NegNotes×10 − PosNotes×3
+                                                        = @r.OvertimeCount×5 + @r.SickLeaveCount×4 + @r.SanctionCount×6 + @r.NegativeNoteCount×10 − @r.PositiveNoteCount×3
+                                                        = <strong>@r.RiskScore</strong>
+                                                    </div>
+                                                    <!-- Reason tags -->
+                                                    @if (r.RiskReasons.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                                            @foreach (var reason in r.RiskReasons)
+                                                            {
+                                                                <span class="badge bg-light text-dark border" style="font-size:0.7rem;">@reason</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    <!-- View employee link -->
+                                                    <a href="/hr-notes?employeeId=@r.EmployeeId" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;">
+                                                        <i class="bi bi-arrow-right-circle me-1"></i>View HR Notes →
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+            </div>
+        }
+
+    </Authorized>
     <NotAuthorized>
         <p>Loading...</p>
     </NotAuthorized>
 </AuthorizeView>
 
-@* <h1>Home page</h1>
-
-<AuthorizeView>
-    <Authorized>
-        <p>AUTHENTICATED ✅</p>
-    </Authorized>
-    <NotAuthorized>
-        <p>ANONYMOUS ❌</p>
-    </NotAuthorized>
-</AuthorizeView> *@
-
+<style>
+    .ems-zoomable { cursor: zoom-in; }
+    .ems-zoomable:hover { box-shadow: 0 0 0 2px rgba(0,113,227,.35) !important; }
+</style>
 
 @code {
-    private bool isInitializing = true;
-    private List<Employee>?    dashboardEmployees;
-    private List<Department>?  dashboardDepartments;
-    private List<Overtime>?    dashboardOvertimes;
-    private List<Sanction>?    dashboardSanctions;
-    private List<Vacation>?    dashboardVacations;
-    private List<Doctor>?      dashboardHealth;
+    // ── Core data (parallel background load) ─────────────────────────────
+    private List<Employee>?    _employees;
+    private List<Department>?  _departments;
+    private List<Overtime>?    _overtimes;
+    private List<Sanction>?    _sanctions;
+    private List<Vacation>?    _vacations;
+    private List<Doctor>?      _health;
 
-    protected override async Task OnInitializedAsync()
+    // ── Panel open/close ─────────────────────────────────────────────────
+    private bool    _analyticsOpen  = true;
+    private bool    _noteOpen       = true;
+    private bool    _riskOpen       = true;
+    private bool    _showAllRisks   = false;
+
+    // ── Chart zoom — null = none zoomed; values: "donut"|"bar"|"trend"|"dept"
+    private string? _zoomedChart    = null;
+
+    // ── HR intelligence data ─────────────────────────────────────────────
+    private List<SentimentTrendDto>   _trend      = new();
+    private List<DepartmentMoraleDto> _deptMorale = new();
+    private List<EmployeeRiskDto>     _risks      = new();
+    private bool _trendLoading  = false;
+    private bool _deptLoading   = false;
+    private bool _risksLoading  = false;
+    private bool _hrDataLoaded  = false;
+    private int  _hrDays        = 30;  // default; overridden by localStorage preference
+
+    // ── Note panel ───────────────────────────────────────────────────────
+    private int                  _noteEmployeeId = 0;
+    private string               _noteText       = string.Empty;
+    private bool                 _noteSubmitting = false;
+    private NoteCreatedResponse? _noteResult     = null;
+    private string               _noteError      = string.Empty;
+
+    // ── Risk Manager — per-row expanded state ─────────────────────────────
+    private HashSet<int> _expandedRiskRows = new();
+
+    protected override void OnInitialized()
     {
-        // ── Performance diagnostics ───────────────────────────────────────────
-        // All six API calls launch simultaneously (Task.WhenAll) so total wall-
-        // clock time equals the SLOWEST single call, not their sum.
-        // Timings are logged to the browser DevTools Console (F12 → Console).
-        var totalSw = System.Diagnostics.Stopwatch.StartNew();
+        allState.Action                += OnStateChanged;
+        allState.UpdateDashboardAction += OnDashboardUpdate;
+        _ = LoadCoreDataAsync();
+    }
 
-        // Record individual start times so we can report per-endpoint latency.
-        var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+    private void OnStateChanged()
+    {
+        if (allState.ShowDashboard && !_hrDataLoaded)
+            _ = LoadHrIntelligenceAsync();
+        StateHasChanged();
+    }
 
-        var employeesTask   = employeeService.GetAll(Constants.EmployeeBaseUrl);
-        var departmentsTask = departmentService.GetAll(Constants.DepartmentBaseUrl);
-        var overtimesTask   = overtimeService.GetAll(Constants.OvertimeBaseUrl);
-        var sanctionsTask   = sanctionService.GetAll(Constants.SanctionBaseUrl);
-        var vacationsTask   = vacationService.GetAll(Constants.VacationBaseUrl);
-        var healthTask      = doctorService.GetAll(Constants.DoctorBaseUrl);
+    private void OnDashboardUpdate()
+    {
+        _hrDataLoaded = false;
+        _ = LoadCoreDataAsync();
+        if (allState.ShowDashboard)
+            _ = LoadHrIntelligenceAsync();
+    }
 
-        // Wait for all API responses before rendering (ensures TableBanner gets
-        // complete data so its HasInitialData() check passes, avoiding duplicate loads).
-        await Task.WhenAll(
-            employeesTask,
-            departmentsTask,
-            overtimesTask,
-            sanctionsTask,
-            vacationsTask,
-            healthTask);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Read HR Intelligence preferences from localStorage
+            var daysRaw      = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
+            var analyticsRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
 
-        var fetchElapsed = System.Diagnostics.Stopwatch.GetElapsedTime(t0);
+            if (int.TryParse(daysRaw, out var savedDays))
+                _hrDays = savedDays;
 
-        dashboardEmployees   = await employeesTask;
-        dashboardDepartments = await departmentsTask;
-        dashboardOvertimes   = await overtimesTask;
-        dashboardSanctions   = await sanctionsTask;
-        dashboardVacations   = await vacationsTask;
-        dashboardHealth      = await healthTask;
+            _analyticsOpen = analyticsRaw != "false";  // default true unless explicitly disabled
 
-        isInitializing = false;
+            await LoadHrIntelligenceAsync();
+            StateHasChanged();
+        }
+    }
 
-        totalSw.Stop();
+    private async Task LoadCoreDataAsync()
+    {
+        try
+        {
+            var t1 = employeeService.GetAll(ClientLibrary.Helpers.Constants.EmployeeBaseUrl);
+            var t2 = departmentService.GetAll(ClientLibrary.Helpers.Constants.DepartmentBaseUrl);
+            var t3 = overtimeService.GetAll(ClientLibrary.Helpers.Constants.OvertimeBaseUrl);
+            var t4 = sanctionService.GetAll(ClientLibrary.Helpers.Constants.SanctionBaseUrl);
+            var t5 = vacationService.GetAll(ClientLibrary.Helpers.Constants.VacationBaseUrl);
+            var t6 = doctorService.GetAll(ClientLibrary.Helpers.Constants.DoctorBaseUrl);
 
-        // ── Performance report (browser console) ──────────────────────────────
-        Console.WriteLine(
-            $"[Perf] Dashboard parallel fetch: {fetchElapsed.TotalMilliseconds:F0}ms " +
-            $"({dashboardEmployees?.Count ?? 0} employees, " +
-            $"{dashboardDepartments?.Count ?? 0} departments, " +
-            $"{dashboardOvertimes?.Count ?? 0} overtimes, " +
-            $"{dashboardSanctions?.Count ?? 0} sanctions, " +
-            $"{dashboardVacations?.Count ?? 0} vacations, " +
-            $"{dashboardHealth?.Count ?? 0} health records)");
+            await Task.WhenAll(t1, t2, t3, t4, t5, t6);
 
-        Console.WriteLine(
-            $"[Perf] Dashboard OnInitializedAsync total: {totalSw.ElapsedMilliseconds}ms");
+            _employees   = t1.Result;
+            _departments = t2.Result;
+            _overtimes   = t3.Result;
+            _sanctions   = t4.Result;
+            _vacations   = t5.Result;
+            _health      = t6.Result;
+        }
+        catch
+        {
+            // API unavailable — keep nulls; UI shows skeleton placeholders
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
-        if (totalSw.ElapsedMilliseconds > 3000)
-            Console.WriteLine(
-                $"[Perf Warning] Dashboard initial load exceeded 3000ms " +
-                $"({totalSw.ElapsedMilliseconds}ms). Inspect individual API timings " +
-                $"in Server Serilog logs (look for Warning-level entries with Elapsed > 1000).");
+    private async Task LoadHrIntelligenceAsync()
+    {
+        if (_hrDataLoaded) return;
+        _hrDataLoaded  = true;
+        _trendLoading  = true;
+        _deptLoading   = true;
+        _risksLoading  = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var http  = await HttpFactory.GetPrivateHttpClient();
+            var days  = _hrDays > 0 ? _hrDays : 3650;
+            var tTask = http.GetFromJsonAsync<List<SentimentTrendDto>>($"{ClientLibrary.Helpers.Constants.HRTrendUrl}?days={days}");
+            var dTask = http.GetFromJsonAsync<List<DepartmentMoraleDto>>($"{ClientLibrary.Helpers.Constants.HRDepartmentsUrl}?days={days}");
+            var rTask = http.GetFromJsonAsync<List<EmployeeRiskDto>>($"{ClientLibrary.Helpers.Constants.HRRisksUrl}?top=10&days=90&includeAll={_showAllRisks.ToString().ToLower()}");
+
+            await Task.WhenAll(tTask, dTask, rTask);
+
+            _trend      = tTask.Result ?? new();
+            _deptMorale = dTask.Result ?? new();
+            _risks      = rTask.Result ?? new();
+        }
+        catch { /* HR intelligence data is optional */ }
+        finally
+        {
+            _trendLoading  = false;
+            _deptLoading   = false;
+            _risksLoading  = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SetHrDays(int days)
+    {
+        if (_hrDays == days) return;
+        _hrDays       = days;
+        _hrDataLoaded = false;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_hr_default_days", days.ToString());
+        await LoadHrIntelligenceAsync();
+    }
+
+    private async Task ToggleAnalyticsPanel()
+    {
+        _analyticsOpen = !_analyticsOpen;
+        await JS.InvokeVoidAsync("localStorage.setItem", "ems_analytics_panel", _analyticsOpen ? "true" : "false");
+    }
+
+    private async Task ToggleShowAllRisks()
+    {
+        _showAllRisks  = !_showAllRisks;
+        _hrDataLoaded  = false;           // force a fresh risk fetch with the new includeAll flag
+        await LoadHrIntelligenceAsync();
+    }
+
+    private async Task SubmitNote()
+    {
+        _noteError  = string.Empty;
+        _noteResult = null;
+
+        if (_noteEmployeeId <= 0)
+        {
+            _noteError = "You need to select an employee.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_noteText))
+        {
+            _noteError = "You need to write an observation.";
+            return;
+        }
+
+        _noteSubmitting = true;
+
+        try
+        {
+            var http      = await HttpFactory.GetPrivateHttpClient();
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId    = authState.User.FindFirst("sub")?.Value
+                         ?? authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? "unknown";
+
+            var req  = new CreateNoteRequest { EmployeeId = _noteEmployeeId, NoteText = _noteText, CreatedByUserId = userId };
+            var resp = await http.PostAsJsonAsync(ClientLibrary.Helpers.Constants.HRNotesUrl, req);
+
+            if (resp.IsSuccessStatusCode)
+            {
+                _noteResult      = await resp.Content.ReadFromJsonAsync<NoteCreatedResponse>();
+                _noteText        = string.Empty;
+                _noteEmployeeId  = 0;
+                _hrDataLoaded    = false;
+                toastService.ShowSuccess("Note saved and analysed.");
+                allState.UpdateDashboardAction?.Invoke();  // refresh charts in real time
+            }
+            else
+            {
+                _noteError = "Failed to save note. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _noteError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _noteSubmitting = false;
+        }
+    }
+
+    private void ToggleRiskRow(int employeeId)
+    {
+        if (!_expandedRiskRows.Add(employeeId))
+            _expandedRiskRows.Remove(employeeId);
+    }
+
+    private static string SentimentBadgeClass(string label) => label switch
+    {
+        "Positive" => "bg-success",
+        "Negative" => "bg-danger",
+        _          => "bg-secondary"
+    };
+
+    private static string RiskBadgeClass(string level) => level switch
+    {
+        "High"   => "bg-danger",
+        "Medium" => "bg-warning text-dark",
+        _        => "bg-success"
+    };
+
+    private static string RiskBarClass(string level) => level switch
+    {
+        "High"   => "bg-danger",
+        "Medium" => "bg-warning",
+        _        => "bg-success"
+    };
+
+    public void Dispose()
+    {
+        allState.Action                -= OnStateChanged;
+        allState.UpdateDashboardAction -= OnDashboardUpdate;
     }
 }

@@ -67,6 +67,11 @@
             </div>
         </div>
     </div>
+
+    <BranchDialog @ref="branchDialog"
+                  HandleSaveOperationEvent="HandleSaveOperationEvent"
+                  Branch="Branch"
+                  Departments="Departments" />
 }
 
 
@@ -76,11 +81,6 @@
         cursor: pointer;
     }
 </style>
-
-<BranchDialog @ref="branchDialog"
-                  HandleSaveOperationEvent="HandleSaveOperationEvent"
-                  Branch="Branch"
-                  Departments="Departments" />
 
 @code {
 

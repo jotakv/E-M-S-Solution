@@ -67,6 +67,11 @@
             </div>
         </div>
     </div>
+
+    <DepartmentDialog @ref="departmentDialog"
+                      HandleSaveOperationEvent="HandleSaveOperationEvent"
+                      Department="Department"
+                      GeneralDepartments="GeneralDepartments" />
 }
 
 
@@ -76,11 +81,6 @@
         cursor: pointer;
     }
 </style>
-
-<DepartmentDialog @ref="departmentDialog"
-                  HandleSaveOperationEvent="HandleSaveOperationEvent"
-                  Department="Department"
-                  GeneralDepartments="GeneralDepartments" />
 
 
 @code {

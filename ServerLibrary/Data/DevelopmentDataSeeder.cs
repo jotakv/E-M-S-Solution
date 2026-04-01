@@ -56,10 +56,15 @@ namespace ServerLibrary.Data
 
                 var employees = await SeedEmployeesAsync(context, seedData, branches, towns, logger, cancellationToken);
 
+                // Flush employees (and everything above) to the DB so they get real PK IDs.
+                // Notes reference EmployeeId FK, so they must be inserted after IDs are known.
+                await context.SaveChangesAsync(cancellationToken);
+
                 await SeedDoctorsAsync(context, seedData, employees, logger, cancellationToken);
                 await SeedOvertimesAsync(context, seedData, employees, overtimeTypes, logger, cancellationToken);
                 await SeedSanctionsAsync(context, seedData, employees, sanctionTypes, logger, cancellationToken);
                 await SeedVacationsAsync(context, seedData, employees, vacationTypes, logger, cancellationToken);
+                await SeedEmployeeNotesAsync(context, employees, logger, cancellationToken);
 
                 await context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -346,8 +351,12 @@ namespace ServerLibrary.Data
             ILogger? logger,
             CancellationToken ct)
         {
-            var existing = await context.Employees
-                .ToDictionaryAsync(x => x.Name, StringComparer.OrdinalIgnoreCase, ct);
+            // Use GroupBy + First to handle any pre-existing duplicate names in the DB
+            // (e.g. a partial seed that left two "Daniel Smith" rows) without crashing.
+            var employeeList = await context.Employees.ToListAsync(ct);
+            var existing = employeeList
+                .GroupBy(x => x.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Employees)
             {
@@ -705,5 +714,277 @@ namespace ServerLibrary.Data
         }
 
         #endregion
+
+        #region EmployeeNotes
+
+        private static async Task SeedEmployeeNotesAsync(
+            AppDbContext context,
+            Dictionary<string, Employee> employees,
+            ILogger? logger,
+            CancellationToken ct)
+        {
+            // Only re-seed if we have fewer than 200 notes (allows topping up after JSON expansion)
+            if (await context.EmployeeNotes.CountAsync(ct) >= 200)
+                return;
+
+            var empList = employees.Values.ToList();
+            if (empList.Count == 0) return;
+
+            var now = DateTime.UtcNow;
+            var rng = new Random(42);
+
+            var noteTemplates = new (string Text, string Label, float MinScore, float MaxScore)[]
+            {
+                // Positive
+                ("Employee delivered the project ahead of schedule and received strong peer feedback.", "Positive", 0.75f, 0.95f),
+                ("Consistently exceeds performance targets. A reliable team contributor.", "Positive", 0.78f, 0.92f),
+                ("Excellent communication during the client presentation this quarter.", "Positive", 0.76f, 0.94f),
+                ("Demonstrated great initiative on the new system rollout.", "Positive", 0.80f, 0.95f),
+                ("Team members have praised this employee's collaborative approach.", "Positive", 0.75f, 0.90f),
+                ("Received outstanding feedback from department review.", "Positive", 0.77f, 0.93f),
+                ("Proactively identified a process bottleneck and proposed a solution.", "Positive", 0.79f, 0.94f),
+                ("Mentored two junior staff members effectively this quarter.", "Positive", 0.76f, 0.91f),
+                ("Achieved all KPIs and received a commendation from the department head.", "Positive", 0.82f, 0.96f),
+                // Neutral
+                ("Standard performance review completed. No significant concerns raised.", "Neutral", 0.40f, 0.60f),
+                ("Attendance and punctuality are within acceptable range.", "Neutral", 0.42f, 0.58f),
+                ("Mid-year check-in completed. Goals partially met.", "Neutral", 0.43f, 0.57f),
+                ("Routine task completion observed. No notable positive or negative trends.", "Neutral", 0.41f, 0.59f),
+                ("Employee noted some difficulty adapting to recent process changes.", "Neutral", 0.44f, 0.56f),
+                ("Performance meets baseline expectations for the role.", "Neutral", 0.43f, 0.57f),
+                ("Quarterly review documented. Development plan updated.", "Neutral", 0.40f, 0.60f),
+                // Negative
+                ("Employee reported feeling overwhelmed. Attendance has been declining this month.", "Negative", 0.10f, 0.32f),
+                ("Multiple deadlines missed without prior communication to the team lead.", "Negative", 0.08f, 0.28f),
+                ("Received formal complaint from a colleague regarding communication style.", "Negative", 0.09f, 0.28f),
+                ("Performance has dropped significantly over the past quarter.", "Negative", 0.10f, 0.30f),
+                ("Repeated tardiness flagged by the department manager.", "Negative", 0.08f, 0.28f),
+                ("Escalation raised due to non-compliance with company policy.", "Negative", 0.07f, 0.26f),
+                ("Team morale impacted by this employee's attitude during meetings.", "Negative", 0.09f, 0.27f),
+                ("Second formal warning issued for conduct issues.", "Negative", 0.06f, 0.24f),
+            };
+
+            // ── Targeted high-risk notes for Kevin Walsh and Daniel Smith ──────────
+            var highRiskNegatives = new string[]
+            {
+                "Multiple deadlines missed without prior communication to the team lead.",
+                "Received formal complaint from a colleague regarding communication style.",
+                "Performance has dropped significantly over the past quarter.",
+                "Repeated tardiness flagged by the department manager.",
+                "Escalation raised due to non-compliance with company policy.",
+                "Second formal warning issued for conduct issues.",
+            };
+
+            foreach (var riskName in new[] { "Kevin Walsh", "Daniel Smith" })
+            {
+                if (!employees.TryGetValue(riskName, out var riskEmp)) continue;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    context.EmployeeNotes.Add(new BaseLibrary.Entities.EmployeeNote
+                    {
+                        EmployeeId      = riskEmp.Id,
+                        NoteText        = highRiskNegatives[i],
+                        SentimentLabel  = "Negative",
+                        SentimentScore  = 0.08f + (float)rng.NextDouble() * 0.18f,
+                        CreatedAt       = now.AddDays(-(i * 12 + rng.Next(1, 8))).AddHours(-rng.Next(0, 8)),
+                        CreatedByUserId = "seed"
+                    });
+                }
+            }
+
+            // ── General pool: ~200 notes across all employees ────────────────────
+            var schedule = new List<(int DaysAgo, string Label)>();
+
+            // Last 30 days — 50 notes
+            for (int i = 0; i < 50; i++)
+                schedule.Add((rng.Next(1, 30), PickLabel(rng)));
+
+            // 31-90 days — 60 notes
+            for (int i = 0; i < 60; i++)
+                schedule.Add((rng.Next(31, 90), PickLabel(rng)));
+
+            // 91-365 days — 55 notes
+            for (int i = 0; i < 55; i++)
+                schedule.Add((rng.Next(91, 365), PickLabel(rng)));
+
+            // Over 1 year — 35 notes
+            for (int i = 0; i < 35; i++)
+                schedule.Add((rng.Next(366, 600), PickLabel(rng)));
+
+            int empIdx = 0;
+            foreach (var (daysAgo, label) in schedule)
+            {
+                var emp       = empList[empIdx % empList.Count];
+                var templates = noteTemplates.Where(t => t.Label == label).ToArray();
+                var template  = templates[rng.Next(0, templates.Length)];
+
+                context.EmployeeNotes.Add(new BaseLibrary.Entities.EmployeeNote
+                {
+                    EmployeeId      = emp.Id,
+                    NoteText        = template.Text,
+                    SentimentLabel  = template.Label,
+                    SentimentScore  = template.MinScore + (float)rng.NextDouble() * (template.MaxScore - template.MinScore),
+                    CreatedAt       = now.AddDays(-daysAgo).AddHours(-rng.Next(0, 8)),
+                    CreatedByUserId = "seed"
+                });
+
+                empIdx++;
+            }
+
+            logger?.LogInformation("Seeded EmployeeNotes.");
+        }
+
+        private static string PickLabel(Random rng)
+        {
+            var roll = rng.NextDouble();
+            return roll < 0.55 ? "Positive" : roll < 0.80 ? "Neutral" : "Negative";
+        }
+
+        #endregion
+
+    // ── Analytics seed ────────────────────────────────────────────────────────
+    // Runs in ALL environments after migration. Seeds realistic HR notes only
+    // if the EmployeeNotes table is empty AND employees already exist.
+    // This guarantees Trend, Morale, and Risk charts are never blank on first load.
+
+    public static async Task SeedAnalyticsNotesAsync(
+        AppDbContext context,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await context.Employees.AnyAsync(cancellationToken)) return;
+        if (await context.EmployeeNotes.AnyAsync(cancellationToken)) return;
+
+        logger?.LogInformation("SeedAnalyticsNotesAsync: seeding HR notes for analytics...");
+
+        var employees = await context.Employees
+            .AsNoTracking()
+            .Include(e => e.Branch)
+                .ThenInclude(b => b!.Department)
+            .ToListAsync(cancellationToken);
+
+        if (employees.Count == 0) return;
+
+        var rng = new Random(777);
+        var now = DateTime.UtcNow;
+
+        // Pre-classified note templates — labels are set explicitly so analytics charts work
+        // even before the ML model has been trained/applied.
+        var positiveTemplates = new[]
+        {
+            "Consistently delivers high quality work ahead of schedule this period.",
+            "Received outstanding feedback from stakeholders for excellent project delivery.",
+            "Shows remarkable initiative and leadership skills that inspire the team.",
+            "Has gone above and beyond expectations on every assignment given.",
+            "Performance metrics are consistently above department benchmarks.",
+            "Proactively resolved a critical issue before it escalated, saving significant time.",
+            "Colleagues recognise this employee as a strong positive contributor.",
+            "Excellent attendance and punctuality record maintained throughout the quarter.",
+            "Strong technical skills and collaborative approach are highly valued by the team.",
+            "Has significantly improved processes leading to measurable efficiency gains.",
+            "Received formal commendation from senior management for outstanding results.",
+            "Demonstrates exceptional dedication and commitment to team success.",
+            "Client satisfaction scores are at an all-time high thanks to this employees work.",
+            "Positive attitude during a difficult period has boosted team morale significantly.",
+            "Has earned the trust and respect of colleagues across multiple departments.",
+            "Exceeded all quarterly targets by a strong margin with great attention to detail.",
+            "Team lead reports this employee as a model performer and great team player.",
+            "Delivers work with remarkable accuracy and consistently positive outcomes.",
+            "Has taken on additional responsibilities with great enthusiasm and skill.",
+            "Continuous learning efforts are clearly reflected in improved performance.",
+        };
+
+        var neutralTemplates = new[]
+        {
+            "Completed assigned tasks within the expected timeframe this period.",
+            "Attended all mandatory training sessions as required.",
+            "Work quality meets standard expectations for the role.",
+            "No notable performance incidents recorded this period.",
+            "Met the minimum required deliverables for the review period.",
+            "Participation in team meetings is adequate and appropriate.",
+            "Followed standard procedures and protocols throughout the period.",
+            "Delivered work to the expected level for this stage of employment.",
+            "Performance aligns with the average for this role and department.",
+            "Has maintained the expected output level with no major issues reported.",
+            "Completed standard compliance and documentation requirements.",
+            "Working relationships with colleagues are generally satisfactory.",
+        };
+
+        var negativeTemplates = new[]
+        {
+            "Has missed multiple project deadlines without prior communication.",
+            "Received complaints from two colleagues regarding unprofessional conduct.",
+            "Performance has been consistently below expectations this quarter.",
+            "Attendance issues have continued despite HR intervention and support.",
+            "Work quality has deteriorated significantly and requires ongoing correction.",
+            "Has been formally warned about repeated late arrivals to the office.",
+            "Team lead reports ongoing friction created by this employee in meetings.",
+            "Multiple customers have raised concerns about rude and dismissive behavior.",
+            "Has failed to complete mandatory training despite several reminders.",
+            "Negative attitude is clearly impacting team morale and productivity.",
+            "Continues to fall short of required standards after coaching and support.",
+            "Has been formally placed on a performance improvement plan this quarter.",
+            "Persistent failure to follow agreed procedures has caused avoidable delays.",
+            "Colleagues have expressed discomfort working alongside this employee.",
+            "Work output requires constant supervision and frequent corrections.",
+        };
+
+        var notes = new List<BaseLibrary.Entities.EmployeeNote>();
+
+        // Distribute notes across all employees, spread across 120 days
+        // Target ~40% positive, ~30% neutral, ~30% negative per employee
+        foreach (var emp in employees)
+        {
+            var notesPerEmployee = rng.Next(6, 14);
+
+            for (int i = 0; i < notesPerEmployee; i++)
+            {
+                var bucket = rng.Next(10);
+                string text;
+                string label;
+                float score;
+
+                if (bucket < 4)         // 40% Positive
+                {
+                    text  = positiveTemplates[rng.Next(positiveTemplates.Length)];
+                    label = "Positive";
+                    score = 0.70f + (float)rng.NextDouble() * 0.25f;
+                }
+                else if (bucket < 7)    // 30% Neutral
+                {
+                    text  = neutralTemplates[rng.Next(neutralTemplates.Length)];
+                    label = "Neutral";
+                    score = 0.38f + (float)rng.NextDouble() * 0.24f;
+                }
+                else                    // 30% Negative
+                {
+                    text  = negativeTemplates[rng.Next(negativeTemplates.Length)];
+                    label = "Negative";
+                    score = 0.05f + (float)rng.NextDouble() * 0.28f;
+                }
+
+                // Spread notes across last 120 days
+                var daysBack = rng.Next(1, 121);
+                var hoursBack = rng.Next(0, 8);
+
+                notes.Add(new BaseLibrary.Entities.EmployeeNote
+                {
+                    EmployeeId      = emp.Id,
+                    NoteText        = text,
+                    SentimentLabel  = label,
+                    SentimentScore  = score,
+                    CreatedAt       = now.AddDays(-daysBack).AddHours(-hoursBack),
+                    CreatedByUserId = "seed"
+                });
+            }
+        }
+
+        context.EmployeeNotes.AddRange(notes);
+        await context.SaveChangesAsync(cancellationToken);
+
+        logger?.LogInformation("SeedAnalyticsNotesAsync: seeded {Count} HR notes across {Employees} employees.",
+            notes.Count, employees.Count);
     }
+}
 }

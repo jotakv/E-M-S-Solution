@@ -55,16 +55,17 @@
             </div>
         </div>
     </div>
+
+    <UserDialog @ref="userDialog"
+                ManageUser="ManageUser"
+                SystemRoles="SystemRoles"
+                HandleSaveOperationEvent="HandleSaveOperationEvent" />
 }
 <style>
     #cursorStyle {
         cursor: pointer
     }
 </style>
-<UserDialog @ref="userDialog"
-            ManageUser="ManageUser"
-            SystemRoles="SystemRoles"
-            HandleSaveOperationEvent="HandleSaveOperationEvent" />
 
 @code {
     UserDialog? userDialog;

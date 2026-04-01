@@ -71,10 +71,11 @@
             </div>
         </div>
     </div>
+
+    <GeneralDepartmentDialog @ref="generalDepartmentDialog"
+                             HandleSaveOperationEvent="HandleSaveOperationEvent"
+                             GeneralDepartment="GeneralDepartment" />
 }
-<GeneralDepartmentDialog @ref="generalDepartmentDialog"
-                         HandleSaveOperationEvent="HandleSaveOperationEvent"
-                         GeneralDepartment="GeneralDepartment" />
 
 <style>
     cursorStyle {

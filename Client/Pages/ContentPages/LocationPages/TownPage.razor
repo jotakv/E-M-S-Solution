@@ -60,6 +60,11 @@
             </div>
         </div>
     </div>
+
+    <TownDialog @ref="townDialog"
+                HandleSaveOperationEvent="HandleSaveOperationEvent"
+                Town="Town"
+                Cities="Cities" />
 }
 
 <style>
@@ -67,11 +72,6 @@
         cursor: pointer;
     }
 </style>
-
-<TownDialog @ref="townDialog"
-            HandleSaveOperationEvent="HandleSaveOperationEvent"
-            Town="Town"
-            Cities="Cities" />
 
 @code {
     public string Title { get; set; } = "Add";

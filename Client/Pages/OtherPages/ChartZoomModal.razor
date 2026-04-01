@@ -1,0 +1,78 @@
+@* Reusable chart-zoom overlay.
+   Usage:
+     <ChartZoomModal Title="My Chart" IsOpen="_zoomed" OnClose="() => _zoomed = false">
+         <SfChart ...> ... </SfChart>
+     </ChartZoomModal>
+*@
+
+@if (IsOpen)
+{
+    <!-- Dark backdrop — click to close -->
+    <div class="chart-zoom-backdrop" @onclick="OnClose" role="button" aria-label="Close enlarged chart"></div>
+
+    <!-- Modal panel -->
+    <div class="chart-zoom-panel shadow-lg" @onclick:stopPropagation="true">
+        <div class="chart-zoom-header">
+            <span class="fw-semibold" style="font-size:0.9rem;">@Title</span>
+            <button class="btn-close btn-close-white btn-sm" @onclick="OnClose" aria-label="Close"></button>
+        </div>
+        <div class="chart-zoom-body">
+            @ChildContent
+        </div>
+    </div>
+}
+
+<style>
+    .chart-zoom-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 1050;
+        cursor: pointer;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        animation: fadeIn .15s ease;
+    }
+
+    .chart-zoom-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1051;
+        width: min(90vw, 900px);
+        max-height: 85vh;
+        background: #fff;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: zoomIn .18s ease;
+    }
+
+    .chart-zoom-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-bottom: 1px solid #e8e8e8;
+        background: #fafafa;
+    }
+
+    .chart-zoom-body {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+    }
+
+    @@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes zoomIn  { from { opacity: 0; transform: translate(-50%, -50%) scale(.92); }
+                          to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+</style>
+
+@code {
+    [Parameter] public string         Title        { get; set; } = string.Empty;
+    [Parameter] public bool           IsOpen       { get; set; }
+    [Parameter] public EventCallback  OnClose      { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

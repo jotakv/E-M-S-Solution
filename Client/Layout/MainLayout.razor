@@ -24,13 +24,4 @@
                 Timeout="4"
                 ShowProgressBar="true"
                 ShowCloseButton="true" />
-@code {
-    async Task LogoutClicked()
-    {
-        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
-        await customAuthStateProvider.UpdateAuthenticationState(null); // clears token
-        NavManager.NavigateTo("/identity/account/login", replace: true); // cannot go back
-    }
-}
-
-@* "/", forceLoad: true *@
+@* Logout is handled entirely by ProfileDropDown → CustomAuthenticationStateProvider.SilentLogout() *@

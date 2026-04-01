@@ -43,6 +43,9 @@ namespace ServerLibrary.Data
         // Sentiment Feedback
         public DbSet<Feedback> Feedbacks { get; set; }
 
+        // HR Notes
+        public DbSet<EmployeeNote> EmployeeNotes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -135,6 +138,21 @@ namespace ServerLibrary.Data
             modelBuilder.Entity<Feedback>()
                 .HasIndex(f => f.CreatedAt)
                 .HasDatabaseName("IX_Feedbacks_CreatedAt");
+            // ── EmployeeNote ──────────────────────────────────────────────────────
+            modelBuilder.Entity<EmployeeNote>()
+                .HasOne(n => n.Employee)
+                .WithMany()
+                .HasForeignKey(n => n.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmployeeNote>()
+                .HasIndex(n => n.EmployeeId)
+                .HasDatabaseName("IX_EmployeeNotes_EmployeeId");
+
+            modelBuilder.Entity<EmployeeNote>()
+                .HasIndex(n => n.CreatedAt)
+                .HasDatabaseName("IX_EmployeeNotes_CreatedAt");
+
             // ── Login performance ─────────────────────────────────────────────────
             // FindUserByEmail does a lookup by email on every login. Without an
             // index this is a full table scan. Index drops login Phase-1 from ~2s to <10ms.

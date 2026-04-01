@@ -8,6 +8,7 @@ using Server.Middleware;
 using Server.Services;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
+using ServerLibrary.Features.HRIntelligence;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
 using ServerLibrary.Services.Contracts;
@@ -56,7 +57,43 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title   = "EMS API",
+            Version = "v1"
+        });
+
+        // Add JWT Bearer auth to Swagger UI — click the padlock to paste your token
+        const string bearerScheme = "Bearer";
+        var jwtScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            BearerFormat = "JWT",
+            Name         = "Authorization",
+            In           = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Type         = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme       = "bearer",
+            Description  = "Paste your JWT token here (without 'Bearer ' prefix)."
+        };
+        var jwtRef = new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Id   = bearerScheme,
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme
+                    }
+                },
+                Array.Empty<string>()
+            }
+        };
+
+        options.AddSecurityDefinition(bearerScheme, jwtScheme);
+        options.AddSecurityRequirement(jwtRef);
+    });
 
     builder.Services.Configure<JwtSection>(builder.Configuration.GetSection("JwtSection"));
     var jwtSection = builder.Configuration.GetSection(nameof(JwtSection)).Get<JwtSection>();
@@ -124,7 +161,9 @@ try
 
     // Sentiment Analysis — singleton so the ML.NET model is trained once at startup
     builder.Services.AddSingleton<ISentimentService, SentimentService>();
-    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+    builder.Services.AddScoped<IEmployeeNoteRepository, EmployeeNoteRepository>();
+    builder.Services.AddScoped<IHRRiskService, HRRiskService>();
+    builder.Services.AddScoped<IHRAnalyticsService, HRAnalyticsService>();
 
     builder.Services.AddMemoryCache();
 
@@ -137,6 +176,7 @@ try
         builder.Configuration.GetSection("RabbitMQ"));
     builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
     builder.Services.AddHostedService<EmsAuditConsumer>();
+    builder.Services.AddHostedService<SentimentWarmupService>();
 
     builder.Services.AddCors(options =>
     {
@@ -163,9 +203,19 @@ try
         await dbContext.Database.MigrateAsync();
     }
 
-    if (app.Environment.IsDevelopment() && seedDemoDataOnStartup)
+    if (seedDemoDataOnStartup)
     {
         await DevelopmentDataSeeder.SeedAsync(app.Services);
+    }
+
+    // Seed HR analytics notes in ALL environments when EmployeeNotes is empty.
+    // Ensures Trend, Morale, and Risk charts populate on first load.
+    using (var analyticsScope = app.Services.CreateScope())
+    {
+        var analyticsDb     = analyticsScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var analyticsLogger = analyticsScope.ServiceProvider
+            .GetService<ILoggerFactory>()?.CreateLogger("AnalyticsSeed");
+        await DevelopmentDataSeeder.SeedAnalyticsNotesAsync(analyticsDb, analyticsLogger);
     }
 
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();

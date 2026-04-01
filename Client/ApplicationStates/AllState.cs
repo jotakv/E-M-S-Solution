@@ -7,6 +7,15 @@
 
         public Action? UpdateDashboardAction { get; set; }
 
+        // Home Dashboard
+        public bool ShowDashboard { get; set; } = true;
+        public void HomeClicked()
+        {
+            ResetAllDepartments();
+            ShowDashboard = true;
+            Action?.Invoke();
+        }
+
         // General Department
         public bool ShowGeneralDepartment { get; set; }
         public void GeneralDepartmentClicked()
@@ -92,7 +101,7 @@
         }
 
         //Employee
-        public bool ShowEmployee { get; set; } = true;
+        public bool ShowEmployee { get; set; } = false;
         public void EmployeeClicked()
         {
             ResetAllDepartments();
@@ -156,6 +165,7 @@
 
         private void ResetAllDepartments()
         {
+            ShowDashboard = false;
             ShowGeneralDepartment = false;
             ShowDepartment = false;
             ShowBranch = false;

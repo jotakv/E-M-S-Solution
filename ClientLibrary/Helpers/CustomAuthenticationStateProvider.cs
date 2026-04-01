@@ -105,4 +105,18 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
         await _localStorage.RemoveItemAsync(TokenKey);
         NotifyAuthenticationStateChanged(Task.FromResult(Unauthenticated()));
     }
+
+    /// <summary>
+    /// Removes the token silently — without triggering a Blazor re-render cycle.
+    /// Use this before a forceLoad navigation to avoid disposing Syncfusion
+    /// DotNetObjectReferences mid-render, which causes:
+    ///   "Cannot access a disposed object. Object name: 'Microsoft.JSInterop.DotNetObjectReference'"
+    /// </summary>
+    public async Task SilentLogout()
+    {
+        await _localStorage.RemoveItemAsync(TokenKey);
+        // Intentionally NO NotifyAuthenticationStateChanged — the caller issues
+        // NavigateTo with forceLoad:true, which triggers a full browser reload
+        // and evaluates auth state fresh from (now empty) localStorage.
+    }
 }
