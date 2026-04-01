@@ -36,7 +36,7 @@
                                             <tr>
                                                 <th scope="row">@count</th>
                                                 <td>@item.Id</td>
-                                                <td>@item.City!.Name</td>
+                                                <td>@item.City?.Name</td>
                                                 <td>@item.Name</td>
                                                 <td>
                                                     <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="() => EditClicked(item)"></i>
@@ -138,18 +138,18 @@
         townDialog?.OpenDialog();
     }
 
-    private async Task HandleSaveOperationEvent()
+    private async Task HandleSaveOperationEvent(Town town)
     {
         bool successCheck = false;
-        
-        if (Town.Id > 0)
+
+        if (town.Id > 0)
         {
-            var result = await townService.Update(Town, Constants.TownBaseUrl);
+            var result = await townService.Update(town, Constants.TownBaseUrl);
             successCheck = await DisplayMessage(result.Flag, result.Message);
         }
         else
         {
-            var response = await townService.Insert(Town, Constants.TownBaseUrl);
+            var response = await townService.Insert(town, Constants.TownBaseUrl);
             successCheck = await DisplayMessage(response.Flag, response.Message);
         }
 

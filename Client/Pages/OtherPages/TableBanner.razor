@@ -93,12 +93,21 @@ else
 
     async Task LoadDefaults()
     {
-        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
-        Departments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
-        Overtimes = await overtimeService.GetAll(Constants.OvertimeBaseUrl);
-        Sanctions = await sanctionService.GetAll(Constants.SanctionBaseUrl);
-        Vacations = await vacationService.GetAll(Constants.VacationBaseUrl);
-        Health = await doctorService.GetAll(Constants.DoctorBaseUrl);
+        var t1 = employeeService.GetAll(Constants.EmployeeBaseUrl);
+        var t2 = departmentService.GetAll(Constants.DepartmentBaseUrl);
+        var t3 = overtimeService.GetAll(Constants.OvertimeBaseUrl);
+        var t4 = sanctionService.GetAll(Constants.SanctionBaseUrl);
+        var t5 = vacationService.GetAll(Constants.VacationBaseUrl);
+        var t6 = doctorService.GetAll(Constants.DoctorBaseUrl);
+
+        await Task.WhenAll(t1, t2, t3, t4, t5, t6);
+
+        Employees   = t1.Result;
+        Departments = t2.Result;
+        Overtimes   = t3.Result;
+        Sanctions   = t4.Result;
+        Vacations   = t5.Result;
+        Health      = t6.Result;
     }
 
     void HealthClicked() => allState.HealthClicked();
@@ -110,7 +119,6 @@ else
 
     protected async override Task OnInitializedAsync()
     {
-        allState.Action += StateHasChanged;
         allState.UpdateDashboardAction += RefreshDashboard;
 
         if (HasInitialData())
@@ -137,7 +145,6 @@ else
 
     public void Dispose()
     {
-        allState.Action -= StateHasChanged;
         allState.UpdateDashboardAction -= RefreshDashboard;
     }
 

@@ -609,14 +609,15 @@
     {
         if (firstRender)
         {
-            // Read HR Intelligence preferences from localStorage
-            var daysRaw      = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days");
-            var analyticsRaw = await JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel");
+            // Read both localStorage preferences in parallel — two round-trips become one wait
+            var daysTask      = JS.InvokeAsync<string?>("localStorage.getItem", "ems_hr_default_days").AsTask();
+            var analyticsTask = JS.InvokeAsync<string?>("localStorage.getItem", "ems_analytics_panel").AsTask();
+            await Task.WhenAll(daysTask, analyticsTask);
 
-            if (int.TryParse(daysRaw, out var savedDays))
+            if (int.TryParse(daysTask.Result, out var savedDays))
                 _hrDays = savedDays;
 
-            _analyticsOpen = analyticsRaw != "false";  // default true unless explicitly disabled
+            _analyticsOpen = analyticsTask.Result != "false";  // default true unless explicitly disabled
 
             await LoadHrIntelligenceAsync();
             StateHasChanged();

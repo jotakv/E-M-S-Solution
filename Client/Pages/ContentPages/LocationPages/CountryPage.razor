@@ -182,12 +182,19 @@
         _isLoading = false;
     }
 
+    private void AutoDismissSyncBanner(int ms, bool isCountry)
+    {
+        _ = Task.Delay(ms).ContinueWith(_ => InvokeAsync(() =>
+        {
+            if (isCountry) lastCountrySyncResult  = null;
+            else           lastCapitalSyncResult  = null;
+            StateHasChanged();
+        }));
+    }
+
     private async Task SyncCountriesClicked()
     {
-        if (isSyncingCountries)
-        {
-            return;
-        }
+        if (isSyncingCountries) return;
 
         try
         {
@@ -198,6 +205,7 @@
             {
                 await GetCountries();
                 toastService.ShowSuccess($"Inserted: {lastCountrySyncResult.Inserted}, Updated: {lastCountrySyncResult.Updated}, Skipped: {lastCountrySyncResult.Skipped}.");
+                AutoDismissSyncBanner(5000, isCountry: true);
             }
         }
         catch (Exception ex)
@@ -212,10 +220,7 @@
 
     private async Task SyncCapitalsClicked()
     {
-        if (isSyncingCapitals)
-        {
-            return;
-        }
+        if (isSyncingCapitals) return;
 
         try
         {
@@ -226,6 +231,7 @@
             {
                 await GetCountries();
                 toastService.ShowSuccess($"Matched: {lastCapitalSyncResult.CountriesMatched}, Skipped: {lastCapitalSyncResult.CountriesSkipped}, Cities inserted/updated: {lastCapitalSyncResult.CitiesInserted}/{lastCapitalSyncResult.CitiesUpdated}, Towns inserted/updated: {lastCapitalSyncResult.TownsInserted}/{lastCapitalSyncResult.TownsUpdated}.");
+                AutoDismissSyncBanner(5000, isCountry: false);
             }
         }
         catch (Exception ex)
