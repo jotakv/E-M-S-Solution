@@ -25,88 +25,40 @@ The application covers:
 
 There is only one frontend in this repository: the Blazor WebAssembly app. There is no React admin UI, no `package.json`, and no Node.js-based application to run.
 
-## Architecture Summary
+## Quick Start
 
-### What exists in this repository
+## Video explaining how to install the application in your local machine using Visual Studio
+---
+https://youtu.be/tVsxeiRQl-4
+---
 
-| Component | Present? | Notes |
-| --- | --- | --- |
-| Order API | No | The backend is an employee management API in `Server`, not an order API. |
-| RabbitMQ | Yes | Optional. Used for audit events and employee created/updated events. |
-| Database | Yes | SQL Server via EF Core. Default local setup targets Windows LocalDB. |
-| Inventory Service | No | Not present in this repository. |
-| Payment Service | No | Not present in this repository. |
-| Shipping Service | No | Not present in this repository. |
-| Blazor UI | Yes | `Client` is a Blazor WebAssembly frontend. |
-| React Admin UI | No | Not present in this repository. |
+1. Install .NET 8 SDK, SQL Server LocalDB (or another SQL Server instance), and optionally Docker Desktop.
+2. Clone the repository.
+3. Run:
 
-### Project responsibilities
-
-| Path | Responsibility |
-| --- | --- |
-| `BaseLibrary/` | Shared entities, DTOs, and response models used by both client and server. |
-| `Client/` | Blazor WebAssembly UI, login/register screens, dashboards, CRUD pages, feedback UI. |
-| `ClientLibrary/` | Client-side HTTP/auth helpers and service abstractions used by the Blazor app. |
-| `Server/` | ASP.NET Core API host, Swagger, JWT auth, CORS, logging, feedback sentiment service, RabbitMQ audit consumer. |
-| `ServerLibrary/` | EF Core `AppDbContext`, migrations, development seeder, repositories, auth implementation, RabbitMQ publisher, country sync services. |
-| `Tests/ServerLibrary.UnitTests/` | Unit tests for seeding, employee repository behavior/logging, and country/capital sync services. |
-
-### Diagram
-
-```mermaid
-flowchart LR
-    Browser["Blazor WebAssembly Client<br/>Client"] -->|HTTPS + JWT| Api["ASP.NET Core API<br/>Server"]
-    Api --> Db[("SQL Server / LocalDB")]
-    Api --> Logs["Serilog file logs<br/>Optional Seq sink"]
-    Api -->|Publish ems.audit.* and ems.employee.*| Rabbit["RabbitMQ (optional)"]
-    Rabbit -->|Consume ems.audit.#| Api
-    Api -->|Admin sync only| Rest["REST Countries API (optional)"]
+```powershell
+dotnet restore .\EmployeeManagmentSystemSolution.sln
+dotnet build .\EmployeeManagmentSystemSolution.sln
+dotnet test .\Tests\ServerLibrary.UnitTests\ServerLibrary.UnitTests.csproj
 ```
 
-## Event Flow
+4. Optional: start RabbitMQ with `docker compose up -d`.
+5. In a new PowerShell terminal, run the API in `Development`:
 
-### 1. Authentication and normal CRUD flow
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:DOTNET_ENVIRONMENT='Development'
+dotnet run --no-launch-profile --project .\Server\Server.csproj --urls "https://localhost:7012;http://localhost:5094"
+```
 
-1. The user opens the Blazor app and signs in at `/identity/account/login`.
-2. The client posts credentials to `POST /api/Authentication/login`.
-3. The API validates the user, loads the assigned role, issues a JWT + refresh token, and the client stores them in local storage.
-4. The Blazor app calls the API for departments, branches, countries, cities, towns, employees, overtime, sanctions, vacations, doctor records, and user management.
-5. The API persists data through EF Core into SQL Server.
-6. On startup, the API automatically applies pending EF Core migrations.
+6. In another terminal, run the Blazor app:
 
-### 2. Employee event publishing
+```powershell
+dotnet run --no-launch-profile --project .\Client\Client.csproj --urls "https://localhost:7201;http://localhost:5049"
+```
 
-1. Creating an employee publishes `ems.employee.created`.
-2. Updating an employee publishes `ems.employee.updated`.
-3. Those messages go to RabbitMQ if the broker is available.
-4. No consumer for `ems.employee.*` exists in this repository, so those events are published only. They are not processed further inside this codebase.
-
-### 3. Audit flow
-
-1. Export, print, and employee image-upload actions in the Blazor UI call:
-   - `POST /api/audit/export`
-   - `POST /api/audit/print`
-   - `POST /api/audit/image-upload`
-2. `AuditController` logs the action and publishes an `AuditEvent` to RabbitMQ using routing keys under `ems.audit.*`.
-3. `EmsAuditConsumer` listens on the `ems.audit` queue with binding key `ems.audit.#`.
-4. When RabbitMQ is available, the consumer writes those audit events into the `AuditLogs` table.
-5. If RabbitMQ is unavailable, the application still runs, but audit events are not persisted through the queue.
-
-### 4. Feedback flow
-
-1. A user submits feedback from the Blazor feedback page.
-2. The client posts the comment to `POST /api/feedback`.
-3. The API runs an ML.NET sentiment prediction using `Server/Data/sentiment_data.tsv`.
-4. The feedback record and sentiment result are stored in SQL Server.
-5. The client can fetch the summary at `GET /api/feedback/summary`.
-
-### 5. Country/capital sync flow
-
-1. An admin user opens the Country page and clicks `Sync Countries` or `Sync Capitals`.
-2. The API calls the REST Countries API through a named `HttpClient`.
-3. Country, city, and town data are inserted/updated in SQL Server.
-4. This feature requires outbound internet access.
-
+7. Open `https://localhost:7201/identity/account/login`.
+8. Sign in with `admin@ems.local` / `Admin123!`.
 
 # E-M-S-Solution Local Setup Guide
 
@@ -227,6 +179,120 @@ For the Blazor app to talk to the API without changing source code, keep these e
 - Blazor app: `https://localhost:7201`
 
 If you change either port, update both source files together.
+
+
+## Test Users and Roles
+
+These users are seeded from `ServerLibrary/Data/development-seed.json` when the API starts in `Development` with `SeedDemoDataOnStartup=true`.
+
+| Email | Password | Role | What it can do |
+| --- | --- | --- | --- |
+| `admin@ems.local` | `Admin123!` | `Admin` | Full authenticated UI access, user management UI, country/capital sync buttons, server-side access to the admin-only country sync endpoints. |
+| `hr@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
+| `manager@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
+
+Additional auth notes:
+
+- Registering a new account from `/identity/account/register` automatically assigns the `User` role.
+- The UI shows admin-only actions through `AuthorizeView`.
+- On the server side, the explicit role-based restrictions currently present are on the country sync endpoints and the authenticated audit endpoints.
+
+## End-to-End Smoke Test
+
+If you want to show the system working to an evaluator:
+
+1. Start the API in `Development` and the Blazor app on the default ports.
+2. Sign in as `admin@ems.local` / `Admin123!`.
+3. Open the dashboard and confirm that seeded data appears in the management sections.
+4. Open `Administration -> Users` and confirm the seeded roles/users are visible.
+5. Open `Management -> Employees` and create or update an employee.
+6. Open `Feedback` and submit a comment to see the sentiment result and summary refresh.
+7. If RabbitMQ is running, use export/print/image-upload actions from the UI and then inspect the `AuditLogs` table to confirm async audit persistence.
+8. If internet access is available, open the Country page and run `Sync Countries` / `Sync Capitals` as the admin user.
+
+## Architecture Summary
+
+### What exists in this repository
+
+| Component | Present? | Notes |
+| --- | --- | --- |
+| Order API | No | The backend is an employee management API in `Server`, not an order API. |
+| RabbitMQ | Yes | Optional. Used for audit events and employee created/updated events. |
+| Database | Yes | SQL Server via EF Core. Default local setup targets Windows LocalDB. |
+| Inventory Service | No | Not present in this repository. |
+| Payment Service | No | Not present in this repository. |
+| Shipping Service | No | Not present in this repository. |
+| Blazor UI | Yes | `Client` is a Blazor WebAssembly frontend. |
+| React Admin UI | No | Not present in this repository. |
+
+### Project responsibilities
+
+| Path | Responsibility |
+| --- | --- |
+| `BaseLibrary/` | Shared entities, DTOs, and response models used by both client and server. |
+| `Client/` | Blazor WebAssembly UI, login/register screens, dashboards, CRUD pages, feedback UI. |
+| `ClientLibrary/` | Client-side HTTP/auth helpers and service abstractions used by the Blazor app. |
+| `Server/` | ASP.NET Core API host, Swagger, JWT auth, CORS, logging, feedback sentiment service, RabbitMQ audit consumer. |
+| `ServerLibrary/` | EF Core `AppDbContext`, migrations, development seeder, repositories, auth implementation, RabbitMQ publisher, country sync services. |
+| `Tests/ServerLibrary.UnitTests/` | Unit tests for seeding, employee repository behavior/logging, and country/capital sync services. |
+
+### Diagram
+
+```mermaid
+flowchart LR
+    Browser["Blazor WebAssembly Client<br/>Client"] -->|HTTPS + JWT| Api["ASP.NET Core API<br/>Server"]
+    Api --> Db[("SQL Server / LocalDB")]
+    Api --> Logs["Serilog file logs<br/>Optional Seq sink"]
+    Api -->|Publish ems.audit.* and ems.employee.*| Rabbit["RabbitMQ (optional)"]
+    Rabbit -->|Consume ems.audit.#| Api
+    Api -->|Admin sync only| Rest["REST Countries API (optional)"]
+```
+
+## Event Flow
+
+### 1. Authentication and normal CRUD flow
+
+1. The user opens the Blazor app and signs in at `/identity/account/login`.
+2. The client posts credentials to `POST /api/Authentication/login`.
+3. The API validates the user, loads the assigned role, issues a JWT + refresh token, and the client stores them in local storage.
+4. The Blazor app calls the API for departments, branches, countries, cities, towns, employees, overtime, sanctions, vacations, doctor records, and user management.
+5. The API persists data through EF Core into SQL Server.
+6. On startup, the API automatically applies pending EF Core migrations.
+
+### 2. Employee event publishing
+
+1. Creating an employee publishes `ems.employee.created`.
+2. Updating an employee publishes `ems.employee.updated`.
+3. Those messages go to RabbitMQ if the broker is available.
+4. No consumer for `ems.employee.*` exists in this repository, so those events are published only. They are not processed further inside this codebase.
+
+### 3. Audit flow
+
+1. Export, print, and employee image-upload actions in the Blazor UI call:
+   - `POST /api/audit/export`
+   - `POST /api/audit/print`
+   - `POST /api/audit/image-upload`
+2. `AuditController` logs the action and publishes an `AuditEvent` to RabbitMQ using routing keys under `ems.audit.*`.
+3. `EmsAuditConsumer` listens on the `ems.audit` queue with binding key `ems.audit.#`.
+4. When RabbitMQ is available, the consumer writes those audit events into the `AuditLogs` table.
+5. If RabbitMQ is unavailable, the application still runs, but audit events are not persisted through the queue.
+
+### 4. Feedback flow
+
+1. A user submits feedback from the Blazor feedback page.
+2. The client posts the comment to `POST /api/feedback`.
+3. The API runs an ML.NET sentiment prediction using `Server/Data/sentiment_data.tsv`.
+4. The feedback record and sentiment result are stored in SQL Server.
+5. The client can fetch the summary at `GET /api/feedback/summary`.
+
+### 5. Country/capital sync flow
+
+1. An admin user opens the Country page and clicks `Sync Countries` or `Sync Capitals`.
+2. The API calls the REST Countries API through a named `HttpClient`.
+3. Country, city, and town data are inserted/updated in SQL Server.
+4. This feature requires outbound internet access.
+
+
 
 ### RabbitMQ local defaults
 
@@ -393,34 +459,7 @@ Notes:
 - `docker compose up --build` is not needed here because the compose file only references the published `rabbitmq:3.13-management` image.
 - If `docker compose up -d` fails with a Docker pipe/daemon error, start Docker Desktop first and wait until the engine is ready.
 
-## Test Users and Roles
 
-These users are seeded from `ServerLibrary/Data/development-seed.json` when the API starts in `Development` with `SeedDemoDataOnStartup=true`.
-
-| Email | Password | Role | What it can do |
-| --- | --- | --- | --- |
-| `admin@ems.local` | `Admin123!` | `Admin` | Full authenticated UI access, user management UI, country/capital sync buttons, server-side access to the admin-only country sync endpoints. |
-| `hr@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
-| `manager@ems.local` | `User123!` | `User` | Standard authenticated UI access. |
-
-Additional auth notes:
-
-- Registering a new account from `/identity/account/register` automatically assigns the `User` role.
-- The UI shows admin-only actions through `AuthorizeView`.
-- On the server side, the explicit role-based restrictions currently present are on the country sync endpoints and the authenticated audit endpoints.
-
-## End-to-End Smoke Test
-
-If you want to show the system working to an evaluator:
-
-1. Start the API in `Development` and the Blazor app on the default ports.
-2. Sign in as `admin@ems.local` / `Admin123!`.
-3. Open the dashboard and confirm that seeded data appears in the management sections.
-4. Open `Administration -> Users` and confirm the seeded roles/users are visible.
-5. Open `Management -> Employees` and create or update an employee.
-6. Open `Feedback` and submit a comment to see the sentiment result and summary refresh.
-7. If RabbitMQ is running, use export/print/image-upload actions from the UI and then inspect the `AuditLogs` table to confirm async audit persistence.
-8. If internet access is available, open the Country page and run `Sync Countries` / `Sync Capitals` as the admin user.
 
 ## Running Tests
 
@@ -499,32 +538,3 @@ There are no frontend unit tests, Playwright tests, or Node-based test suites in
 - Seq is configured as a Serilog sink, but the repository does not provide Seq infrastructure.
 - Most CRUD controllers are not decorated with `[Authorize]`. Access control is only partially enforced server-side and is more complete in the Blazor UI than in the API surface itself.
 
-## Quick Start
-
-1. Install .NET 8 SDK, SQL Server LocalDB (or another SQL Server instance), and optionally Docker Desktop.
-2. Clone the repository.
-3. Run:
-
-```powershell
-dotnet restore .\EmployeeManagmentSystemSolution.sln
-dotnet build .\EmployeeManagmentSystemSolution.sln
-dotnet test .\Tests\ServerLibrary.UnitTests\ServerLibrary.UnitTests.csproj
-```
-
-4. Optional: start RabbitMQ with `docker compose up -d`.
-5. In a new PowerShell terminal, run the API in `Development`:
-
-```powershell
-$env:ASPNETCORE_ENVIRONMENT='Development'
-$env:DOTNET_ENVIRONMENT='Development'
-dotnet run --no-launch-profile --project .\Server\Server.csproj --urls "https://localhost:7012;http://localhost:5094"
-```
-
-6. In another terminal, run the Blazor app:
-
-```powershell
-dotnet run --no-launch-profile --project .\Client\Client.csproj --urls "https://localhost:7201;http://localhost:5049"
-```
-
-7. Open `https://localhost:7201/identity/account/login`.
-8. Sign in with `admin@ems.local` / `Admin123!`.
