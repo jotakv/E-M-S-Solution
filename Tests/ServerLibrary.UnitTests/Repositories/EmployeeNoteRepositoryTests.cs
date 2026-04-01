@@ -17,6 +17,37 @@ public class EmployeeNoteRepositoryTests
         return new AppDbContext(options);
     }
 
+    /// <summary>
+    /// Seeds the full Department → Branch → Employee hierarchy so that the repository's
+    /// Include(n => n.Employee).ThenInclude(e => e.Branch).ThenInclude(b => b.Department)
+    /// chain does not filter out EmployeeNotes. EF Core's in-memory provider performs
+    /// inner-join behaviour for each hop that has a non-nullable FK, so every level of
+    /// the chain must have a matching row.
+    /// </summary>
+    private static void SeedEmployees(AppDbContext ctx, params int[] ids)
+    {
+        // One shared Department and Branch is enough — all stub employees point to them.
+        ctx.GeneralDepartments.Add(new GeneralDepartment { Id = 1, Name = "Stub GD" });
+        ctx.Departments.Add(new Department { Id = 1, Name = "Stub Dept", GeneralDepartmentId = 1 });
+        ctx.Branches.Add(new Branch { Id = 1, Name = "Stub Branch", DepartmentId = 1 });
+
+        foreach (var id in ids)
+            ctx.Employees.Add(new Employee
+            {
+                Id              = id,
+                Name            = $"Employee {id}",
+                CivilId         = "stub",
+                FileNumber      = "stub",
+                JobName         = "stub",
+                Address         = "stub",
+                TelephoneNumber = "stub",
+                Photo           = "stub",
+                BranchId        = 1,
+            });
+
+        ctx.SaveChanges();
+    }
+
     [Fact]
     public async Task AddAsync_PersistsNote()
     {
@@ -44,6 +75,7 @@ public class EmployeeNoteRepositoryTests
     {
         await using var ctx  = CreateContext();
         var repo = new EmployeeNoteRepository(ctx);
+        SeedEmployees(ctx, 1, 2);
 
         ctx.EmployeeNotes.AddRange(
             new EmployeeNote { EmployeeId = 1, NoteText = "Note A", SentimentLabel = "Positive", CreatedAt = DateTime.UtcNow, CreatedByUserId = "u" },
@@ -64,6 +96,7 @@ public class EmployeeNoteRepositoryTests
         await using var ctx  = CreateContext();
         var repo = new EmployeeNoteRepository(ctx);
         var cutoff = DateTime.UtcNow.AddDays(-7);
+        SeedEmployees(ctx, 1);
 
         ctx.EmployeeNotes.AddRange(
             new EmployeeNote { EmployeeId = 1, NoteText = "Old note",    SentimentLabel = "Neutral",  CreatedAt = DateTime.UtcNow.AddDays(-30), CreatedByUserId = "u" },
@@ -82,6 +115,7 @@ public class EmployeeNoteRepositoryTests
     {
         await using var ctx  = CreateContext();
         var repo = new EmployeeNoteRepository(ctx);
+        SeedEmployees(ctx, 1);
 
         for (int i = 0; i < 10; i++)
         {
@@ -106,6 +140,7 @@ public class EmployeeNoteRepositoryTests
     {
         await using var ctx  = CreateContext();
         var repo = new EmployeeNoteRepository(ctx);
+        SeedEmployees(ctx, 1);
 
         ctx.EmployeeNotes.AddRange(
             new EmployeeNote { EmployeeId = 1, NoteText = "Older",  SentimentLabel = "Neutral", CreatedAt = DateTime.UtcNow.AddDays(-5), CreatedByUserId = "u" },
