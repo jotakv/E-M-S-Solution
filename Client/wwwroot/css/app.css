@@ -362,6 +362,15 @@ h4, h5 {
 }
 
 /* ── Dialogs / modals ────────────────────────────────────────────────────── */
+/* .top-row is sticky at z-index:1050; raise the Syncfusion dialog container
+   above it so modals always appear on top across the entire app. */
+.e-dlg-container {
+    z-index: 10000 !important;
+}
+.e-dlg-overlay {
+    z-index: 9999 !important;
+}
+
 .e-dialog {
     border-radius: var(--ems-radius-lg) !important;
     box-shadow: var(--ems-shadow-md) !important;
