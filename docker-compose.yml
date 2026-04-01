@@ -1,15 +1,100 @@
+# EMS Docker Compose — full local stack
+#
+# Services:
+#   sqlserver  — SQL Server 2022 Developer Edition (persisted volume)
+#   rabbitmq   — RabbitMQ 3.13 with management UI
+#   ems-api    — ASP.NET Core 8 API (built from source)
+#
+# Usage:
+#   docker compose up --build          # first run / after code changes
+#   docker compose up                  # subsequent runs (uses cached image)
+#   docker compose down -v             # wipe all data (re-seeds on next up)
+#
+# On every start the API:
+#   1. Waits for SQL Server + RabbitMQ to pass their health checks
+#   2. Runs any pending EF migrations (idempotent)
+#   3. Seeds demo data when the DB is empty (SeedDemoDataOnStartup=true)
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
+
+  # ── SQL Server 2022 ─────────────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ems-sqlserver
+    environment:
+      SA_PASSWORD: "EmsD0cker_Strong!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      # Try mssql-tools18 (SQL Server 2022 default path) then fall back to the
+      # older mssql-tools path so the check works across image variants.
+      test:
+        - "CMD-SHELL"
+        - >
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA
+          -P 'EmsD0cker_Strong!' -Q 'SELECT 1' -b -C -o /dev/null 2>&1
+          || /opt/mssql-tools/bin/sqlcmd -S localhost -U SA
+          -P 'EmsD0cker_Strong!' -Q 'SELECT 1' -b -o /dev/null 2>&1
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  # ── RabbitMQ 3.13 ───────────────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: ems-rabbitmq
     ports:
       - "5672:5672"
-      - "15672:15672"
+      - "15672:15672"    # Management UI  →  http://localhost:15672  (guest/guest)
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
+  # ── EMS API ──────────────────────────────────────────────────────────────────
+  ems-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ems-api
+    ports:
+      - "8080:8080"    # API  →  http://localhost:8080  (Swagger at /swagger)
+    environment:
+      # Use the Development profile so SeedDemoDataOnStartup defaults to true
+      # and the RabbitMQ guest credentials are already correct.
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      # Override the localdb connection string with the Docker SQL Server service.
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=EmployeeDB;User Id=SA;Password=EmsD0cker_Strong!;MultipleActiveResultSets=true;TrustServerCertificate=True"
+
+      # Override RabbitMQ host — the rest of the config (port/user/pass/vhost)
+      # comes from appsettings.Development.json which already has the right values.
+      RabbitMQ__HostName: rabbitmq
+
+      # Ensure seeding is on (already true in Development, but explicit here).
+      SeedDemoDataOnStartup: "true"
+
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
 volumes:
+  sqlserver_data:
   rabbitmq_data:

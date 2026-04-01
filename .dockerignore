@@ -1,0 +1,32 @@
+# Exclude version control history — not needed in Docker build context
+.git
+.gitignore
+.gitattributes
+
+# Exclude Claude Code workspace files
+.claude/
+
+# Exclude frontend projects — Server build doesn't depend on them
+Client/
+ClientLibrary/
+
+# Exclude test projects
+Tests/
+
+# Exclude local build outputs — the Docker build runs its own restore + publish
+**/bin/
+**/obj/
+
+# Exclude local runtime artefacts
+Logs/
+**/Logs/
+
+# Exclude IDE and OS files
+.vs/
+*.user
+.DS_Store
+Thumbs.db
+
+# Exclude sensitive local overrides (secrets should come from env vars)
+**/appsettings.Production.json
+**/secrets.json

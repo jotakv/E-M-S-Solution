@@ -39,6 +39,22 @@ namespace ServerLibrary.Repositories.Implementations
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
                 "UserRegister", "Register", "ApplicationUser", user.Email, "Attempt");
 
+            // Server-side password complexity guard — mirrors the [RegularExpression]
+            // on AccountBase.Password so that direct API callers (curl/Postman) also
+            // get enforcement, not just the Blazor frontend.
+            // Seeded accounts bypass this path: they are BCrypt-hashed in the seeder
+            // directly and never flow through CreateAsync.
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                    user.Password ?? string.Empty,
+                    @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[^\s]{8,}$"))
+            {
+                logger.LogWarning(
+                    "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | Email: {Email} | Result: {Result}",
+                    "UserRegister", "Register", "ApplicationUser", user.Email, "Failure:WeakPassword");
+                return new GeneralResponse(false,
+                    "Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.");
+            }
+
             var checkUser = await FindUserByEmail(user.Email!);
             if (checkUser != null)
             {

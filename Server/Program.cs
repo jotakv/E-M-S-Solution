@@ -218,6 +218,17 @@ try
         await DevelopmentDataSeeder.SeedAnalyticsNotesAsync(analyticsDb, analyticsLogger);
     }
 
+    // One-time idempotent fixup: replace legacy "seed" placeholder in
+    // EmployeeNotes.CreatedByUserId with the real admin display name.
+    // Runs on every startup; no-op once all rows are already fixed.
+    using (var fixScope = app.Services.CreateScope())
+    {
+        var fixDb     = fixScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var fixLogger = fixScope.ServiceProvider
+            .GetService<ILoggerFactory>()?.CreateLogger("SeederIdentityFix");
+        await DevelopmentDataSeeder.FixSeederIdentityAsync(fixDb, fixLogger);
+    }
+
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
 
