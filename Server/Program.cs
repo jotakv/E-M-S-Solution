@@ -161,7 +161,6 @@ try
 
     // Sentiment Analysis — singleton so the ML.NET model is trained once at startup
     builder.Services.AddSingleton<ISentimentService, SentimentService>();
-    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
     builder.Services.AddScoped<IEmployeeNoteRepository, EmployeeNoteRepository>();
     builder.Services.AddScoped<IHRRiskService, HRRiskService>();
     builder.Services.AddScoped<IHRAnalyticsService, HRAnalyticsService>();

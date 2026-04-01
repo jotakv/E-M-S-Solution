@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\images\background\" />
-    <Folder Include="wwwroot\images\companylogos\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties wwwroot_4bootstrap_4css_4bootstrap-grid_1css_1map__JsonSchema="" /></VisualStudio></ProjectExtensions>
