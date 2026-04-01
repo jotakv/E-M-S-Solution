@@ -103,40 +103,70 @@ flowchart LR
 3. Country, city, and town data are inserted/updated in SQL Server.
 4. This feature requires outbound internet access.
 
-## Repository Cloning
 
+# E-M-S-Solution Local Setup Guide
 
-If you clone into a different local folder name, use that folder instead of `E-M-S-Solution`.
+This guide provides step-by-step instructions to set up and run the E-M-S-Solution on a completely blank Windows machine, using Visual Studio Code.
 
-## Prerequisites
+## 1. Initial System Setup
 
-- .NET SDK 8.0.x
+If you are starting from a fresh Windows installation, open **PowerShell as Administrator** and use the Windows Package Manager (`winget`) to install the required core tools.
+
+**Install Git:**
+
+    winget install --id Git.Git -e --source winget
+
+*Alternative:* Download the installer directly from [https://git-scm.com/downloads](https://git-scm.com/downloads).
+
+**Install Visual Studio Code & SQL Server LocalDB:**
+Since we are using VS Code as our primary IDE, we need to install the editor and the database engine separately:
+
+    winget install --id Microsoft.VisualStudioCode -e --source winget
+
+*Alternative VS Code:* Download the installer directly from [https://code.visualstudio.com/](https://code.visualstudio.com/).
+
+    winget install --id Microsoft.SQLServer.2022.Express.LocalDB -e --source winget
+
+*Alternative LocalDB:* Download SQL Server Express from [https://www.microsoft.com/en-us/sql-server/sql-server-downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Make sure to choose the "Download media" option and select "LocalDB" during the setup).
+
+## 2. Repository Cloning
+
+Once Git is installed, open your terminal or command prompt, navigate to the directory where you want to store your projects, and run:
+
+    git clone https://github.com/your-username/E-M-S-Solution.git
+    cd E-M-S-Solution
+
+*Note: If you clone into a different local folder name, use that folder instead of `E-M-S-Solution`.*
+
+## 3. Prerequisites & Environment Setup
+
+- **.NET SDK 8.0.x**
   - All projects target `net8.0`.
   - The CI workflow in `.github/workflows/ci.yml` also uses `.NET 8.0.x`.
-```bash
- winget install --id Microsoft.DotNet.SDK.8 --exact --source winget
-```
-- ASP.NET Core HTTPS development certificate
+
+        winget install Microsoft.DotNet.SDK.8
+
+  *Alternative:* Download the .NET 8 SDK installer directly from [https://dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+- **ASP.NET Core HTTPS development certificate**
   - The API and Blazor app run on HTTPS localhost URLs.
   - If your machine does not already trust the dev certificate, run:
 
-```powershell
-dotnet dev-certs https --trust
-```
+        dotnet dev-certs https --trust
 
-- SQL Server LocalDB or another SQL Server instance
+- **SQL Server LocalDB or another SQL Server instance**
   - The default connection string in `Server/appsettings.json` points to `Server=(localdb)\MSSQLLocalDB`.
-  - This is the easiest path on Windows.
-  - On non-Windows machines, or if LocalDB is not installed, you must override the connection string to a reachable SQL Server instance.
-- Docker Desktop + Docker Compose v2 (optional)
-  - Only needed if you want the RabbitMQ broker defined in `docker-compose.yml`.
-  - Docker is not required to run the API or the Blazor app.
-- Entity Framework Core CLI tools (optional)
-  - Only needed if you want to run EF commands manually instead of relying on the API's startup migration behavior.
+  - This is the easiest path on Windows (installed in Step 1).
+  - On non-Windows machines, you must override the connection string in `appsettings.Development.json` to point to a reachable SQL Server instance.
 
-```powershell
-dotnet tool install --global dotnet-ef
-```
+- **Docker Desktop + Docker Compose v2 (Optional)**
+  - Only needed if you want to run the local RabbitMQ broker defined in `docker-compose.yml`.
+  - The application relies on CloudAMQP by default or handles connection failures gracefully, so Docker is **not strictly required** to run the API or the Blazor app.
+
+- **Entity Framework Core CLI tools (Optional)**
+  - Only needed if you want to run EF commands manually (e.g., `dotnet ef database update`). The application is configured to apply pending migrations automatically on startup in development environments.
+
+        dotnet tool install --global dotnet-ef
 
 - Node.js is not required
   - There is no React app, no `package.json`, and no frontend Node toolchain in this repository.
