@@ -176,6 +176,7 @@ try
         builder.Configuration.GetSection("RabbitMQ"));
     builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
     builder.Services.AddHostedService<EmsAuditConsumer>();
+    builder.Services.AddHostedService<SentimentWarmupService>();
 
     builder.Services.AddCors(options =>
     {

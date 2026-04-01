@@ -28,6 +28,7 @@ namespace Server.Controllers
         public async Task<ActionResult<CountrySyncResultDto>> SyncCountries()
         {
             var result = await countrySyncService.SyncFromRestCountriesAsync();
+            cache.Remove(CountryCacheKey);   // invalidate after bulk sync
             return Ok(result);
         }
 
@@ -36,6 +37,7 @@ namespace Server.Controllers
         public async Task<ActionResult<CapitalSyncResultDto>> SyncCapitals()
         {
             var result = await capitalSyncService.SyncCapitalsFromRestCountriesAsync();
+            cache.Remove(CountryCacheKey);   // invalidate after bulk sync
             return Ok(result);
         }
 

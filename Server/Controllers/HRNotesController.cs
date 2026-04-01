@@ -2,6 +2,7 @@ using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Server.Services;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Services.Contracts;
@@ -18,17 +19,20 @@ namespace Server.Controllers
         private readonly IEmployeeNoteRepository    _noteRepo;
         private readonly ISentimentService          _sentiment;
         private readonly IEventBus                  _eventBus;
+        private readonly IMemoryCache                  _cache;
         private readonly ILogger<HRNotesController> _logger;
 
         public HRNotesController(
             IEmployeeNoteRepository noteRepo,
             ISentimentService sentiment,
             IEventBus eventBus,
+            IMemoryCache cache,
             ILogger<HRNotesController> logger)
         {
             _noteRepo  = noteRepo;
             _sentiment = sentiment;
             _eventBus  = eventBus;
+            _cache     = cache;
             _logger    = logger;
         }
 
@@ -67,6 +71,14 @@ namespace Server.Controllers
             };
 
             await _noteRepo.AddAsync(note);
+
+            // Bust HR Intelligence caches so the next dashboard load reflects the new note
+            foreach (var key in new[] { "hr_summary_30", "hr_summary_90", "hr_summary_365",
+                                         "hr_trend_30",   "hr_trend_90",   "hr_trend_365",
+                                         "hr_departments_30", "hr_departments_90", "hr_departments_365",
+                                         "hr_risks_5_90_False", "hr_risks_5_90_True",
+                                         "hr_risks_10_90_False", "hr_risks_10_90_True" })
+                _cache.Remove(key);
 
             _logger.LogInformation(
                 "Audit — EventName: {EventName} | Action: {Action} | Entity: {Entity} | " +
@@ -123,6 +135,7 @@ namespace Server.Controllers
                 Id              = n.Id,
                 EmployeeId      = n.EmployeeId,
                 EmployeeName    = n.Employee?.Name                     ?? string.Empty,
+                CivilId         = n.Employee?.CivilId                  ?? string.Empty,
                 Department      = n.Employee?.Branch?.Department?.Name ?? string.Empty,
                 Branch          = n.Employee?.Branch?.Name             ?? string.Empty,
                 NoteText        = n.NoteText,

@@ -351,8 +351,12 @@ namespace ServerLibrary.Data
             ILogger? logger,
             CancellationToken ct)
         {
-            var existing = await context.Employees
-                .ToDictionaryAsync(x => x.Name, StringComparer.OrdinalIgnoreCase, ct);
+            // Use GroupBy + First to handle any pre-existing duplicate names in the DB
+            // (e.g. a partial seed that left two "Daniel Smith" rows) without crashing.
+            var employeeList = await context.Employees.ToListAsync(ct);
+            var existing = employeeList
+                .GroupBy(x => x.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             foreach (var dto in seedData.Employees)
             {

@@ -36,7 +36,9 @@
                             <option value="0">-- Select employee --</option>
                             @foreach (var emp in _employees)
                             {
-                                <option value="@emp.Id">@emp.Name</option>
+                                <option value="@emp.Id">
+                                    @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                                </option>
                             }
                         </select>
                     </div>
@@ -82,7 +84,9 @@
                         <option value="0">All employees</option>
                         @foreach (var emp in _employees)
                         {
-                            <option value="@emp.Id">@emp.Name</option>
+                            <option value="@emp.Id">
+                                @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                            </option>
                         }
                     </select>
                 </div>
@@ -188,7 +192,13 @@
                             {
                                 <tr>
                                     <td class="text-muted text-nowrap">@note.CreatedAt.ToString("yyyy-MM-dd")</td>
-                                    <td class="fw-semibold text-nowrap">@note.EmployeeName</td>
+                                    <td class="fw-semibold text-nowrap">
+                                        @note.EmployeeName
+                                        @if (!string.IsNullOrEmpty(note.CivilId))
+                                        {
+                                            <br /><small class="text-muted fw-normal" style="font-size:0.73rem;">ID: @note.CivilId</small>
+                                        }
+                                    </td>
                                     <td class="text-muted">
                                         @note.Department
                                         @if (!string.IsNullOrEmpty(note.Branch))

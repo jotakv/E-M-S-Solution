@@ -356,7 +356,9 @@
                                         <option value="0">-- Select employee --</option>
                                         @foreach (var emp in (_employees ?? []))
                                         {
-                                            <option value="@emp.Id">@emp.Name</option>
+                                            <option value="@emp.Id">
+                                                @emp.Name@(string.IsNullOrEmpty(emp.CivilId) ? "" : $" ({emp.CivilId})")
+                                            </option>
                                         }
                                     </select>
                                 </div>
@@ -393,14 +395,22 @@
 
                 <!-- E. Risk Manager — interactive collapsible rows -->
                 <div class="card shadow-sm mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
                         <span class="fw-semibold" style="font-size:0.85rem;">
                             <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Risk Manager
                         </span>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick='() => _riskOpen = !_riskOpen'>
-                            <i class="bi @(_riskOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
-                            @(_riskOpen ? "Collapse" : "Expand")
-                        </button>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm @(_showAllRisks ? "btn-warning" : "btn-outline-secondary")"
+                                    @onclick="ToggleShowAllRisks"
+                                    title="@(_showAllRisks ? "Showing all employees — click to show top risks only" : "Click to include employees with zero risk")">
+                                <i class="bi bi-people me-1"></i>
+                                @(_showAllRisks ? "All employees" : "Top risks only")
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick='() => _riskOpen = !_riskOpen'>
+                                <i class="bi @(_riskOpen ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                                @(_riskOpen ? "Collapse" : "Expand")
+                            </button>
+                        </div>
                     </div>
                     @if (_riskOpen)
                     {
@@ -429,7 +439,13 @@
                                             <div class="d-flex align-items-center gap-3 px-3 py-2 @(isExpanded ? "border-bottom" : "")"
                                                  style="background:@(isExpanded ? "#fafafa" : "white"); font-size:0.82rem;">
                                                 <span style="width:10px; height:10px; border-radius:50%; background:@dotColor; flex-shrink:0; display:inline-block;"></span>
-                                                <span class="fw-semibold" style="min-width:130px;">@r.EmployeeFullName</span>
+                                                <div style="min-width:160px; line-height:1.2;">
+                                                    <span class="fw-semibold">@r.EmployeeFullName</span>
+                                                    @if (!string.IsNullOrEmpty(r.CivilId))
+                                                    {
+                                                        <br /><small class="text-muted fw-normal" style="font-size:0.7rem;">ID: @r.CivilId</small>
+                                                    }
+                                                </div>
                                                 <span class="text-muted d-none d-md-inline" style="min-width:110px; font-size:0.75rem;">@r.Department</span>
                                                 <div class="flex-grow-1 mx-2 d-none d-md-block">
                                                     <div class="progress" style="height:6px; border-radius:3px;">
@@ -542,6 +558,7 @@
     private bool    _analyticsOpen  = true;
     private bool    _noteOpen       = true;
     private bool    _riskOpen       = true;
+    private bool    _showAllRisks   = false;
 
     // ── Chart zoom — null = none zoomed; values: "donut"|"bar"|"trend"|"dept"
     private string? _zoomedChart    = null;
@@ -651,7 +668,7 @@
             var days  = _hrDays > 0 ? _hrDays : 3650;
             var tTask = http.GetFromJsonAsync<List<SentimentTrendDto>>($"{ClientLibrary.Helpers.Constants.HRTrendUrl}?days={days}");
             var dTask = http.GetFromJsonAsync<List<DepartmentMoraleDto>>($"{ClientLibrary.Helpers.Constants.HRDepartmentsUrl}?days={days}");
-            var rTask = http.GetFromJsonAsync<List<EmployeeRiskDto>>($"{ClientLibrary.Helpers.Constants.HRRisksUrl}?top=10&days=90");
+            var rTask = http.GetFromJsonAsync<List<EmployeeRiskDto>>($"{ClientLibrary.Helpers.Constants.HRRisksUrl}?top=10&days=90&includeAll={_showAllRisks.ToString().ToLower()}");
 
             await Task.WhenAll(tTask, dTask, rTask);
 
@@ -682,6 +699,13 @@
     {
         _analyticsOpen = !_analyticsOpen;
         await JS.InvokeVoidAsync("localStorage.setItem", "ems_analytics_panel", _analyticsOpen ? "true" : "false");
+    }
+
+    private async Task ToggleShowAllRisks()
+    {
+        _showAllRisks  = !_showAllRisks;
+        _hrDataLoaded  = false;           // force a fresh risk fetch with the new includeAll flag
+        await LoadHrIntelligenceAsync();
     }
 
     private async Task SubmitNote()

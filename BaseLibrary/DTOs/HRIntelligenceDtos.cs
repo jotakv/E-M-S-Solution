@@ -6,6 +6,7 @@ namespace BaseLibrary.DTOs
         public string EmployeeFullName { get; set; } = string.Empty;
         public string Department       { get; set; } = string.Empty;
         public string Branch           { get; set; } = string.Empty;
+        public string CivilId        { get; set; } = string.Empty;
         public int    RiskScore        { get; set; }
         public string RiskLevel        { get; set; } = string.Empty; // "Low" | "Medium" | "High"
         public int    OvertimeCount    { get; set; }
@@ -64,6 +65,7 @@ namespace BaseLibrary.DTOs
         public string   EmployeeName    { get; set; } = string.Empty;
         public string   Department      { get; set; } = string.Empty;
         public string   Branch          { get; set; } = string.Empty;
+        public string   CivilId         { get; set; } = string.Empty;
         public string   NoteText        { get; set; } = string.Empty;
         public float    SentimentScore  { get; set; }
         public string   SentimentLabel  { get; set; } = string.Empty;
