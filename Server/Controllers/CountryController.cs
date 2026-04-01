@@ -17,7 +17,7 @@ namespace Server.Controllers
         IGenericRepositoryInterface<Country> genericRepositoryInterface,
         ICountrySyncService countrySyncService,
         ICapitalSyncService capitalSyncService,
-        IMemoryCache cache, 
+        IMemoryCache cache,
         ILogger<CountryRepository> logger) :
         GenericController<Country>(genericRepositoryInterface)
     {
@@ -39,14 +39,12 @@ namespace Server.Controllers
             return Ok(result);
         }
 
-
         [HttpGet("all")]
         public override async Task<IActionResult> GetAll()
         {
             if (cache.TryGetValue(LocationCacheKeys.CountryList, out IEnumerable<Country>? countries))
             {
                 logger.LogInformation("Countries found in cache.");
-
                 return Ok(countries);
             }
 
