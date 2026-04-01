@@ -52,6 +52,15 @@
                                                 HeaderText="End Date">
                                     </GridColumn>
 
+                                    <GridColumn HeaderText="Overtime Type">
+                                        <Template>
+                                            @{
+                                                var ot = context as Overtime;
+                                            }
+                                            @(ot?.OvertimeType?.Name ?? "—")
+                                        </Template>
+                                    </GridColumn>
+
                                     <GridColumn HeaderText="Action">
                                         <Template>
                                             @{
@@ -121,7 +130,9 @@
 
     private async Task HandleSaveOperationEvent(Overtime item)
     {
-        var result = await overtimeService.Update(item, Constants.OvertimeBaseUrl);
+        var result = item.Id == 0
+            ? await overtimeService.Insert(item, Constants.OvertimeBaseUrl)
+            : await overtimeService.Update(item, Constants.OvertimeBaseUrl);
         bool successCheck = await DisplayMessage(result.Flag, result.Message);
         if (successCheck)
             await GetOvertime();

@@ -846,3 +846,10 @@ h4, h5 {
 .blazored-toast-info    .blazored-toast__icon     { color:      #0a84ff !important; }
 .blazored-toast-info    .blazored-toast__progress { background: #0a84ff !important; }
 
+/* Force toast to appear above all EMS UI layers */
+.blazored-toast-container {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 1rem !important;
+    right: 1rem !important;
+}

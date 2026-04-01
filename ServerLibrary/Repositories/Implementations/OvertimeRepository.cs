@@ -11,11 +11,20 @@ namespace ServerLibrary.Repositories.Implementations
         AppDbContext appDbContext,
         ILogger<OvertimeRepository> logger) : IGenericRepositoryInterface<Overtime>
     {
-        public async Task<List<Overtime>> GetAll() =>
-            await appDbContext.Overtimes
+        public async Task<List<Overtime>> GetAll()
+        {
+            var list = await appDbContext.Overtimes
                 .AsNoTracking()
                 .Include(t => t.OvertimeType)
                 .ToListAsync();
+
+            // Sync the scalar UI-bound field from the navigation property
+            foreach (var o in list)
+                if (o.OvertimeType is not null)
+                    o.OvertimeTypeld = o.OvertimeType.Id;
+
+            return list;
+        }
 
         public async Task<Overtime> GetById(int id) =>
             (await appDbContext.Overtimes.FirstOrDefaultAsync(eid => eid.EmployeeId == id))!;
@@ -24,6 +33,10 @@ namespace ServerLibrary.Repositories.Implementations
         {
             try
             {
+                // Wire the navigation FK so EF writes OvertimeTypeId column correctly
+                if (item.OvertimeTypeld > 0)
+                    item.OvertimeType = await appDbContext.OvertimeTypes.FindAsync(item.OvertimeTypeld);
+
                 appDbContext.Overtimes.Add(item);
                 await Commit();
 
@@ -66,6 +79,9 @@ namespace ServerLibrary.Repositories.Implementations
             obj.StartDate      = item.StartDate;
             obj.EndDate        = item.EndDate;
             obj.OvertimeTypeld = item.OvertimeTypeld;
+            // Keep the EF shadow FK in sync
+            if (item.OvertimeTypeld > 0)
+                obj.OvertimeType = await appDbContext.OvertimeTypes.FindAsync(item.OvertimeTypeld);
             await Commit();
 
             logger.LogInformation(
