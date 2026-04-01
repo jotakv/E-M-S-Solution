@@ -269,8 +269,9 @@
         if (int.TryParse(daysRaw, out var savedDays))
             _filterDays = savedDays;
 
-        _employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
-        await Task.WhenAll(LoadNotesAsync(), LoadSummaryAsync());
+        var employeesTask = employeeService.GetAll(Constants.EmployeeBaseUrl);
+        await Task.WhenAll(employeesTask, LoadNotesAsync(), LoadSummaryAsync());
+        _employees = employeesTask.Result ?? new();
     }
 
     private async Task LoadNotesAsync()
