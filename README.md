@@ -108,6 +108,11 @@ flowchart LR
 
 This guide provides step-by-step instructions to set up and run the E-M-S-Solution on a completely blank Windows machine, using Visual Studio Code.
 
+## Video explaining how to install the application in your local machine using Visual Studio
+---
+https://youtu.be/tVsxeiRQl-4
+---
+
 ## 1. Initial System Setup
 
 If you are starting from a fresh Windows installation, open **PowerShell as Administrator** and use the Windows Package Manager (`winget`) to install the required core tools.
