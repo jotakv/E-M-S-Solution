@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Server\Server.csproj" />
     <ProjectReference Include="..\..\ServerLibrary\ServerLibrary.csproj" />
     <ProjectReference Include="..\..\BaseLibrary\BaseLibrary.csproj" />
   </ItemGroup>

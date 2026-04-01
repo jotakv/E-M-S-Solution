@@ -2,7 +2,6 @@
 using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using Server.Caching;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
 
@@ -13,10 +12,12 @@ namespace Server.Controllers
     public class CityController(IGenericRepositoryInterface<City> genericRepositoryInterface, IMemoryCache cache, ILogger<CityRepository> logger) :
     GenericController<City>(genericRepositoryInterface)
     {
+        private const string CityCacheKey = "CityListCache";
+
         [HttpGet("all")]
         public override async Task<IActionResult> GetAll()
         {
-            if (cache.TryGetValue(LocationCacheKeys.CityList, out IEnumerable<City>? cities))
+            if (cache.TryGetValue(CityCacheKey, out IEnumerable<City>? cities))
             {
                 logger.LogInformation("Cities found in cache.");
 
@@ -32,7 +33,7 @@ namespace Server.Controllers
                 .SetAbsoluteExpiration(TimeSpan.FromHours(1))
                 .SetPriority(CacheItemPriority.Normal);
 
-            cache.Set(LocationCacheKeys.CityList, cities, cacheEntryOptions);
+            cache.Set(CityCacheKey, cities, cacheEntryOptions);
 
             return Ok(cities);
         }
@@ -41,7 +42,7 @@ namespace Server.Controllers
         public override async Task<IActionResult> Delete(int id)
         {
             var result = await base.Delete(id);
-            InvalidateLocationCaches();
+            cache.Remove(CityCacheKey);
             return result;
         }
 
@@ -49,7 +50,7 @@ namespace Server.Controllers
         public override async Task<IActionResult> Add(City model)
         {
             var result = await base.Add(model);
-            InvalidateLocationCaches();
+            cache.Remove(CityCacheKey);
             return result;
         }
 
@@ -57,14 +58,8 @@ namespace Server.Controllers
         public override async Task<IActionResult> Update(City model)
         {
             var result = await base.Update(model);
-            InvalidateLocationCaches();
+            cache.Remove(CityCacheKey);
             return result;
-        }
-
-        private void InvalidateLocationCaches()
-        {
-            cache.Remove(LocationCacheKeys.CityList);
-            cache.Remove(LocationCacheKeys.TownList);
         }
     }
 }
