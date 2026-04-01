@@ -47,7 +47,9 @@
                                 </GridColumn>
 
                                 <GridColumn Field=@nameof(Sanction.Date)
-                                            HeaderText="Occuring Date">
+                                            HeaderText="Occuring Date"
+                                            Format="d"
+                                            Type="ColumnType.Date">
                                 </GridColumn>
 
                                 <GridColumn Field=@nameof(Sanction.Punishment)
@@ -55,7 +57,9 @@
                                 </GridColumn>
 
                                 <GridColumn Field=@nameof(Sanction.PunishmentDate)
-                                            HeaderText="Punishment Date">
+                                            HeaderText="Punishment Date"
+                                            Format="d"
+                                            Type="ColumnType.Date">
                                 </GridColumn>
 
                                 <GridColumn HeaderText="Action">

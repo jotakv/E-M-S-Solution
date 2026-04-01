@@ -41,7 +41,9 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.StartDate)
-                                                HeaderText="Start Date">
+                                                HeaderText="Start Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.NumberOfDays)
@@ -49,7 +51,9 @@
                                     </GridColumn>
 
                                     <GridColumn Field=@nameof(Overtime.EndDate)
-                                                HeaderText="End Date">
+                                                HeaderText="End Date"
+                                                Format="d"
+                                                Type="ColumnType.Date">
                                     </GridColumn>
 
                                     <GridColumn HeaderText="Overtime Type">
