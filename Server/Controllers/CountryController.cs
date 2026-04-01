@@ -4,6 +4,7 @@ using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Server.Caching;
 using ServerLibrary.Repositories.Contracts;
 using ServerLibrary.Repositories.Implementations;
 using ServerLibrary.Services.Contracts;
@@ -16,20 +17,16 @@ namespace Server.Controllers
         IGenericRepositoryInterface<Country> genericRepositoryInterface,
         ICountrySyncService countrySyncService,
         ICapitalSyncService capitalSyncService,
-        IMemoryCache cache, 
+        IMemoryCache cache,
         ILogger<CountryRepository> logger) :
         GenericController<Country>(genericRepositoryInterface)
     {
-
-        private const string CountryCacheKey = "CountryListCache";
-        private const string CityCacheKey = "CityListCache";
-
         [Authorize(Roles = "Admin")]
         [HttpPost("sync")]
         public async Task<ActionResult<CountrySyncResultDto>> SyncCountries()
         {
             var result = await countrySyncService.SyncFromRestCountriesAsync();
-            cache.Remove(CountryCacheKey);   // invalidate after bulk sync
+            InvalidateLocationCaches();
             return Ok(result);
         }
 
@@ -38,18 +35,16 @@ namespace Server.Controllers
         public async Task<ActionResult<CapitalSyncResultDto>> SyncCapitals()
         {
             var result = await capitalSyncService.SyncCapitalsFromRestCountriesAsync();
-            cache.Remove(CityCacheKey);   // invalidate after bulk sync
+            InvalidateLocationCaches();
             return Ok(result);
         }
-
 
         [HttpGet("all")]
         public override async Task<IActionResult> GetAll()
         {
-            if (cache.TryGetValue(CountryCacheKey, out IEnumerable<Country>? countries))
+            if (cache.TryGetValue(LocationCacheKeys.CountryList, out IEnumerable<Country>? countries))
             {
                 logger.LogInformation("Countries found in cache.");
-
                 return Ok(countries);
             }
 
@@ -62,7 +57,7 @@ namespace Server.Controllers
                 .SetAbsoluteExpiration(TimeSpan.FromHours(1))
                 .SetPriority(CacheItemPriority.Normal);
 
-            cache.Set(CountryCacheKey, countries, cacheEntryOptions);
+            cache.Set(LocationCacheKeys.CountryList, countries, cacheEntryOptions);
 
             return Ok(countries);
         }
@@ -71,7 +66,7 @@ namespace Server.Controllers
         public override async Task<IActionResult> Delete(int id)
         {
             var result = await base.Delete(id);
-            cache.Remove(CountryCacheKey);
+            InvalidateLocationCaches();
             return result;
         }
 
@@ -79,7 +74,7 @@ namespace Server.Controllers
         public override async Task<IActionResult> Add(Country model)
         {
             var result = await base.Add(model);
-            cache.Remove(CountryCacheKey);
+            InvalidateLocationCaches();
             return result;
         }
 
@@ -87,8 +82,15 @@ namespace Server.Controllers
         public override async Task<IActionResult> Update(Country model)
         {
             var result = await base.Update(model);
-            cache.Remove(CountryCacheKey);
+            InvalidateLocationCaches();
             return result;
+        }
+
+        private void InvalidateLocationCaches()
+        {
+            cache.Remove(LocationCacheKeys.CountryList);
+            cache.Remove(LocationCacheKeys.CityList);
+            cache.Remove(LocationCacheKeys.TownList);
         }
     }
 }
